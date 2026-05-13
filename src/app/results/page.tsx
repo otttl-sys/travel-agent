@@ -85,6 +85,7 @@ function ResultsContent() {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const [loadingStep, setLoadingStep] = useState(0);
+  const [aiResult, setAiResult] = useState<string | null>(null);
 
   const destination = searchParams.get("destination") || "";
   const budget = Number(searchParams.get("budget") || 3000);
@@ -99,26 +100,75 @@ function ResultsContent() {
   ];
 
   useEffect(() => {
-    let currentProgress = 0;
+    const params = {
+      destination,
+      startDate: searchParams.get("startDate") || "",
+      endDate: searchParams.get("endDate") || "",
+      travelers: searchParams.get("travelers") || "2",
+      interests: searchParams.get("interests") || "",
+      budget,
+    };
+
     let stepIndex = 0;
 
-    const interval = setInterval(() => {
-      currentProgress += 4;
-      setProgress(Math.min(currentProgress, 100));
+    const progressInterval = setInterval(() => {
+      setProgress((p) => {
+        const next = Math.min(p + 1.5, 90);
+        const newStep = Math.floor((next / 100) * loadingSteps.length);
+        if (newStep !== stepIndex && newStep < loadingSteps.length) {
+          stepIndex = newStep;
+          setLoadingStep(newStep);
+        }
+        return next;
+      });
+    }, 200);
 
-      const newStep = Math.floor((currentProgress / 100) * loadingSteps.length);
-      if (newStep !== stepIndex && newStep < loadingSteps.length) {
-        stepIndex = newStep;
-        setLoadingStep(newStep);
+    fetch("/api/plan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    }).then(async (res) => {
+      clearInterval(progressInterval);
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let result = "";
+
+      if (!reader) return;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n").filter((l) => l.startsWith("data: "));
+
+        for (const line of lines) {
+          const data = line.replace("data: ", "");
+          if (data === "[DONE]") break;
+
+          const parsed = JSON.parse(data);
+          if (parsed.type === "tool_call") {
+            const toolIdx = loadingSteps.findIndex((s) =>
+              s.toLowerCase().includes(parsed.tool.split("_")[1] || "")
+            );
+            if (toolIdx >= 0) setLoadingStep(toolIdx);
+          }
+          if (parsed.type === "result") {
+            result = parsed.text;
+          }
+        }
       }
 
-      if (currentProgress >= 100) {
-        clearInterval(interval);
-        setTimeout(() => setLoading(false), 400);
-      }
-    }, 60);
-
-    return () => clearInterval(interval);
+      setProgress(100);
+      setLoadingStep(loadingSteps.length - 1);
+      setTimeout(() => {
+        setAiResult(result);
+        setLoading(false);
+      }, 500);
+    }).catch(() => {
+      clearInterval(progressInterval);
+      setLoading(false);
+    });
   }, []);
 
   if (loading) {
@@ -202,6 +252,19 @@ function ResultsContent() {
               <TripCard key={trip.id} trip={trip} featured={index === 0} />
             ))}
           </div>
+
+          {/* AI Result */}
+          {aiResult && (
+            <div className="bg-white rounded-2xl border border-gray-100 p-8 mb-6">
+              <div className="flex items-center gap-2 mb-5">
+                <span className="text-xl">🤖</span>
+                <h3 className="font-semibold text-gray-900">Dein persönlicher Reiseplan von Claude</h3>
+              </div>
+              <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap">
+                {aiResult}
+              </div>
+            </div>
+          )}
 
           {/* Agent Summary */}
           <div className="bg-white rounded-2xl border border-gray-100 p-6">
