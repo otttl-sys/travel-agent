@@ -79,6 +79,15 @@ export default function ResultsPage() {
   );
 }
 
+const loadingSteps = [
+  "Orchestrator Agent startet...",
+  "Flight Agent sucht beste Verbindungen...",
+  "Hotel Agent prüft Verfügbarkeiten...",
+  "Activity Agent plant Erlebnisse...",
+  "Budget Agent optimiert Kosten...",
+  "Reisepläne werden zusammengestellt...",
+];
+
 function ResultsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -86,18 +95,10 @@ function ResultsContent() {
   const [progress, setProgress] = useState(0);
   const [loadingStep, setLoadingStep] = useState(0);
   const [aiResult, setAiResult] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const destination = searchParams.get("destination") || "";
   const budget = Number(searchParams.get("budget") || 3000);
-
-  const loadingSteps = [
-    "Orchestrator Agent startet...",
-    "Flight Agent sucht beste Verbindungen...",
-    "Hotel Agent prüft Verfügbarkeiten...",
-    "Activity Agent plant Erlebnisse...",
-    "Budget Agent optimiert Kosten...",
-    "Reisepläne werden zusammengestellt...",
-  ];
 
   useEffect(() => {
     const params = {
@@ -146,15 +147,20 @@ function ResultsContent() {
           const data = line.replace("data: ", "");
           if (data === "[DONE]") break;
 
-          const parsed = JSON.parse(data);
+          let parsed: { type: string; tool?: string; text?: string };
+          try {
+            parsed = JSON.parse(data);
+          } catch {
+            continue;
+          }
           if (parsed.type === "tool_call") {
             const toolIdx = loadingSteps.findIndex((s) =>
-              s.toLowerCase().includes(parsed.tool.split("_")[1] || "")
+              s.toLowerCase().includes((parsed.tool ?? "").split("_")[1] || "")
             );
             if (toolIdx >= 0) setLoadingStep(toolIdx);
           }
           if (parsed.type === "result") {
-            result = parsed.text;
+            result = parsed.text ?? "";
           }
         }
       }
@@ -167,8 +173,10 @@ function ResultsContent() {
       }, 500);
     }).catch(() => {
       clearInterval(progressInterval);
+      setError("Verbindungsfehler. Bitte versuche es erneut.");
       setLoading(false);
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (loading) {
@@ -201,6 +209,19 @@ function ResultsContent() {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6">
+        <div className="w-full max-w-md text-center">
+          <div className="text-5xl mb-6">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Etwas ist schiefgelaufen</h2>
+          <p className="text-gray-500 text-sm mb-8">{error}</p>
+          <Button onClick={() => router.push("/plan")}>Nochmal versuchen</Button>
         </div>
       </div>
     );

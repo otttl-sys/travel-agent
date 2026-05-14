@@ -1,5 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { tavily } from "@tavily/core";
 import { NextRequest, NextResponse } from "next/server";
+
+const tvly = tavily({ apiKey: process.env.TAVILY_API_KEY! });
 
 const client = new Anthropic();
 
@@ -67,37 +70,53 @@ const tools: Anthropic.Tool[] = [
   },
 ];
 
-function executeTool(name: string, input: Record<string, unknown>): string {
+async function executeTool(name: string, input: Record<string, unknown>): Promise<string> {
   switch (name) {
-    case "search_flights":
-      return JSON.stringify({
-        options: [
-          { airline: "Lufthansa", price: Math.floor(Math.random() * 400) + 300, duration: "11h 20min", stops: 0 },
-          { airline: "Swiss", price: Math.floor(Math.random() * 300) + 250, duration: "13h 45min", stops: 1 },
-          { airline: "Austrian", price: Math.floor(Math.random() * 350) + 280, duration: "12h 10min", stops: 1 },
-        ],
-        destination: input.destination,
-      });
-    case "search_hotels":
-      return JSON.stringify({
-        options: [
-          { name: `Hotel ${input.destination} Central`, stars: 4, price_per_night: 120, location: "Zentrum" },
-          { name: `${input.destination} Boutique`, stars: 3, price_per_night: 75, location: "Altstadt" },
-          { name: `Grand ${input.destination}`, stars: 5, price_per_night: 220, location: "Bestlage" },
-        ],
-      });
-    case "get_activities":
-      return JSON.stringify({
-        highlights: [
-          "Historische Altstadt erkunden",
-          "Lokale Märkte & Street Food",
-          "Tagesausflug in die Umgebung",
-          "Kulinarisches Abendessen mit Einheimischen",
-          "Museum & Kulturprogramm",
-        ],
-        destination: input.destination,
-        interests: input.interests,
-      });
+    case "search_flights": {
+      const origin = input.origin ? ` from ${input.origin}` : "";
+      const date = input.departure_date ? ` ${input.departure_date}` : "";
+      const pax = input.travelers ? ` ${input.travelers} passengers` : "";
+      const query = `flights to ${input.destination}${origin}${date}${pax} price`;
+      try {
+        const result = await tvly.search(query, { searchDepth: "basic", maxResults: 5 });
+        return JSON.stringify({
+          destination: input.destination,
+          results: result.results.map((r) => ({ title: r.title, url: r.url, snippet: r.content })),
+        });
+      } catch {
+        return JSON.stringify({ destination: input.destination, error: "Search unavailable", results: [] });
+      }
+    }
+    case "search_hotels": {
+      const style = input.style ? ` ${input.style}` : "";
+      const date = input.check_in ? ` ${input.check_in}` : "";
+      const query = `best${style} hotels in ${input.destination}${date} recommendations`;
+      try {
+        const result = await tvly.search(query, { searchDepth: "basic", maxResults: 5 });
+        return JSON.stringify({
+          destination: input.destination,
+          results: result.results.map((r) => ({ title: r.title, url: r.url, snippet: r.content })),
+        });
+      } catch {
+        return JSON.stringify({ destination: input.destination, error: "Search unavailable", results: [] });
+      }
+    }
+    case "get_activities": {
+      const interests = Array.isArray(input.interests) && input.interests.length > 0
+        ? ` ${(input.interests as string[]).join(", ")}`
+        : "";
+      const days = input.duration_days ? ` ${input.duration_days} days` : "";
+      const query = `top things to do${interests} in ${input.destination}${days} attractions`;
+      try {
+        const result = await tvly.search(query, { searchDepth: "basic", maxResults: 5 });
+        return JSON.stringify({
+          destination: input.destination,
+          results: result.results.map((r) => ({ title: r.title, url: r.url, snippet: r.content })),
+        });
+      } catch {
+        return JSON.stringify({ destination: input.destination, error: "Search unavailable", results: [] });
+      }
+    }
     case "optimize_budget":
       return JSON.stringify({
         breakdown: {
@@ -138,8 +157,11 @@ Erstelle dann einen konkreten, strukturierten Reisevorschlag auf Deutsch.
       ];
 
       let continueLoop = true;
+      let iterations = 0;
+      const MAX_ITERATIONS = 10;
 
-      while (continueLoop) {
+      while (continueLoop && iterations < MAX_ITERATIONS) {
+        iterations++;
         const response = await client.messages.create({
           model: "claude-sonnet-4-6",
           max_tokens: 4096,
@@ -160,11 +182,13 @@ Erstelle dann einen konkreten, strukturierten Reisevorschlag auf Deutsch.
 
           messages.push({ role: "assistant", content: response.content });
 
-          const toolResults: Anthropic.ToolResultBlockParam[] = toolUseBlocks.map((toolUse) => ({
-            type: "tool_result" as const,
-            tool_use_id: toolUse.id,
-            content: executeTool(toolUse.name, toolUse.input as Record<string, unknown>),
-          }));
+          const toolResults: Anthropic.ToolResultBlockParam[] = await Promise.all(
+            toolUseBlocks.map(async (toolUse) => ({
+              type: "tool_result" as const,
+              tool_use_id: toolUse.id,
+              content: await executeTool(toolUse.name, toolUse.input as Record<string, unknown>),
+            }))
+          );
 
           messages.push({ role: "user", content: toolResults });
         } else {
