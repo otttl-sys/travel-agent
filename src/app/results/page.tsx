@@ -127,6 +127,7 @@ function ResultsContent() {
   const [loadingStep, setLoadingStep] = useState(0);
   const [aiResult, setAiResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [toolCounts, setToolCounts] = useState({ search_flights: 0, search_hotels: 0, get_activities: 0, optimize_budget: 0 });
 
   const destination = searchParams.get("destination") || "";
   const budget = Number(searchParams.get("budget") || 3000);
@@ -194,6 +195,10 @@ function ResultsContent() {
               s.toLowerCase().includes((parsed.tool ?? "").split("_")[1] || "")
             );
             if (toolIdx >= 0) setLoadingStep(toolIdx);
+            const tool = parsed.tool as keyof typeof toolCounts;
+            if (tool in toolCounts) {
+              setToolCounts((prev) => ({ ...prev, [tool]: prev[tool] + 1 }));
+            }
           }
           if (parsed.type === "result") {
             result = parsed.text ?? "";
@@ -327,7 +332,12 @@ function ResultsContent() {
           <div className="bg-white rounded-2xl border border-gray-100 p-6">
             <h3 className="font-semibold text-gray-900 mb-4">Was die Agenten analysiert haben</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {agentSummary.map((item) => (
+              {[
+                { icon: "✈️", label: "Flug-Ergebnisse", value: toolCounts.search_flights > 0 ? `${toolCounts.search_flights * 5}` : "—" },
+                { icon: "🏨", label: "Hotel-Ergebnisse", value: toolCounts.search_hotels > 0 ? `${toolCounts.search_hotels * 5}` : "—" },
+                { icon: "🗺️", label: "Aktivitäten", value: toolCounts.get_activities > 0 ? `${toolCounts.get_activities * 5}` : "—" },
+                { icon: "💰", label: "Budget optimiert", value: toolCounts.optimize_budget > 0 ? "✓" : "—" },
+              ].map((item) => (
                 <div key={item.label} className="text-center p-4 rounded-xl bg-gray-50">
                   <span className="text-2xl block mb-2">{item.icon}</span>
                   <p className="text-xs text-gray-400 mb-1">{item.label}</p>
@@ -457,9 +467,3 @@ function TripCard({ trip, featured }: { trip: Trip; featured: boolean }) {
   );
 }
 
-const agentSummary = [
-  { icon: "✈️", label: "Flüge analysiert", value: "847" },
-  { icon: "🏨", label: "Hotels geprüft", value: "1.240" },
-  { icon: "🗺️", label: "Aktivitäten", value: "320+" },
-  { icon: "💰", label: "Einsparung ø", value: "€340" },
-];
