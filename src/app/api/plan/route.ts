@@ -2,8 +2,6 @@ import Anthropic from "@anthropic-ai/sdk";
 import { tavily } from "@tavily/core";
 import { NextRequest, NextResponse } from "next/server";
 
-const tvly = tavily({ apiKey: process.env.TAVILY_API_KEY! });
-
 const client = new Anthropic();
 
 const tools: Anthropic.Tool[] = [
@@ -71,6 +69,7 @@ const tools: Anthropic.Tool[] = [
 ];
 
 async function executeTool(name: string, input: Record<string, unknown>): Promise<string> {
+  const tvly = tavily({ apiKey: process.env.TAVILY_API_KEY! });
   switch (name) {
     case "search_flights": {
       const origin = input.origin ? ` from ${input.origin}` : "";
