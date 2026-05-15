@@ -2,7 +2,7 @@
 
 An AI-powered travel planning app that uses agentic workflows to research flights, hotels, and activities in real time — then synthesizes everything into a structured trip proposal.
 
-**Live demo:** coming soon (Vercel deployment pending)  
+**Live demo:** https://travel-agent-ristotto-8650s-projects.vercel.app  
 **Stack:** Next.js · Claude API (Anthropic) · Tavily Web Search · Tailwind CSS · shadcn/ui
 
 ---
@@ -118,8 +118,8 @@ The "loop" is the mechanism that makes steps 3-6 possible: Claude can take multi
 
 ## Roadmap
 
-- [ ] Vercel deployment
-- [ ] Error state UI when API calls fail
+- [x] Vercel deployment
+- [x] Error state UI when API calls fail
 - [ ] Persistent trip history (database)
 - [ ] Shareable trip links
 - [ ] Multi-destination itineraries
