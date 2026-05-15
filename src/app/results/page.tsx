@@ -328,6 +328,14 @@ function ResultsContent() {
             </div>
           )}
 
+          {/* Booking Links */}
+          <BookingSection
+            destination={destination}
+            startDate={searchParams.get("startDate") || ""}
+            endDate={searchParams.get("endDate") || ""}
+            travelers={searchParams.get("travelers") || "2"}
+          />
+
           {/* Agent Summary */}
           <div className="bg-white rounded-2xl border border-gray-100 p-6">
             <h3 className="font-semibold text-gray-900 mb-4">Was die Agenten analysiert haben</h3>
@@ -348,6 +356,71 @@ function ResultsContent() {
           </div>
         </div>
       </main>
+    </div>
+  );
+}
+
+function BookingSection({
+  destination,
+  startDate,
+  endDate,
+  travelers,
+}: {
+  destination: string;
+  startDate: string;
+  endDate: string;
+  travelers: string;
+}) {
+  const dest = encodeURIComponent(destination || "Europa");
+
+  const links = [
+    {
+      icon: "✈️",
+      label: "Flüge buchen",
+      sub: "Google Flights",
+      url: `https://www.google.com/travel/flights?hl=de&q=Flug+nach+${dest}`,
+      cardClass: "bg-blue-50 hover:bg-blue-100 border-blue-100",
+      labelClass: "text-blue-700",
+    },
+    {
+      icon: "🏨",
+      label: "Hotel buchen",
+      sub: "Booking.com",
+      url: `https://www.booking.com/searchresults.html?ss=${dest}&checkin=${startDate}&checkout=${endDate}&group_adults=${travelers}&no_rooms=1&lang=de`,
+      cardClass: "bg-orange-50 hover:bg-orange-100 border-orange-100",
+      labelClass: "text-orange-700",
+    },
+    {
+      icon: "🗺️",
+      label: "Aktivitäten buchen",
+      sub: "GetYourGuide",
+      url: `https://www.getyourguide.de/s/?q=${dest}${startDate ? `&date_from=${startDate}` : ""}`,
+      cardClass: "bg-green-50 hover:bg-green-100 border-green-100",
+      labelClass: "text-green-700",
+    },
+  ];
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 p-8 mb-6">
+      <div className="flex items-center gap-2 mb-5">
+        <span className="text-xl">🔗</span>
+        <h3 className="font-semibold text-gray-900">Direkt buchen</h3>
+      </div>
+      <div className="grid md:grid-cols-3 gap-4">
+        {links.map((link) => (
+          <a
+            key={link.label}
+            href={link.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`flex flex-col items-center gap-2 p-5 rounded-xl border transition-colors ${link.cardClass}`}
+          >
+            <span className="text-3xl">{link.icon}</span>
+            <span className={`font-semibold text-sm ${link.labelClass}`}>{link.label}</span>
+            <span className="text-xs text-gray-400">{link.sub}</span>
+          </a>
+        ))}
+      </div>
     </div>
   );
 }
