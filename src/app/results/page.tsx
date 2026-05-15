@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -147,11 +148,16 @@ function ResultsContent() {
           const data = line.replace("data: ", "");
           if (data === "[DONE]") break;
 
-          let parsed: { type: string; tool?: string; text?: string };
+          let parsed: { type: string; tool?: string; text?: string; message?: string };
           try {
             parsed = JSON.parse(data);
           } catch {
             continue;
+          }
+          if (parsed.type === "error") {
+            setError(parsed.message ?? "AI-Fehler. Bitte versuche es erneut.");
+            setLoading(false);
+            break;
           }
           if (parsed.type === "tool_call") {
             const toolIdx = loadingSteps.findIndex((s) =>
@@ -281,8 +287,8 @@ function ResultsContent() {
                 <span className="text-xl">🤖</span>
                 <h3 className="font-semibold text-gray-900">Dein persönlicher Reiseplan von Claude</h3>
               </div>
-              <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap">
-                {aiResult}
+              <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed">
+                <ReactMarkdown>{aiResult}</ReactMarkdown>
               </div>
             </div>
           )}
