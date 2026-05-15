@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type Trip = {
   id: string;
@@ -19,6 +20,9 @@ type Trip = {
   highlights: string[];
   gradient: string;
   emoji: string;
+  itinerary: { day: string; activities: string[] }[];
+  budget: { flights: number; hotel: number; activities: number; food: number };
+  bookingUrl: string;
 };
 
 const MOCK_TRIPS: Trip[] = [
@@ -34,6 +38,15 @@ const MOCK_TRIPS: Trip[] = [
     highlights: ["Shinkansen-Erlebnis", "Ryokan in Kyoto", "Fuji-Besteigung", "Tokio Streetfood Tour"],
     gradient: "from-rose-400 to-orange-300",
     emoji: "🗾",
+    itinerary: [
+      { day: "Tag 1–3", activities: ["Ankunft Tokio", "Shibuya & Harajuku", "Teamlab Borderless Museum"] },
+      { day: "Tag 4–6", activities: ["Shinkansen nach Kyoto", "Fushimi Inari Schrein", "Bambushain Arashiyama"] },
+      { day: "Tag 7–9", activities: ["Nara Tagesausflug", "Nishiki-Markt", "Goldener Pavillon Kinkaku-ji"] },
+      { day: "Tag 10–12", activities: ["Fuji-Region", "Hakone Onsen", "Ryokan-Nacht"] },
+      { day: "Tag 13–14", activities: ["Rückflug Tokio", "Last-Minute Akihabara & Souvenir"] },
+    ],
+    budget: { flights: 1010, hotel: 1010, activities: 435, food: 290 },
+    bookingUrl: "https://www.google.com/flights?q=flights+to+tokyo",
   },
   {
     id: "portugal",
@@ -47,6 +60,14 @@ const MOCK_TRIPS: Trip[] = [
     highlights: ["Lissabon Altstadt", "Algarve Klippenküste", "Portwein-Tour", "Cascais Tagesausflug"],
     gradient: "from-emerald-400 to-teal-300",
     emoji: "🇵🇹",
+    itinerary: [
+      { day: "Tag 1–3", activities: ["Ankunft Lissabon", "Alfama & Belém", "Pastéis de Nata Pflichtprogramm"] },
+      { day: "Tag 4–5", activities: ["Tagesausflug Sintra", "Cascais Strandpromenade"] },
+      { day: "Tag 6–8", activities: ["Fahrt Algarve", "Praia da Marinha", "Ponta da Piedade Bootsfahrt"] },
+      { day: "Tag 9–10", activities: ["Porto Tagesausflug", "Portwein-Keller", "Rückflug"] },
+    ],
+    budget: { flights: 450, hotel: 450, activities: 195, food: 130 },
+    bookingUrl: "https://www.google.com/flights?q=flights+to+lisbon",
   },
   {
     id: "costarica",
@@ -60,6 +81,15 @@ const MOCK_TRIPS: Trip[] = [
     highlights: ["Arenal Vulkan", "Monteverde Regenwald", "Manuel Antonio Strand", "Weißwasser-Rafting"],
     gradient: "from-green-500 to-lime-400",
     emoji: "🌴",
+    itinerary: [
+      { day: "Tag 1–2", activities: ["Ankunft San José", "Transfer Arenal", "Vulkan-Wanderung"] },
+      { day: "Tag 3–4", activities: ["La Fortuna Wasserfall", "Heiße Quellen", "Zip-lining"] },
+      { day: "Tag 5–7", activities: ["Monteverde Nebelwald", "Hängebrücken", "Quetzal-Vogelbeobachtung"] },
+      { day: "Tag 8–10", activities: ["Manuel Antonio Nationalpark", "Surfstunden", "Strandtage"] },
+      { day: "Tag 11–12", activities: ["Weißwasser-Rafting Río Pacuare", "Rückflug San José"] },
+    ],
+    budget: { flights: 765, hotel: 765, activities: 330, food: 220 },
+    bookingUrl: "https://www.google.com/flights?q=flights+to+san+jose+costa+rica",
   },
 ];
 
@@ -313,7 +343,10 @@ function ResultsContent() {
 }
 
 function TripCard({ trip, featured }: { trip: Trip; featured: boolean }) {
+  const [open, setOpen] = useState(false);
+
   return (
+    <>
     <Card
       className={`overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow ${
         featured ? "ring-2 ring-indigo-600" : ""
@@ -361,12 +394,66 @@ function TripCard({ trip, featured }: { trip: Trip; featured: boolean }) {
             <p className="text-xl font-bold text-gray-900">€{trip.price.toLocaleString()}</p>
             <p className="text-xs text-gray-400">pro Person</p>
           </div>
-          <Button size="sm" className={featured ? "bg-indigo-600 hover:bg-indigo-700" : ""}>
+          <Button size="sm" className={featured ? "bg-indigo-600 hover:bg-indigo-700" : ""} onClick={() => setOpen(true)}>
             Details →
           </Button>
         </div>
       </CardContent>
     </Card>
+
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-xl">
+            {trip.emoji} {trip.destination} — {trip.duration}
+          </DialogTitle>
+        </DialogHeader>
+
+        <p className="text-sm text-gray-500 mb-4">{trip.description}</p>
+
+        {/* Itinerary */}
+        <h4 className="font-semibold text-gray-900 mb-3">Reiseverlauf</h4>
+        <div className="space-y-3 mb-5">
+          {trip.itinerary.map((block) => (
+            <div key={block.day}>
+              <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wide mb-1">{block.day}</p>
+              <ul className="space-y-1">
+                {block.activities.map((a) => (
+                  <li key={a} className="flex items-start gap-2 text-sm text-gray-600">
+                    <span className="text-indigo-300 mt-0.5">•</span>
+                    {a}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        {/* Budget breakdown */}
+        <h4 className="font-semibold text-gray-900 mb-3">Budget-Aufteilung <span className="text-gray-400 font-normal text-sm">pro Person</span></h4>
+        <div className="grid grid-cols-2 gap-2 mb-6">
+          {Object.entries(trip.budget).map(([key, val]) => (
+            <div key={key} className="flex justify-between text-sm bg-gray-50 rounded-lg px-3 py-2">
+              <span className="text-gray-500 capitalize">{key === "flights" ? "Flug" : key === "hotel" ? "Hotel" : key === "activities" ? "Aktivitäten" : "Essen"}</span>
+              <span className="font-medium">€{val}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex gap-3">
+          <a
+            href={trip.bookingUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
+          >
+            Flüge suchen ↗
+          </a>
+          <Button variant="outline" className="flex-1" onClick={() => setOpen(false)}>Schließen</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
 

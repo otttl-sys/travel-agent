@@ -151,58 +151,65 @@ Erstelle dann einen konkreten, strukturierten Reisevorschlag auf Deutsch.
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
-      const messages: Anthropic.MessageParam[] = [
-        { role: "user", content: userMessage },
-      ];
+      try {
+        const messages: Anthropic.MessageParam[] = [
+          { role: "user", content: userMessage },
+        ];
 
-      let continueLoop = true;
-      let iterations = 0;
-      const MAX_ITERATIONS = 10;
+        let continueLoop = true;
+        let iterations = 0;
+        const MAX_ITERATIONS = 10;
 
-      while (continueLoop && iterations < MAX_ITERATIONS) {
-        iterations++;
-        const response = await client.messages.create({
-          model: "claude-sonnet-4-6",
-          max_tokens: 4096,
-          tools,
-          messages,
-        });
+        while (continueLoop && iterations < MAX_ITERATIONS) {
+          iterations++;
+          const response = await client.messages.create({
+            model: "claude-sonnet-4-6",
+            max_tokens: 4096,
+            tools,
+            messages,
+          });
 
-        if (response.stop_reason === "tool_use") {
-          const toolUseBlocks = response.content.filter(
-            (b): b is Anthropic.ToolUseBlock => b.type === "tool_use"
-          );
-
-          for (const toolUse of toolUseBlocks) {
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify({ type: "tool_call", tool: toolUse.name })}\n\n`)
+          if (response.stop_reason === "tool_use") {
+            const toolUseBlocks = response.content.filter(
+              (b): b is Anthropic.ToolUseBlock => b.type === "tool_use"
             );
-          }
 
-          messages.push({ role: "assistant", content: response.content });
+            for (const toolUse of toolUseBlocks) {
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify({ type: "tool_call", tool: toolUse.name })}\n\n`)
+              );
+            }
 
-          const toolResults: Anthropic.ToolResultBlockParam[] = await Promise.all(
-            toolUseBlocks.map(async (toolUse) => ({
-              type: "tool_result" as const,
-              tool_use_id: toolUse.id,
-              content: await executeTool(toolUse.name, toolUse.input as Record<string, unknown>),
-            }))
-          );
+            messages.push({ role: "assistant", content: response.content });
 
-          messages.push({ role: "user", content: toolResults });
-        } else {
-          const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === "text");
-          if (textBlock) {
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify({ type: "result", text: textBlock.text })}\n\n`)
+            const toolResults: Anthropic.ToolResultBlockParam[] = await Promise.all(
+              toolUseBlocks.map(async (toolUse) => ({
+                type: "tool_result" as const,
+                tool_use_id: toolUse.id,
+                content: await executeTool(toolUse.name, toolUse.input as Record<string, unknown>),
+              }))
             );
+
+            messages.push({ role: "user", content: toolResults });
+          } else {
+            const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === "text");
+            if (textBlock) {
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify({ type: "result", text: textBlock.text })}\n\n`)
+              );
+            }
+            continueLoop = false;
           }
-          continueLoop = false;
         }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Unbekannter Fehler";
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify({ type: "error", message })}\n\n`)
+        );
+      } finally {
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        controller.close();
       }
-
-      controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-      controller.close();
     },
   });
 
