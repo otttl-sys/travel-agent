@@ -116,6 +116,45 @@ The "loop" is the mechanism that makes steps 3-6 possible: Claude can take multi
 
 ---
 
+## Example outputs
+
+Three real queries run against the live API:
+
+### 1 — Lisbon city trip
+> 2 people · 9 nights · €1,500/person · interests: city, food, beach
+
+Tool calls: `search_flights` → `search_hotels` → `get_activities` → `optimize_budget`
+
+Budget split: Flights €525 · Hotel €525 · Activities €225 · Food €150 · Transport €75 — **total: €1,500 ✅**
+
+The agent found TAP Air Portugal nonstop routes from FRA/BER (~€260/person), recommended boutique hotels in Chiado (~€115–130/night), and built a day-by-day plan including Sintra, Cascais beach, and the Time Out Market.
+
+---
+
+### 2 — Costa Rica adventure (New Year's Eve)
+> 2 people · 14 nights · €3,500/person · interests: adventure, nature, rainforest
+
+Tool calls: `search_flights` → `search_hotels` → `get_activities` → `optimize_budget`
+
+Route: San José → La Fortuna (Arenal) → Monteverde Cloud Forest → Manuel Antonio → San José
+
+Budget split: Flights €1,100 · Hotels €980 · Activities €525 · Food €350 · Transport €175 — **€290/person reserve remaining ✅**
+
+Highlights: New Year's Eve at Arenal volcano, canyoning & waterfall-rappelling, zip-lining through cloud forest canopy, snorkeling on the Pacific coast.
+
+---
+
+### 3 — Tokyo solo
+> 1 person · 14 nights · €4,000 · interests: culture, food, anime, technology
+
+Tool calls: `search_flights` → `search_hotels` → `get_activities` → `optimize_budget`
+
+Budget split: Flight €1,400 · Hotel €1,400 · Activities €600 · Food €400 · Transport €200 — **total: €4,000 ✅**
+
+The agent recommended EVA Air Munich–Narita (~€995), Hotel Century Southern Tower in Shinjuku as base, and planned 14 days across Akihabara, teamLab Borderless, Toyosu fish market, and a Nikko day trip for autumn foliage.
+
+---
+
 ## Roadmap
 
 - [x] Vercel deployment
