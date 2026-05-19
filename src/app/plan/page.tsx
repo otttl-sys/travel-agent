@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -29,10 +29,19 @@ type FormData = {
 };
 
 export default function PlanPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center"><p className="text-gray-400">Lädt...</p></div>}>
+      <PlanContent />
+    </Suspense>
+  );
+}
+
+function PlanContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormData>({
-    destination: "",
+    destination: searchParams.get("destination") || "",
     startDate: "",
     endDate: "",
     travelers: 2,

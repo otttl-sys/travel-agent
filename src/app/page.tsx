@@ -12,8 +12,10 @@ export default function Home() {
             <span className="text-2xl">✈</span>
             <span className="font-semibold text-gray-900 text-lg">TravelAgent</span>
           </div>
-          <div className="flex items-center gap-6">
-            <span className="text-sm text-gray-500 hidden sm:block">Wie es funktioniert</span>
+          <div className="flex items-center gap-4">
+            <Link href="/research" className="text-sm text-gray-500 hidden sm:block hover:text-indigo-600 transition-colors">
+              Destination Research
+            </Link>
             <Link href="/plan">
               <Button size="sm">Reise planen</Button>
             </Link>
@@ -165,5 +167,10 @@ const agents = [
     icon: "💰",
     name: "Budget Agent",
     description: "Gesamtkosten optimieren, Alternativen finden.",
+  },
+  {
+    icon: "🔍",
+    name: "Research Agent",
+    description: "Visa, Klima, Sicherheit, lokale Tipps — alles vor der Buchung.",
   },
 ];
