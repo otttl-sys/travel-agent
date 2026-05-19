@@ -19,8 +19,12 @@ const INTERESTS = [
   { id: "family", label: "Familie", icon: "👨‍👩‍👧" },
 ];
 
+type CityStop = { city: string; days: number };
+
 type FormData = {
+  isMultiCity: boolean;
   destination: string;
+  cities: CityStop[];
   startDate: string;
   endDate: string;
   travelers: number;
@@ -41,7 +45,13 @@ function PlanContent() {
   const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormData>({
+    isMultiCity: false,
     destination: searchParams.get("destination") || "",
+    cities: [
+      { city: searchParams.get("destination") || "", days: 3 },
+      { city: "", days: 3 },
+      { city: "", days: 3 },
+    ],
     startDate: "",
     endDate: "",
     travelers: 2,
@@ -66,15 +76,26 @@ function PlanContent() {
   }
 
   function handleSubmit() {
-    const params = new URLSearchParams({
-      destination: form.destination,
+    const base = {
       startDate: form.startDate,
       endDate: form.endDate,
       travelers: String(form.travelers),
       interests: form.interests.join(","),
       budget: String(form.budget),
-    });
-    router.push(`/results?${params.toString()}`);
+    };
+    if (form.isMultiCity) {
+      const validCities = form.cities.filter((c) => c.city.trim());
+      const params = new URLSearchParams({
+        ...base,
+        multiCity: "1",
+        cities: validCities.map((c) => c.city).join(","),
+        cityDays: validCities.map((c) => c.days).join(","),
+      });
+      router.push(`/results?${params.toString()}`);
+    } else {
+      const params = new URLSearchParams({ ...base, destination: form.destination });
+      router.push(`/results?${params.toString()}`);
+    }
   }
 
   const progress = ((step - 1) / (TOTAL_STEPS - 1)) * 100;
@@ -104,8 +125,12 @@ function PlanContent() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
             {step === 1 && (
               <StepDestination
+                isMultiCity={form.isMultiCity}
+                onToggleMode={() => setForm((f) => ({ ...f, isMultiCity: !f.isMultiCity }))}
                 value={form.destination}
                 onChange={(v) => setForm((f) => ({ ...f, destination: v }))}
+                cities={form.cities}
+                onCitiesChange={(cities) => setForm((f) => ({ ...f, cities }))}
               />
             )}
             {step === 2 && (
@@ -147,7 +172,12 @@ function PlanContent() {
                 <Button
                   onClick={nextStep}
                   className="flex-1"
-                  disabled={step === 1 && !form.destination.trim()}
+                  disabled={
+                    step === 1 &&
+                    (form.isMultiCity
+                      ? form.cities.filter((c) => c.city.trim()).length < 2
+                      : !form.destination.trim())
+                  }
                 >
                   Weiter →
                 </Button>
@@ -165,37 +195,141 @@ function PlanContent() {
 }
 
 function StepDestination({
+  isMultiCity,
+  onToggleMode,
   value,
   onChange,
+  cities,
+  onCitiesChange,
 }: {
+  isMultiCity: boolean;
+  onToggleMode: () => void;
   value: string;
   onChange: (v: string) => void;
+  cities: CityStop[];
+  onCitiesChange: (cities: CityStop[]) => void;
 }) {
+  function updateCity(index: number, city: string) {
+    const next = cities.map((c, i) => (i === index ? { ...c, city } : c));
+    onCitiesChange(next);
+  }
+  function updateDays(index: number, days: number) {
+    const next = cities.map((c, i) => (i === index ? { ...c, days } : c));
+    onCitiesChange(next);
+  }
+  function addCity() {
+    if (cities.length < 5) onCitiesChange([...cities, { city: "", days: 3 }]);
+  }
+  function removeCity(index: number) {
+    if (cities.length > 2) onCitiesChange(cities.filter((_, i) => i !== index));
+  }
+
   return (
     <div>
       <p className="text-xs font-medium text-indigo-600 uppercase tracking-wider mb-2">Schritt 1</p>
       <h2 className="text-2xl font-bold text-gray-900 mb-2">Wohin soll die Reise gehen?</h2>
-      <p className="text-gray-500 text-sm mb-6">
-        Land, Stadt oder Region — auch &quot;Irgendwo warm&quot; funktioniert.
-      </p>
-      <Input
-        placeholder="z.B. Japan, Portugal, Bali..."
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="text-base py-5"
-        autoFocus
-      />
-      <div className="flex flex-wrap gap-2 mt-4">
-        {["Japan", "Portugal", "Costa Rica", "Griechenland", "Marokko"].map((dest) => (
-          <button
-            key={dest}
-            onClick={() => onChange(dest)}
-            className="px-3 py-1.5 text-sm rounded-full border border-gray-200 text-gray-600 hover:border-indigo-300 hover:bg-indigo-50 transition-colors"
-          >
-            {dest}
-          </button>
-        ))}
+
+      {/* Mode Toggle */}
+      <div className="flex gap-2 mb-6">
+        <button
+          onClick={() => { if (isMultiCity) onToggleMode(); }}
+          className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
+            !isMultiCity
+              ? "bg-indigo-600 text-white border-indigo-600"
+              : "bg-white text-gray-500 border-gray-200 hover:border-indigo-300"
+          }`}
+        >
+          Ein Ziel
+        </button>
+        <button
+          onClick={() => { if (!isMultiCity) onToggleMode(); }}
+          className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
+            isMultiCity
+              ? "bg-indigo-600 text-white border-indigo-600"
+              : "bg-white text-gray-500 border-gray-200 hover:border-indigo-300"
+          }`}
+        >
+          Multi-City Tour
+        </button>
       </div>
+
+      {!isMultiCity ? (
+        <>
+          <p className="text-gray-500 text-sm mb-4">Land, Stadt oder Region — auch &quot;Irgendwo warm&quot; funktioniert.</p>
+          <Input
+            placeholder="z.B. Japan, Portugal, Bali..."
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="text-base py-5"
+            autoFocus
+          />
+          <div className="flex flex-wrap gap-2 mt-4">
+            {["Japan", "Portugal", "Costa Rica", "Griechenland", "Marokko"].map((dest) => (
+              <button
+                key={dest}
+                onClick={() => onChange(dest)}
+                className="px-3 py-1.5 text-sm rounded-full border border-gray-200 text-gray-600 hover:border-indigo-300 hover:bg-indigo-50 transition-colors"
+              >
+                {dest}
+              </button>
+            ))}
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="text-gray-500 text-sm mb-4">Füge 2–5 Städte hinzu. Der Agent plant alle Flüge, Hotels und Aktivitäten für jede Station.</p>
+          <div className="space-y-3">
+            {cities.map((stop, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <span className="text-gray-400 text-sm w-5 text-center font-medium">{i + 1}</span>
+                <Input
+                  placeholder={`Stadt ${i + 1}`}
+                  value={stop.city}
+                  onChange={(e) => updateCity(i, e.target.value)}
+                  className="flex-1"
+                  autoFocus={i === 0}
+                />
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => updateDays(i, Math.max(1, stop.days - 1))}
+                    className="w-7 h-7 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 flex items-center justify-center text-sm"
+                  >−</button>
+                  <span className="text-sm text-gray-700 w-14 text-center font-medium">{stop.days}d</span>
+                  <button
+                    onClick={() => updateDays(i, Math.min(14, stop.days + 1))}
+                    className="w-7 h-7 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 flex items-center justify-center text-sm"
+                  >+</button>
+                </div>
+                {cities.length > 2 && (
+                  <button
+                    onClick={() => removeCity(i)}
+                    className="text-gray-300 hover:text-red-400 transition-colors text-lg leading-none"
+                  >×</button>
+                )}
+              </div>
+            ))}
+          </div>
+          {cities.length < 5 && (
+            <button
+              onClick={addCity}
+              className="mt-3 text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+            >
+              + Stadt hinzufügen
+            </button>
+          )}
+          <div className="flex flex-wrap gap-2 mt-4">
+            {[["Paris", "Rom", "Barcelona"], ["Tokyo", "Kyoto", "Osaka"], ["Lissabon", "Porto"]].map((route, i) => (
+              <button
+                key={i}
+                onClick={() => onCitiesChange(route.map((city) => ({ city, days: 3 })))}
+                className="px-3 py-1.5 text-xs rounded-full border border-gray-200 text-gray-600 hover:border-indigo-300 hover:bg-indigo-50 transition-colors"
+              >
+                {route.join(" → ")}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -358,6 +492,13 @@ function StepBudget({
 
 function StepSummary({ form }: { form: FormData }) {
   const selectedInterests = INTERESTS.filter((i) => form.interests.includes(i.id));
+  const validCities = form.cities.filter((c) => c.city.trim());
+  const totalDays = validCities.reduce((sum, c) => sum + c.days, 0);
+
+  const destinationValue = form.isMultiCity
+    ? validCities.map((c) => `${c.city} (${c.days}d)`).join(" → ")
+    : form.destination || "Noch nicht angegeben";
+
   return (
     <div>
       <p className="text-xs font-medium text-indigo-600 uppercase tracking-wider mb-2">Schritt 6</p>
@@ -366,7 +507,10 @@ function StepSummary({ form }: { form: FormData }) {
         Hier ist eine Zusammenfassung — dann startet der AI-Agent.
       </p>
       <div className="space-y-3">
-        <SummaryRow icon="📍" label="Destination" value={form.destination || "Noch nicht angegeben"} />
+        <SummaryRow icon={form.isMultiCity ? "🗺️" : "📍"} label={form.isMultiCity ? "Route" : "Destination"} value={destinationValue} />
+        {form.isMultiCity && (
+          <SummaryRow icon="📆" label="Gesamtreisedauer" value={`${totalDays} Tage`} />
+        )}
         <SummaryRow
           icon="📅"
           label="Zeitraum"
@@ -390,7 +534,9 @@ function StepSummary({ form }: { form: FormData }) {
       </div>
       <div className="mt-6 p-4 rounded-xl bg-indigo-50 border border-indigo-100">
         <p className="text-sm text-indigo-700 font-medium">
-          🤖 Der AI-Agent wird jetzt Flüge, Hotels und Aktivitäten analysieren und dir 3 Reisevorschläge erstellen.
+          {form.isMultiCity
+            ? `🤖 Der AI-Agent plant jetzt alle ${validCities.length} Stationen: Flüge, Hotels und Aktivitäten für jede Stadt.`
+            : "🤖 Der AI-Agent wird jetzt Flüge, Hotels und Aktivitäten analysieren und dir 3 Reisevorschläge erstellen."}
         </p>
       </div>
     </div>

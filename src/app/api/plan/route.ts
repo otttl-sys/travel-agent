@@ -133,10 +133,122 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
   }
 }
 
-export async function POST(req: NextRequest) {
-  const { destination, startDate, endDate, travelers, interests, budget } = await req.json();
+const multiCityTools: Anthropic.Tool[] = [
+  {
+    name: "search_flight_leg",
+    description: "Search flights for one leg of a multi-city journey (origin to destination).",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        origin: { type: "string", description: "Departure city or airport" },
+        destination: { type: "string", description: "Arrival city or airport" },
+        date: { type: "string", description: "Travel date (YYYY-MM-DD or approximate)" },
+        travelers: { type: "number" },
+      },
+      required: ["origin", "destination"],
+    },
+  },
+  {
+    name: "plan_city_stop",
+    description: "Find hotels and activities for one city stop in a multi-city journey.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        city: { type: "string" },
+        duration_days: { type: "number" },
+        interests: { type: "array", items: { type: "string" } },
+        style: { type: "string", description: "budget / comfort / luxury" },
+      },
+      required: ["city"],
+    },
+  },
+  {
+    name: "optimize_total_budget",
+    description: "Optimize budget allocation across the entire multi-city journey.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        cities: { type: "array", items: { type: "string" } },
+        total_days: { type: "number" },
+        budget_per_person: { type: "number" },
+        travelers: { type: "number" },
+      },
+      required: ["cities", "budget_per_person"],
+    },
+  },
+];
 
-  const userMessage = `
+async function executeMultiCityTool(name: string, input: Record<string, unknown>): Promise<string> {
+  const tvly = tavily({ apiKey: process.env.TAVILY_API_KEY! });
+  const search = async (query: string) => {
+    try {
+      const result = await tvly.search(query, { searchDepth: "basic", maxResults: 5 });
+      return JSON.stringify({ query, results: result.results.map((r) => ({ title: r.title, url: r.url, snippet: r.content })) });
+    } catch {
+      return JSON.stringify({ query, error: "Search unavailable", results: [] });
+    }
+  };
+
+  switch (name) {
+    case "search_flight_leg": {
+      const date = input.date ? ` ${input.date}` : "";
+      const pax = input.travelers ? ` ${input.travelers} passengers` : "";
+      return search(`flights from ${input.origin} to ${input.destination}${date}${pax} price`);
+    }
+    case "plan_city_stop": {
+      const days = input.duration_days ? ` ${input.duration_days} days` : "";
+      const interests = Array.isArray(input.interests) && input.interests.length > 0
+        ? ` ${(input.interests as string[]).join(", ")}`
+        : "";
+      const style = input.style ? ` ${input.style}` : "";
+      const [hotels, activities] = await Promise.all([
+        search(`best${style} hotels in ${input.city}${days} recommendations`),
+        search(`top things to do${interests} in ${input.city}${days} attractions`),
+      ]);
+      return JSON.stringify({ city: input.city, hotels: JSON.parse(hotels), activities: JSON.parse(activities) });
+    }
+    case "optimize_total_budget": {
+      const cities = Array.isArray(input.cities) ? (input.cities as string[]) : [];
+      const budget = input.budget_per_person as number;
+      const days = input.total_days as number || cities.length * 3;
+      const perDay = Math.floor(budget / days);
+      return JSON.stringify({
+        total_budget: budget,
+        total_days: days,
+        per_day_budget: perDay,
+        city_allocations: cities.map((c) => ({ city: c, daily_budget: perDay })),
+        savings_tip: "Book inter-city trains/flights early for up to 40% savings.",
+      });
+    }
+    default:
+      return JSON.stringify({ error: "Unknown tool" });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  const { destination, startDate, endDate, travelers, interests, budget, cities, cityDays, multiCity } = await req.json();
+
+  const isMultiCity = multiCity === "1" || multiCity === true;
+  const cityList: string[] = isMultiCity && cities ? (Array.isArray(cities) ? cities : String(cities).split(",")) : [];
+  const daysList: number[] = isMultiCity && cityDays
+    ? (Array.isArray(cityDays) ? cityDays.map(Number) : String(cityDays).split(",").map(Number))
+    : cityList.map(() => 3);
+
+  const activeTools = isMultiCity ? multiCityTools : tools;
+
+  const userMessage = isMultiCity
+    ? `
+Plane eine Multi-City Reise:
+- Route: ${cityList.map((c, i) => `${c} (${daysList[i] ?? 3} Tage)`).join(" → ")}
+- Abreise: ${startDate || "flexibel"}
+- Reisende: ${travelers || 2} Person(en)
+- Interessen: ${interests || "allgemein"}
+- Budget pro Person (gesamt): €${budget || 3000}
+
+Nutze die Tools: Suche Flüge für jedes Leg (inkl. Rückflug von der letzten Stadt), plane Hotels und Aktivitäten für jede Stadt, dann optimiere das Gesamtbudget.
+Erstelle einen detaillierten Tag-für-Tag Reiseplan für alle Stationen auf Deutsch.
+`.trim()
+    : `
 Plane eine Reise mit folgenden Wünschen:
 - Destination: ${destination || "flexibel"}
 - Zeitraum: ${startDate || "flexibel"} bis ${endDate || "flexibel"}
@@ -146,7 +258,7 @@ Plane eine Reise mit folgenden Wünschen:
 
 Nutze die verfügbaren Tools um Flüge, Hotels, Aktivitäten zu analysieren und das Budget zu optimieren.
 Erstelle dann einen konkreten, strukturierten Reisevorschlag auf Deutsch.
-`;
+`.trim();
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -165,7 +277,7 @@ Erstelle dann einen konkreten, strukturierten Reisevorschlag auf Deutsch.
           const response = await client.messages.create({
             model: "claude-sonnet-4-6",
             max_tokens: 4096,
-            tools,
+            tools: activeTools,
             messages,
           });
 
@@ -186,7 +298,9 @@ Erstelle dann einen konkreten, strukturierten Reisevorschlag auf Deutsch.
               toolUseBlocks.map(async (toolUse) => ({
                 type: "tool_result" as const,
                 tool_use_id: toolUse.id,
-                content: await executeTool(toolUse.name, toolUse.input as Record<string, unknown>),
+                content: isMultiCity
+                  ? await executeMultiCityTool(toolUse.name, toolUse.input as Record<string, unknown>)
+                  : await executeTool(toolUse.name, toolUse.input as Record<string, unknown>),
               }))
             );
 

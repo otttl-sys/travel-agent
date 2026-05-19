@@ -110,13 +110,22 @@ export default function ResultsPage() {
   );
 }
 
-const loadingSteps = [
+const loadingStepsSingle = [
   "Orchestrator Agent startet...",
   "Flight Agent sucht beste Verbindungen...",
   "Hotel Agent prüft Verfügbarkeiten...",
   "Activity Agent plant Erlebnisse...",
   "Budget Agent optimiert Kosten...",
   "Reisepläne werden zusammengestellt...",
+];
+
+const loadingStepsMulti = [
+  "Multi-City Agent startet...",
+  "Flüge für alle Legs werden gesucht...",
+  "Hotels werden für jede Stadt geplant...",
+  "Aktivitäten pro Stadt werden recherchiert...",
+  "Gesamtbudget wird optimiert...",
+  "Kompletter Reiseplan wird erstellt...",
 ];
 
 function ResultsContent() {
@@ -127,20 +136,36 @@ function ResultsContent() {
   const [loadingStep, setLoadingStep] = useState(0);
   const [aiResult, setAiResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [toolCounts, setToolCounts] = useState({ search_flights: 0, search_hotels: 0, get_activities: 0, optimize_budget: 0 });
+  const [toolCounts, setToolCounts] = useState({ search_flights: 0, search_hotels: 0, get_activities: 0, optimize_budget: 0, search_flight_leg: 0, plan_city_stop: 0, optimize_total_budget: 0 });
 
   const destination = searchParams.get("destination") || "";
   const budget = Number(searchParams.get("budget") || 3000);
+  const isMultiCity = searchParams.get("multiCity") === "1";
+  const loadingSteps = isMultiCity ? loadingStepsMulti : loadingStepsSingle;
+  const citiesParam = searchParams.get("cities") || "";
+  const cityDaysParam = searchParams.get("cityDays") || "";
+  const cityNames = isMultiCity ? citiesParam.split(",").filter(Boolean) : [];
+  const cityDaysArr = isMultiCity ? cityDaysParam.split(",").map(Number) : [];
 
   useEffect(() => {
-    const params = {
-      destination,
-      startDate: searchParams.get("startDate") || "",
-      endDate: searchParams.get("endDate") || "",
-      travelers: searchParams.get("travelers") || "2",
-      interests: searchParams.get("interests") || "",
-      budget,
-    };
+    const params = isMultiCity
+      ? {
+          multiCity: "1",
+          cities: citiesParam,
+          cityDays: cityDaysParam,
+          startDate: searchParams.get("startDate") || "",
+          travelers: searchParams.get("travelers") || "2",
+          interests: searchParams.get("interests") || "",
+          budget,
+        }
+      : {
+          destination,
+          startDate: searchParams.get("startDate") || "",
+          endDate: searchParams.get("endDate") || "",
+          travelers: searchParams.get("travelers") || "2",
+          interests: searchParams.get("interests") || "",
+          budget,
+        };
 
     let stepIndex = 0;
 
@@ -296,24 +321,52 @@ function ResultsContent() {
           {/* Header */}
           <div className="mb-10">
             <Badge variant="secondary" className="mb-3 text-xs">
-              AI hat 3 Reisen für dich zusammengestellt
+              {isMultiCity ? `Multi-City Tour · ${cityNames.length} Stationen` : "AI hat 3 Reisen für dich zusammengestellt"}
             </Badge>
             <h1 className="text-3xl font-bold text-gray-900">
-              {destination ? `Deine Reisevorschläge für ${destination}` : "Deine Reisevorschläge"}
+              {isMultiCity
+                ? cityNames.join(" → ")
+                : destination ? `Deine Reisevorschläge für ${destination}` : "Deine Reisevorschläge"}
             </h1>
             <p className="text-gray-500 mt-2">
               {searchParams.get("travelers") || "2"} Personen ·{" "}
               {searchParams.get("startDate") || "Flexibles Datum"} ·{" "}
               Budget €{budget.toLocaleString()} pro Person
+              {isMultiCity && ` · ${cityDaysArr.reduce((s, d) => s + d, 0)} Tage gesamt`}
             </p>
           </div>
 
-          {/* Trip Cards */}
-          <div className="grid md:grid-cols-3 gap-6 mb-12">
-            {displayTrips.map((trip, index) => (
-              <TripCard key={trip.id} trip={trip} featured={index === 0} />
-            ))}
-          </div>
+          {/* Multi-City Route Visual */}
+          {isMultiCity && (
+            <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-8">
+              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Deine Route</h3>
+              <div className="flex items-center gap-2 flex-wrap">
+                {cityNames.map((city, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <div className="text-center">
+                      <div className="w-8 h-8 rounded-full bg-indigo-600 text-white text-sm font-bold flex items-center justify-center mx-auto mb-1">
+                        {i + 1}
+                      </div>
+                      <p className="text-sm font-semibold text-gray-900">{city}</p>
+                      <p className="text-xs text-gray-400">{cityDaysArr[i] ?? 3} Tage</p>
+                    </div>
+                    {i < cityNames.length - 1 && (
+                      <span className="text-gray-300 text-xl mx-1">→</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Trip Cards (single-city only) */}
+          {!isMultiCity && (
+            <div className="grid md:grid-cols-3 gap-6 mb-12">
+              {displayTrips.map((trip, index) => (
+                <TripCard key={trip.id} trip={trip} featured={index === 0} />
+              ))}
+            </div>
+          )}
 
           {/* AI Result */}
           {aiResult && (
@@ -340,12 +393,17 @@ function ResultsContent() {
           <div className="bg-white rounded-2xl border border-gray-100 p-6">
             <h3 className="font-semibold text-gray-900 mb-4">Was die Agenten analysiert haben</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
+              {(isMultiCity ? [
+                { icon: "✈️", label: "Flug-Legs", value: toolCounts.search_flight_leg > 0 ? `${toolCounts.search_flight_leg}` : "—" },
+                { icon: "🏨", label: "Städte geplant", value: toolCounts.plan_city_stop > 0 ? `${toolCounts.plan_city_stop}` : "—" },
+                { icon: "🗺️", label: "Stationen", value: cityNames.length > 0 ? `${cityNames.length}` : "—" },
+                { icon: "💰", label: "Budget optimiert", value: toolCounts.optimize_total_budget > 0 ? "✓" : "—" },
+              ] : [
                 { icon: "✈️", label: "Flug-Ergebnisse", value: toolCounts.search_flights > 0 ? `${toolCounts.search_flights * 5}` : "—" },
                 { icon: "🏨", label: "Hotel-Ergebnisse", value: toolCounts.search_hotels > 0 ? `${toolCounts.search_hotels * 5}` : "—" },
                 { icon: "🗺️", label: "Aktivitäten", value: toolCounts.get_activities > 0 ? `${toolCounts.get_activities * 5}` : "—" },
                 { icon: "💰", label: "Budget optimiert", value: toolCounts.optimize_budget > 0 ? "✓" : "—" },
-              ].map((item) => (
+              ]).map((item) => (
                 <div key={item.label} className="text-center p-4 rounded-xl bg-gray-50">
                   <span className="text-2xl block mb-2">{item.icon}</span>
                   <p className="text-xs text-gray-400 mb-1">{item.label}</p>
