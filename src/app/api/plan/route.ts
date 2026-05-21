@@ -343,7 +343,6 @@ Erstelle dann einen konkreten, strukturierten Reisevorschlag auf Deutsch.
             messages.push({ role: "user", content: toolResults });
           } else {
             // Text was already streamed token-by-token via stream.on("text")
-            // Send the complete text as result for any clients that need the full blob
             const fullText = finalMessage.content
               .filter((b): b is Anthropic.TextBlock => b.type === "text")
               .map((b) => b.text)
@@ -352,6 +351,101 @@ Erstelle dann einen konkreten, strukturierten Reisevorschlag auf Deutsch.
               encoder.encode(`data: ${JSON.stringify({ type: "result", text: fullText })}\n\n`)
             );
             continueLoop = false;
+
+            // Generate dynamic trip cards (single-city only, parallel with no extra Tavily calls)
+            if (!isMultiCity) {
+              try {
+                const GRADIENTS = [
+                  "from-rose-400 to-orange-300",
+                  "from-emerald-400 to-teal-300",
+                  "from-violet-400 to-indigo-300",
+                  "from-amber-400 to-yellow-300",
+                  "from-sky-400 to-blue-300",
+                  "from-green-500 to-lime-400",
+                  "from-pink-400 to-rose-300",
+                  "from-cyan-400 to-sky-300",
+                ];
+                const cardTool: Anthropic.Tool = {
+                  name: "generate_trip_cards",
+                  description: "Generate 3 structured trip card options based on the travel plan already created.",
+                  input_schema: {
+                    type: "object" as const,
+                    properties: {
+                      cards: {
+                        type: "array",
+                        minItems: 3,
+                        maxItems: 3,
+                        items: {
+                          type: "object",
+                          properties: {
+                            id: { type: "string" },
+                            destination: { type: "string" },
+                            tagline: { type: "string", description: "Short catchy tagline, max 5 words" },
+                            description: { type: "string", description: "2 sentences max" },
+                            price: { type: "number", description: "Estimated total price per person in EUR" },
+                            duration: { type: "string", description: "e.g. '10 Tage'" },
+                            themes: { type: "array", items: { type: "string" }, description: "2-3 theme tags in German" },
+                            highlights: { type: "array", items: { type: "string" }, description: "4 highlights in German" },
+                            gradient: { type: "string", enum: GRADIENTS },
+                            emoji: { type: "string", description: "Single emoji representing the destination" },
+                            itinerary: {
+                              type: "array",
+                              items: {
+                                type: "object",
+                                properties: {
+                                  day: { type: "string" },
+                                  activities: { type: "array", items: { type: "string" } },
+                                },
+                              },
+                              description: "4-5 day-blocks",
+                            },
+                            budget: {
+                              type: "object",
+                              properties: {
+                                flights: { type: "number" },
+                                hotel: { type: "number" },
+                                activities: { type: "number" },
+                                food: { type: "number" },
+                              },
+                            },
+                            bookingUrl: { type: "string", description: "Google Flights URL for this destination" },
+                          },
+                          required: ["id", "destination", "tagline", "description", "price", "duration", "themes", "highlights", "gradient", "emoji", "itinerary", "budget", "bookingUrl"],
+                        },
+                      },
+                    },
+                    required: ["cards"],
+                  },
+                };
+
+                const cardResponse = await client.messages.create({
+                  model: "claude-sonnet-4-6",
+                  max_tokens: 2048,
+                  tool_choice: { type: "any" },
+                  tools: [cardTool],
+                  messages: [
+                    ...messages,
+                    { role: "assistant", content: finalMessage.content },
+                    {
+                      role: "user",
+                      content: `Based on the travel plan above, generate 3 different trip card options for ${destination}. Vary the style: one budget-friendly, one balanced, one premium. All prices realistic for the destination. Use German for all text fields. bookingUrl should be a Google Flights search URL.`,
+                    },
+                  ],
+                });
+
+                const cardBlock = cardResponse.content.find(
+                  (b): b is Anthropic.ToolUseBlock => b.type === "tool_use" && b.name === "generate_trip_cards"
+                );
+                if (cardBlock) {
+                  const cards = (cardBlock.input as { cards: unknown[] }).cards;
+                  controller.enqueue(
+                    encoder.encode(`data: ${JSON.stringify({ type: "cards", cards })}\n\n`)
+                  );
+                }
+              } catch {
+                // Card generation failure is non-fatal — frontend falls back to mock cards
+              }
+            }
           }
         }
       } catch (err) {

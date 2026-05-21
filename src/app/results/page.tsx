@@ -137,6 +137,7 @@ function ResultsContent() {
   const [aiResult, setAiResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [toolCounts, setToolCounts] = useState({ search_flights: 0, search_hotels: 0, get_activities: 0, optimize_budget: 0, search_flight_leg: 0, plan_city_stop: 0, optimize_total_budget: 0 });
+  const [dynamicCards, setDynamicCards] = useState<Trip[] | null>(null);
 
   const destination = searchParams.get("destination") || "";
   const budget = Number(searchParams.get("budget") || 3000);
@@ -204,7 +205,7 @@ function ResultsContent() {
           const data = line.replace("data: ", "");
           if (data === "[DONE]") break;
 
-          let parsed: { type: string; tool?: string; text?: string; message?: string };
+          let parsed: { type: string; tool?: string; text?: string; message?: string; cards?: Trip[] };
           try {
             parsed = JSON.parse(data);
           } catch {
@@ -236,6 +237,9 @@ function ResultsContent() {
           }
           if (parsed.type === "result") {
             result = parsed.text ?? "";
+          }
+          if (parsed.type === "cards") {
+            setDynamicCards(parsed.cards as Trip[]);
           }
         }
       }
@@ -305,8 +309,8 @@ function ResultsContent() {
   const filteredTrips = MOCK_TRIPS.filter((t) =>
     destination ? t.price <= budget * 1.2 : true
   );
-
-  const displayTrips = filteredTrips.length > 0 ? filteredTrips : MOCK_TRIPS;
+  const fallbackTrips = filteredTrips.length > 0 ? filteredTrips : MOCK_TRIPS;
+  const displayTrips = dynamicCards ?? fallbackTrips;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -330,7 +334,7 @@ function ResultsContent() {
           {/* Header */}
           <div className="mb-10">
             <Badge variant="secondary" className="mb-3 text-xs">
-              {isMultiCity ? `Multi-City Tour · ${cityNames.length} Stationen` : "AI hat 3 Reisen für dich zusammengestellt"}
+              {isMultiCity ? `Multi-City Tour · ${cityNames.length} Stationen` : dynamicCards ? "AI hat 3 Reiseoptionen für dich erstellt" : "AI hat 3 Reisen für dich zusammengestellt"}
             </Badge>
             <h1 className="text-3xl font-bold text-gray-900">
               {isMultiCity
