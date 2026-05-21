@@ -2,6 +2,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { tavily } from "@tavily/core";
 import { NextRequest, NextResponse } from "next/server";
 
+export const maxDuration = 300;
+
 const client = new Anthropic();
 
 const tools: Anthropic.Tool[] = [
