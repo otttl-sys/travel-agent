@@ -225,6 +225,15 @@ function ResultsContent() {
               setToolCounts((prev) => ({ ...prev, [tool]: prev[tool] + 1 }));
             }
           }
+          if (parsed.type === "token") {
+            // Streaming token — show result panel immediately, append tokens live
+            result += parsed.text ?? "";
+            setAiResult(result);
+            if (loading) {
+              setProgress(100);
+              setLoading(false);
+            }
+          }
           if (parsed.type === "result") {
             result = parsed.text ?? "";
           }

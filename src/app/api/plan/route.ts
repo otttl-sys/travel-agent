@@ -77,7 +77,7 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
       const pax = input.travelers ? ` ${input.travelers} passengers` : "";
       const query = `flights to ${input.destination}${origin}${date}${pax} price`;
       try {
-        const result = await tvly.search(query, { searchDepth: "basic", maxResults: 5 });
+        const result = await tvly.search(query, { searchDepth: "basic", maxResults: 3 });
         return JSON.stringify({
           destination: input.destination,
           results: result.results.map((r) => ({ title: r.title, url: r.url, snippet: r.content })),
@@ -91,7 +91,7 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
       const date = input.check_in ? ` ${input.check_in}` : "";
       const query = `best${style} hotels in ${input.destination}${date} recommendations`;
       try {
-        const result = await tvly.search(query, { searchDepth: "basic", maxResults: 5 });
+        const result = await tvly.search(query, { searchDepth: "basic", maxResults: 3 });
         return JSON.stringify({
           destination: input.destination,
           results: result.results.map((r) => ({ title: r.title, url: r.url, snippet: r.content })),
@@ -107,7 +107,7 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
       const days = input.duration_days ? ` ${input.duration_days} days` : "";
       const query = `top things to do${interests} in ${input.destination}${days} attractions`;
       try {
-        const result = await tvly.search(query, { searchDepth: "basic", maxResults: 5 });
+        const result = await tvly.search(query, { searchDepth: "basic", maxResults: 3 });
         return JSON.stringify({
           destination: input.destination,
           results: result.results.map((r) => ({ title: r.title, url: r.url, snippet: r.content })),
@@ -182,7 +182,7 @@ async function executeMultiCityTool(name: string, input: Record<string, unknown>
   const tvly = tavily({ apiKey: process.env.TAVILY_API_KEY! });
   const search = async (query: string) => {
     try {
-      const result = await tvly.search(query, { searchDepth: "basic", maxResults: 5 });
+      const result = await tvly.search(query, { searchDepth: "basic", maxResults: 3 });
       return JSON.stringify({ query, results: result.results.map((r) => ({ title: r.title, url: r.url, snippet: r.content })) });
     } catch {
       return JSON.stringify({ query, error: "Search unavailable", results: [] });
@@ -236,6 +236,21 @@ export async function POST(req: NextRequest) {
 
   const activeTools = isMultiCity ? multiCityTools : tools;
 
+  const cityCount = cityList.length;
+  const legCount = cityCount + 1; // outbound + inter-city legs + return
+
+  const multiCitySystemPrompt = `You are a multi-city travel planning agent. Your goal is to plan the complete journey as fast as possible.
+
+CRITICAL RULE — PARALLEL TOOL CALLS:
+In your FIRST response, you MUST call ALL tools simultaneously in a single batch. Do NOT call tools one at a time.
+
+For a ${cityCount}-city trip you must call exactly ${legCount + cityCount + 1} tools in parallel in one shot:
+- ${legCount} × search_flight_leg (one per flight leg including return)
+- ${cityCount} × plan_city_stop (one per city)
+- 1 × optimize_total_budget
+
+Fire all ${legCount + cityCount + 1} tool calls in your very first response. Then write the final travel plan after receiving all results.`;
+
   const userMessage = isMultiCity
     ? `
 Plane eine Multi-City Reise:
@@ -245,8 +260,8 @@ Plane eine Multi-City Reise:
 - Interessen: ${interests || "allgemein"}
 - Budget pro Person (gesamt): €${budget || 3000}
 
-Nutze die Tools: Suche Flüge für jedes Leg (inkl. Rückflug von der letzten Stadt), plane Hotels und Aktivitäten für jede Stadt, dann optimiere das Gesamtbudget.
-Erstelle einen detaillierten Tag-für-Tag Reiseplan für alle Stationen auf Deutsch.
+WICHTIG: Rufe ALLE Tools gleichzeitig in einem einzigen Batch auf — nicht sequenziell.
+Erstelle danach einen detaillierten Tag-für-Tag Reiseplan auf Deutsch.
 `.trim()
     : `
 Plane eine Reise mit folgenden Wünschen:
@@ -274,25 +289,44 @@ Erstelle dann einen konkreten, strukturierten Reisevorschlag auf Deutsch.
 
         while (continueLoop && iterations < MAX_ITERATIONS) {
           iterations++;
-          const response = await client.messages.create({
+
+          // Stream every Claude call — text tokens arrive live, tool_use detected after
+          const stream = client.messages.stream({
             model: "claude-sonnet-4-6",
-            max_tokens: 4096,
+            max_tokens: isMultiCity ? 8192 : 4096,
+            ...(isMultiCity && iterations === 1 ? { system: multiCitySystemPrompt } : {}),
             tools: activeTools,
             messages,
           });
 
-          if (response.stop_reason === "tool_use") {
-            const toolUseBlocks = response.content.filter(
+          // Forward text tokens to client as they arrive
+          stream.on("text", (text) => {
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ type: "token", text })}\n\n`)
+            );
+          });
+
+          // Also forward tool_call events immediately
+          stream.on("streamEvent", (event) => {
+            if (
+              event.type === "content_block_start" &&
+              event.content_block.type === "tool_use"
+            ) {
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify({ type: "tool_call", tool: event.content_block.name })}\n\n`)
+              );
+            }
+          });
+
+          // Wait for full message (needed for tool_use input blocks)
+          const finalMessage = await stream.finalMessage();
+
+          if (finalMessage.stop_reason === "tool_use") {
+            const toolUseBlocks = finalMessage.content.filter(
               (b): b is Anthropic.ToolUseBlock => b.type === "tool_use"
             );
 
-            for (const toolUse of toolUseBlocks) {
-              controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify({ type: "tool_call", tool: toolUse.name })}\n\n`)
-              );
-            }
-
-            messages.push({ role: "assistant", content: response.content });
+            messages.push({ role: "assistant", content: finalMessage.content });
 
             const toolResults: Anthropic.ToolResultBlockParam[] = await Promise.all(
               toolUseBlocks.map(async (toolUse) => ({
@@ -306,12 +340,15 @@ Erstelle dann einen konkreten, strukturierten Reisevorschlag auf Deutsch.
 
             messages.push({ role: "user", content: toolResults });
           } else {
-            const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === "text");
-            if (textBlock) {
-              controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify({ type: "result", text: textBlock.text })}\n\n`)
-              );
-            }
+            // Text was already streamed token-by-token via stream.on("text")
+            // Send the complete text as result for any clients that need the full blob
+            const fullText = finalMessage.content
+              .filter((b): b is Anthropic.TextBlock => b.type === "text")
+              .map((b) => b.text)
+              .join("");
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ type: "result", text: fullText })}\n\n`)
+            );
             continueLoop = false;
           }
         }
