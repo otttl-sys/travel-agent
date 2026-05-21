@@ -14,7 +14,10 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-4">
             <Link href="/research" className="text-sm text-gray-500 hidden sm:block hover:text-indigo-600 transition-colors">
-              Destination Research
+              Research
+            </Link>
+            <Link href="/disruption" className="text-sm text-gray-500 hidden sm:block hover:text-red-600 transition-colors">
+              Disruption
             </Link>
             <Link href="/plan">
               <Button size="sm">Reise planen</Button>
@@ -172,5 +175,10 @@ const agents = [
     icon: "🔍",
     name: "Research Agent",
     description: "Visa, Klima, Sicherheit, lokale Tipps — alles vor der Buchung.",
+  },
+  {
+    icon: "🚨",
+    name: "Disruption Agent",
+    description: "Flug gestört? Status, Alternativen und Fahrgastrechte in Sekunden.",
   },
 ];
