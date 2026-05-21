@@ -398,6 +398,9 @@ function ResultsContent() {
             travelers={searchParams.get("travelers") || "2"}
           />
 
+          {/* Budget Tracker */}
+          <BudgetTracker budget={budget} aiResult={aiResult} isMultiCity={isMultiCity} travelers={Number(searchParams.get("travelers") || 2)} />
+
           {/* Agent Summary */}
           <div className="bg-white rounded-2xl border border-gray-100 p-6">
             <h3 className="font-semibold text-gray-900 mb-4">Was die Agenten analysiert haben</h3>
@@ -423,6 +426,136 @@ function ResultsContent() {
           </div>
         </div>
       </main>
+    </div>
+  );
+}
+
+const BUDGET_CATEGORIES = [
+  { key: "flights",    label: "Flüge",        icon: "✈️",  pct: 0.35 },
+  { key: "hotel",      label: "Unterkunft",   icon: "🏨",  pct: 0.35 },
+  { key: "activities", label: "Aktivitäten",  icon: "🗺️",  pct: 0.15 },
+  { key: "food",       label: "Essen",        icon: "🍽️",  pct: 0.10 },
+  { key: "transport",  label: "Transport",    icon: "🚌",  pct: 0.05 },
+];
+
+function extractBudgetFromAI(aiResult: string | null, budget: number): Record<string, number> {
+  if (!aiResult) {
+    return Object.fromEntries(BUDGET_CATEGORIES.map((c) => [c.key, Math.round(budget * c.pct)]));
+  }
+  const result: Record<string, number> = {};
+  for (const cat of BUDGET_CATEGORIES) {
+    // Look for e.g. "€1.234" or "€1234" near the category label in the AI text
+    const patterns = [
+      new RegExp(`${cat.label}[^\\n]{0,80}€([\\d.,]+)`, "i"),
+      new RegExp(`€([\\d.,]+)[^\\n]{0,40}${cat.label}`, "i"),
+    ];
+    let found = false;
+    for (const re of patterns) {
+      const m = aiResult.match(re);
+      if (m) {
+        const val = Number(m[1].replace(/\./g, "").replace(",", "."));
+        if (val > 0 && val < budget * 3) { result[cat.key] = Math.round(val); found = true; break; }
+      }
+    }
+    if (!found) result[cat.key] = Math.round(budget * cat.pct);
+  }
+  return result;
+}
+
+function BudgetTracker({ budget, aiResult, isMultiCity, travelers }: {
+  budget: number;
+  aiResult: string | null;
+  isMultiCity: boolean;
+  travelers: number;
+}) {
+  const initial = extractBudgetFromAI(aiResult, budget);
+  const [items, setItems] = useState<Record<string, number>>(initial);
+  const [editing, setEditing] = useState<string | null>(null);
+
+  // Re-sync when AI result arrives
+  useEffect(() => {
+    if (aiResult) setItems(extractBudgetFromAI(aiResult, budget));
+  }, [aiResult, budget]);
+
+  const total = Object.values(items).reduce((s, v) => s + v, 0);
+  const remaining = budget - total;
+  const pct = Math.min((total / budget) * 100, 100);
+  const over = total > budget;
+
+  function update(key: string, val: string) {
+    const n = Number(val.replace(/[^0-9]/g, ""));
+    if (!isNaN(n)) setItems((prev) => ({ ...prev, [key]: n }));
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 p-8 mb-6">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">💶</span>
+          <h3 className="font-semibold text-gray-900">Budget Tracker</h3>
+          <span className="text-xs text-gray-400 ml-1">pro Person · klicken zum Bearbeiten</span>
+        </div>
+        <div className="text-right">
+          <p className={`text-lg font-bold ${over ? "text-red-600" : "text-green-600"}`}>
+            {over ? `−€${Math.abs(remaining).toLocaleString()} über Budget` : `€${remaining.toLocaleString()} übrig`}
+          </p>
+          <p className="text-xs text-gray-400">Budget: €{budget.toLocaleString()} / Person</p>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div className="w-full bg-gray-100 rounded-full h-2.5 mb-6 overflow-hidden">
+        <div
+          className={`h-2.5 rounded-full transition-all duration-300 ${over ? "bg-red-500" : pct > 85 ? "bg-amber-400" : "bg-green-500"}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+
+      {/* Line items */}
+      <div className="space-y-2 mb-6">
+        {BUDGET_CATEGORIES.map((cat) => (
+          <div key={cat.key} className="flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-gray-50 transition-colors group">
+            <span className="text-lg w-6">{cat.icon}</span>
+            <span className="text-sm text-gray-600 flex-1">{cat.label}</span>
+            {editing === cat.key ? (
+              <input
+                autoFocus
+                type="number"
+                defaultValue={items[cat.key]}
+                onBlur={(e) => { update(cat.key, e.target.value); setEditing(null); }}
+                onKeyDown={(e) => { if (e.key === "Enter") { update(cat.key, (e.target as HTMLInputElement).value); setEditing(null); } }}
+                className="w-24 text-right text-sm font-semibold border border-indigo-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              />
+            ) : (
+              <button
+                onClick={() => setEditing(cat.key)}
+                className="text-sm font-semibold text-gray-800 group-hover:text-indigo-600 transition-colors"
+              >
+                €{items[cat.key].toLocaleString()}
+              </button>
+            )}
+            <div className="w-20 bg-gray-100 rounded-full h-1.5 overflow-hidden">
+              <div
+                className="h-1.5 rounded-full bg-indigo-400 transition-all duration-300"
+                style={{ width: `${Math.min((items[cat.key] / budget) * 100, 100)}%` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Totals */}
+      <div className={`flex items-center justify-between pt-4 border-t ${over ? "border-red-100 bg-red-50" : "border-gray-100 bg-gray-50"} rounded-xl px-4 py-3`}>
+        <span className="text-sm font-semibold text-gray-700">Gesamt pro Person</span>
+        <span className={`text-lg font-bold ${over ? "text-red-600" : "text-gray-900"}`}>
+          €{total.toLocaleString()}
+        </span>
+      </div>
+      {travelers > 1 && (
+        <p className="text-xs text-gray-400 text-right mt-2">
+          {travelers} Personen gesamt: €{(total * travelers).toLocaleString()}
+        </p>
+      )}
     </div>
   );
 }
