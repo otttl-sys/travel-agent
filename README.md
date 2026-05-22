@@ -1,80 +1,131 @@
-# Travel Agent MVP
+# Travel Companion Agent
 
-An AI-powered travel planning app that uses agentic workflows to research flights, hotels, and activities in real time — then synthesizes everything into a structured trip proposal.
+An agentic AI travel planner built with Claude, Tavily, and Next.js. Multiple specialized agents run in parallel to search flights, hotels, and activities — then synthesize everything into a structured trip proposal, streamed live to the UI.
 
 **Live demo:** https://travel-agent-ristotto-8650s-projects.vercel.app  
-**Stack:** Next.js · Claude API (Anthropic) · Tavily Web Search · Tailwind CSS · shadcn/ui
-
----
-
-## How it works
-
-```
-User fills out form → API route → Claude decides which tools to call
-                                        ↓
-                          [search_flights]  [search_hotels]  [get_activities]
-                                        ↓         ↓               ↓
-                                    Tavily    Tavily          Tavily
-                                    search    search          search
-                                        ↓         ↓               ↓
-                          [optimize_budget] ← Claude synthesizes results
-                                        ↓
-                              Final trip proposal streamed to UI
-```
-
-The core pattern is an **agentic loop**: Claude doesn't just answer — it decides what information it needs, calls tools to get it, and only writes the final answer once it has real data.
+**Stack:** Next.js 16 · Claude API (`claude-sonnet-4-6`) · Tavily Web Search · Tailwind CSS · Vercel
 
 ---
 
 ## Architecture
 
-### 3 pages
+```mermaid
+flowchart TB
+    User(["👤 User"])
 
-| Route | What it does |
-|---|---|
-| `/` | Landing page — explains the product, shows the 4 agent types |
-| `/plan` | 6-step onboarding form (destination, dates, travelers, interests, budget) |
-| `/results` | Streams the AI response live; shows loading states per tool call |
+    subgraph Frontend["Browser — Next.js App Router"]
+        direction TB
+        Pages["/ · /plan · /results\n/research · /disruption · /packing · /saved"]
+        StreamUI["Streaming UI\n(SSE token-by-token)"]
+        BudgetTracker["Interactive Budget Tracker"]
+        SavedTrips["Saved Trips\n(localStorage)"]
+        PDFExport["PDF Export\n(window.print)"]
+        BookingLinks["6 Booking Partners\nFlights · Hotels · Activities"]
+    end
 
-### 1 API route
+    subgraph Server["Server — Next.js Route Handlers on Vercel"]
+        direction TB
+        PlanAPI["/api/plan\nTrip Planner + Multi-City"]
+        ResearchAPI["/api/research\nResearch Mode"]
+        DisruptionAPI["/api/disruption\nDisruption Management"]
+        PackingAPI["/api/packing\nPacking List"]
+    end
 
-`/api/plan` (POST) — the entire AI logic lives here:
+    subgraph AgentLoop["Agentic Loop — Claude claude-sonnet-4-6"]
+        direction LR
+        Claude["claude.messages.stream()"]
+        ToolExec["Tool Execution\n(server-side, parallel via Promise.all)"]
+        Claude -- "tool_use block" --> ToolExec
+        ToolExec -- "tool_result" --> Claude
+    end
 
-1. Receives the user's trip preferences as JSON
-2. Sends them to Claude with 4 tools available
-3. Runs the **agentic loop** (max 10 iterations):
-   - If Claude calls a tool → execute it, stream progress to frontend, feed result back to Claude
-   - If Claude writes text → stream the final answer, close the loop
-4. Returns a Server-Sent Events (SSE) stream so the frontend updates in real time
+    Tavily[("Tavily\nWeb Search API")]
 
-### 4 tools Claude can call
-
-| Tool | What it does | Powered by |
-|---|---|---|
-| `search_flights` | Finds flight options for destination + dates | Tavily Web Search |
-| `search_hotels` | Finds hotels by style (budget/comfort/luxury) | Tavily Web Search |
-| `get_activities` | Finds things to do based on interests | Tavily Web Search |
-| `optimize_budget` | Splits the budget across categories | Local calculation |
-
-Claude calls these tools **in parallel** (via `Promise.all`) to keep latency low.
+    User --> Frontend
+    Frontend -- "POST /api/*" --> Server
+    Server --> AgentLoop
+    ToolExec -- "live queries" --> Tavily
+    Tavily -- "search results" --> ToolExec
+    AgentLoop -- "SSE stream\n(tokens + tool events)" --> StreamUI
+```
 
 ---
 
-## Key files
+## Agent Flows
+
+Six specialized agent flows — each with its own tool set and API route:
+
+| Agent | Route | Tools | What it does |
+|---|---|---|---|
+| **Trip Planner** | `/api/plan` | `search_flights` `search_hotels` `get_activities` `optimize_budget` | Full trip plan from destination, dates, budget, interests |
+| **Multi-City Planner** | `/api/plan` | `search_flight_leg` `plan_city_stop` `optimize_total_budget` | A→B→C routing with per-city plans and a consolidated budget |
+| **Research Mode** | `/api/research` | `get_visa_requirements` `get_climate_info` `get_safety_info` `get_local_tips` `get_best_time_to_visit` | Pre-booking intelligence: visa, climate, safety, insider tips |
+| **Disruption Management** | `/api/disruption` | `check_flight_status` `find_alternative_flights` `get_eu261_rights` `find_airport_facilities` | Flight disruption → status, alternatives, EU261 rights, lounge/hotel options |
+| **Packing List** | `/api/packing` | *(direct Claude completion)* | Destination-specific packing checklist based on climate and trip type |
+| **Budget Tracker** | *(client-side)* | *(parses AI output)* | Extracts AI cost estimates into an interactive editable breakdown |
+
+---
+
+## Key Technical Decisions
+
+**Parallel tool calls**  
+All tools within a single agent turn are called with `Promise.all`. A trip plan that would take ~15s sequentially runs in ~5s. This is a deliberate prompt and schema decision — tools are designed so Claude can call them simultaneously rather than waiting for each result.
+
+**SSE streaming with tool events**  
+The API route emits three SSE event types: `tool_call` (a named tool fired — frontend updates the loading step), `token` (a streamed text chunk — frontend renders markdown live), `cards` (structured JSON for the trip card grid). The frontend switches from loading state to result panel on the first `token` event.
+
+**Structured output for trip cards**  
+Trip cards are not hardcoded. A `generate_trip_cards` tool with a strict JSON schema forces Claude to return a typed array of destinations (name, tagline, highlights, itinerary, budget breakdown, gradient) — every search produces unique, destination-specific cards.
+
+**No auth, no database**  
+Saved trips live in `localStorage`. This keeps the stack minimal and the app fully stateless on the server — the right call for an MVP at this scale.
+
+---
+
+## Feature Overview
+
+| Feature | Status |
+|---|---|
+| Trip Planner (single destination) | ✅ |
+| Multi-City Planner (up to 5 stops) | ✅ |
+| Research Mode (visa · climate · safety · local tips) | ✅ |
+| Disruption Management (EU261 rights) | ✅ |
+| Dynamic Trip Cards (structured output) | ✅ |
+| Interactive Budget Tracker (editable line items) | ✅ |
+| Packing List Generator | ✅ |
+| Saved Trips (localStorage) | ✅ |
+| PDF Export | ✅ |
+| Booking Deep Links (6 providers) | ✅ |
+| Mobile-responsive nav | ✅ |
+
+---
+
+## Project Structure
 
 ```
 src/
 ├── app/
-│   ├── page.tsx              # Landing page
-│   ├── plan/page.tsx         # 6-step form
-│   ├── results/page.tsx      # Streaming results UI
-│   └── api/plan/route.ts     # All AI logic: agentic loop + tools
-└── components/ui/            # shadcn/ui components (button, card, etc.)
+│   ├── page.tsx                  # Landing page (with mobile hamburger nav)
+│   ├── plan/page.tsx             # 6-step trip form
+│   ├── results/page.tsx          # Streaming results, Trip Cards, Budget Tracker
+│   ├── research/page.tsx         # Research Mode UI
+│   ├── disruption/page.tsx       # Disruption Management UI
+│   ├── packing/page.tsx          # Packing List Generator
+│   ├── saved/page.tsx            # Saved Trips (localStorage)
+│   └── api/
+│       ├── plan/route.ts         # Agentic loop: Trip Planner + Multi-City
+│       ├── research/route.ts     # Agentic loop: Research Mode
+│       ├── disruption/route.ts   # Agentic loop: Disruption Management
+│       └── packing/route.ts      # Direct Claude stream: Packing List
+├── lib/
+│   ├── saved-trips.ts            # localStorage read/write helpers
+│   └── utils.ts
+└── components/ui/                # shadcn/ui (Button, Card, Dialog, etc.)
 ```
 
 ---
 
-## Run locally
+## Run Locally
 
 **Prerequisites:** Node.js 18+, Anthropic API key, Tavily API key
 
@@ -86,79 +137,37 @@ npm install
 
 Create `.env.local`:
 
-```
-ANTHROPIC_API_KEY=your_key_here
-TAVILY_API_KEY=your_key_here
+```env
+ANTHROPIC_API_KEY=sk-ant-...
+TAVILY_API_KEY=tvly-...
 ```
 
 ```bash
 npm run dev
+# → http://localhost:3000
 ```
-
-Open [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## What "agentic" means in practice
+## What "Agentic" Means in Practice
 
-A classic chatbot takes your question and answers it from training data.
+A standard LLM app takes your question and answers from training data.
 
 This app works differently:
 
-1. You ask for a trip to Lisbon in June, budget 2000 EUR
-2. Claude receives this — but instead of answering from memory, it decides: "I need current flight prices, hotel options, and things to do"
-3. It calls `search_flights`, `search_hotels`, and `get_activities` simultaneously
-4. Tavily fetches live web results for each
-5. Claude reads those results and calls `optimize_budget` to split the budget
-6. Now Claude has real data — and writes the trip proposal
+1. You describe a trip to Lisbon in June, budget €2,000
+2. Claude receives the request — and instead of answering from memory, it decides: *"I need current flight prices, hotel options, and things to do"*
+3. It calls `search_flights`, `search_hotels`, and `get_activities` simultaneously via `Promise.all`
+4. Tavily fetches live web results for each query
+5. Claude reads those results, calls `optimize_budget` to split the budget across categories
+6. Now Claude has real, current data — and writes the trip proposal, streamed token by token
 
-The "loop" is the mechanism that makes steps 3-6 possible: Claude can take multiple turns, calling tools as needed, before it produces a final answer.
-
----
-
-## Example outputs
-
-Three real queries run against the live API:
-
-### 1 — Lisbon city trip
-> 2 people · 9 nights · €1,500/person · interests: city, food, beach
-
-Tool calls: `search_flights` → `search_hotels` → `get_activities` → `optimize_budget`
-
-Budget split: Flights €525 · Hotel €525 · Activities €225 · Food €150 · Transport €75 — **total: €1,500 ✅**
-
-The agent found TAP Air Portugal nonstop routes from FRA/BER (~€260/person), recommended boutique hotels in Chiado (~€115–130/night), and built a day-by-day plan including Sintra, Cascais beach, and the Time Out Market.
+The **agentic loop** is what makes steps 3–6 possible: Claude takes multiple turns, calling tools as needed, before producing the final answer.
 
 ---
 
-### 2 — Costa Rica adventure (New Year's Eve)
-> 2 people · 14 nights · €3,500/person · interests: adventure, nature, rainforest
+## Built By
 
-Tool calls: `search_flights` → `search_hotels` → `get_activities` → `optimize_budget`
+Otto Rist — Partnership & Innovation leader exploring AI-driven distribution and agentic workflows.
 
-Route: San José → La Fortuna (Arenal) → Monteverde Cloud Forest → Manuel Antonio → San José
-
-Budget split: Flights €1,100 · Hotels €980 · Activities €525 · Food €350 · Transport €175 — **€290/person reserve remaining ✅**
-
-Highlights: New Year's Eve at Arenal volcano, canyoning & waterfall-rappelling, zip-lining through cloud forest canopy, snorkeling on the Pacific coast.
-
----
-
-### 3 — Tokyo solo
-> 1 person · 14 nights · €4,000 · interests: culture, food, anime, technology
-
-Tool calls: `search_flights` → `search_hotels` → `get_activities` → `optimize_budget`
-
-Budget split: Flight €1,400 · Hotel €1,400 · Activities €600 · Food €400 · Transport €200 — **total: €4,000 ✅**
-
-The agent recommended EVA Air Munich–Narita (~€995), Hotel Century Southern Tower in Shinjuku as base, and planned 14 days across Akihabara, teamLab Borderless, Toyosu fish market, and a Nikko day trip for autumn foliage.
-
----
-
-## Roadmap
-
-- [x] Vercel deployment
-- [x] Error state UI when API calls fail
-- [ ] Persistent trip history (database)
-- [ ] Shareable trip links
-- [ ] Multi-destination itineraries
+[LinkedIn](https://www.linkedin.com/in/ottorist) · [Live Demo](https://travel-agent-ristotto-8650s-projects.vercel.app)
