@@ -1,29 +1,74 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 export default function Home() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Nav */}
-      <nav className="border-b border-gray-100 px-6 py-4">
+      <nav className="border-b border-gray-100 px-6 py-4 relative">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-2xl">✈</span>
             <span className="font-semibold text-gray-900 text-lg">TravelAgent</span>
           </div>
-          <div className="flex items-center gap-4">
-            <Link href="/research" className="text-sm text-gray-500 hidden sm:block hover:text-indigo-600 transition-colors">
+
+          {/* Desktop links */}
+          <div className="hidden sm:flex items-center gap-4">
+            <Link href="/research" className="text-sm text-gray-500 hover:text-indigo-600 transition-colors">
               Research
             </Link>
-            <Link href="/disruption" className="text-sm text-gray-500 hidden sm:block hover:text-red-600 transition-colors">
+            <Link href="/disruption" className="text-sm text-gray-500 hover:text-red-600 transition-colors">
               Disruption
+            </Link>
+            <Link href="/packing" className="text-sm text-gray-500 hover:text-indigo-600 transition-colors">
+              Packing
+            </Link>
+            <Link href="/saved" className="text-sm text-gray-500 hover:text-indigo-600 transition-colors">
+              Saved
             </Link>
             <Link href="/plan">
               <Button size="sm">Reise planen</Button>
             </Link>
           </div>
+
+          {/* Mobile hamburger */}
+          <div className="flex sm:hidden items-center gap-3">
+            <Link href="/plan">
+              <Button size="sm">Planen</Button>
+            </Link>
+            <button
+              onClick={() => setMobileMenuOpen((o) => !o)}
+              className="p-2 text-gray-500 hover:text-gray-900"
+              aria-label="Menu"
+            >
+              {mobileMenuOpen ? (
+                <span className="text-xl leading-none">×</span>
+              ) : (
+                <span className="flex flex-col gap-1">
+                  <span className="block w-5 h-0.5 bg-current" />
+                  <span className="block w-5 h-0.5 bg-current" />
+                  <span className="block w-5 h-0.5 bg-current" />
+                </span>
+              )}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile dropdown */}
+        {mobileMenuOpen && (
+          <div className="sm:hidden absolute top-full left-0 right-0 bg-white border-b border-gray-100 shadow-sm z-50 px-6 py-4 flex flex-col gap-3">
+            <Link href="/research" onClick={() => setMobileMenuOpen(false)} className="text-sm text-gray-700 hover:text-indigo-600">Research</Link>
+            <Link href="/disruption" onClick={() => setMobileMenuOpen(false)} className="text-sm text-gray-700 hover:text-red-600">Disruption</Link>
+            <Link href="/packing" onClick={() => setMobileMenuOpen(false)} className="text-sm text-gray-700 hover:text-indigo-600">Packing List</Link>
+            <Link href="/saved" onClick={() => setMobileMenuOpen(false)} className="text-sm text-gray-700 hover:text-indigo-600">Saved Trips</Link>
+          </div>
+        )}
       </nav>
 
       <main className="flex-1">
@@ -43,13 +88,15 @@ export default function Home() {
           </p>
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/plan">
-              <Button size="lg" className="px-8 py-6 text-base">
+              <Button size="lg" className="px-8 py-6 text-base w-full sm:w-auto">
                 Reise planen →
               </Button>
             </Link>
-            <Button variant="outline" size="lg" className="px-8 py-6 text-base">
-              Beispiel ansehen
-            </Button>
+            <Link href="/packing">
+              <Button variant="outline" size="lg" className="px-8 py-6 text-base w-full sm:w-auto">
+                🎒 Packliste erstellen
+              </Button>
+            </Link>
           </div>
           <p className="mt-6 text-sm text-gray-400">
             Kostenlos · Keine Anmeldung nötig · In 2 Minuten fertig
@@ -180,5 +227,10 @@ const agents = [
     icon: "🚨",
     name: "Disruption Agent",
     description: "Flug gestört? Status, Alternativen und Fahrgastrechte in Sekunden.",
+  },
+  {
+    icon: "🎒",
+    name: "Packing Agent",
+    description: "Destination-spezifische Packliste — zugeschnitten auf Klima und Trip-Typ.",
   },
 ];

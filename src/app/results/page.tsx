@@ -3,11 +3,13 @@
 import { Suspense, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { saveTrip } from "@/lib/saved-trips";
 
 type Trip = {
   id: string;
@@ -138,9 +140,25 @@ function ResultsContent() {
   const [error, setError] = useState<string | null>(null);
   const [toolCounts, setToolCounts] = useState({ search_flights: 0, search_hotels: 0, get_activities: 0, optimize_budget: 0, search_flight_leg: 0, plan_city_stop: 0, optimize_total_budget: 0 });
   const [dynamicCards, setDynamicCards] = useState<Trip[] | null>(null);
+  const [saved, setSaved] = useState(false);
 
   const destination = searchParams.get("destination") || "";
   const budget = Number(searchParams.get("budget") || 3000);
+
+  function handleSave() {
+    saveTrip({
+      destination: isMultiCity ? cityNames.join(", ") : destination,
+      isMultiCity,
+      cities: cityNames,
+      startDate: searchParams.get("startDate") || "",
+      endDate: searchParams.get("endDate") || "",
+      travelers: Number(searchParams.get("travelers") || 2),
+      budget,
+      aiResult: aiResult || "",
+      cards: dynamicCards,
+    });
+    setSaved(true);
+  }
   const isMultiCity = searchParams.get("multiCity") === "1";
   const loadingSteps = isMultiCity ? loadingStepsMulti : loadingStepsSingle;
   const citiesParam = searchParams.get("cities") || "";
@@ -315,7 +333,7 @@ function ResultsContent() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Nav */}
-      <nav className="bg-white border-b border-gray-100 px-6 py-4">
+      <nav className="bg-white border-b border-gray-100 px-6 py-4 no-print">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <button
             onClick={() => router.push("/")}
@@ -323,9 +341,17 @@ function ResultsContent() {
           >
             ✈ TravelAgent
           </button>
-          <Button variant="outline" size="sm" onClick={() => router.push("/plan")}>
-            Neue Suche
-          </Button>
+          <div className="flex items-center gap-2">
+            <Link href="/saved" className="text-sm text-gray-500 hidden sm:block hover:text-indigo-600 transition-colors mr-2">
+              Saved Trips
+            </Link>
+            <Link href="/packing" className="text-sm text-gray-500 hidden sm:block hover:text-indigo-600 transition-colors mr-2">
+              Packing List
+            </Link>
+            <Button variant="outline" size="sm" onClick={() => router.push("/plan")}>
+              Neue Suche
+            </Button>
+          </div>
         </div>
       </nav>
 
@@ -333,9 +359,27 @@ function ResultsContent() {
         <div className="max-w-5xl mx-auto">
           {/* Header */}
           <div className="mb-10">
-            <Badge variant="secondary" className="mb-3 text-xs">
-              {isMultiCity ? `Multi-City Tour · ${cityNames.length} Stationen` : dynamicCards ? "AI hat 3 Reiseoptionen für dich erstellt" : "AI hat 3 Reisen für dich zusammengestellt"}
-            </Badge>
+            <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+              <Badge variant="secondary" className="text-xs">
+                {isMultiCity ? `Multi-City Tour · ${cityNames.length} Stationen` : dynamicCards ? "AI hat 3 Reiseoptionen für dich erstellt" : "AI hat 3 Reisen für dich zusammengestellt"}
+              </Badge>
+              {aiResult && (
+                <div className="flex items-center gap-2 no-print">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSave}
+                    disabled={saved}
+                    className={saved ? "text-green-600 border-green-200 bg-green-50" : ""}
+                  >
+                    {saved ? "✓ Saved" : "Save Trip"}
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => window.print()}>
+                    PDF
+                  </Button>
+                </div>
+              )}
+            </div>
             <h1 className="text-3xl font-bold text-gray-900">
               {isMultiCity
                 ? cityNames.join(" → ")
@@ -406,7 +450,7 @@ function ResultsContent() {
           <BudgetTracker budget={budget} aiResult={aiResult} isMultiCity={isMultiCity} travelers={Number(searchParams.get("travelers") || 2)} />
 
           {/* Agent Summary */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-6">
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 no-print">
             <h3 className="font-semibold text-gray-900 mb-4">Was die Agenten analysiert haben</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {(isMultiCity ? [
@@ -575,28 +619,53 @@ function BookingSection({
   endDate: string;
   travelers: string;
 }) {
-  const dest = encodeURIComponent(destination || "Europa");
+  const dest = encodeURIComponent(destination || "Europe");
+  const destRaw = destination || "Europe";
 
   const links = [
     {
       icon: "✈️",
-      label: "Flüge buchen",
+      label: "Flights",
       sub: "Google Flights",
       url: `https://www.google.com/travel/flights?hl=de&q=Flug+nach+${dest}`,
       cardClass: "bg-blue-50 hover:bg-blue-100 border-blue-100",
       labelClass: "text-blue-700",
     },
     {
-      icon: "🏨",
-      label: "Hotel buchen",
-      sub: "Booking.com",
-      url: `https://www.booking.com/searchresults.html?ss=${dest}&checkin=${startDate}&checkout=${endDate}&group_adults=${travelers}&no_rooms=1&lang=de`,
+      icon: "✈️",
+      label: "Flights",
+      sub: "Skyscanner",
+      url: `https://www.skyscanner.de/transport/flights/anywhere/${dest.toLowerCase()}/${startDate.replace(/-/g, "")}/?adults=${travelers}&currency=EUR`,
+      cardClass: "bg-sky-50 hover:bg-sky-100 border-sky-100",
+      labelClass: "text-sky-700",
+    },
+    {
+      icon: "✈️",
+      label: "Flights",
+      sub: "Kayak",
+      url: `https://www.kayak.de/flights/FRA-${dest}/${startDate}/${endDate}/${travelers}adults`,
       cardClass: "bg-orange-50 hover:bg-orange-100 border-orange-100",
       labelClass: "text-orange-700",
     },
     {
+      icon: "🏨",
+      label: "Hotels",
+      sub: "Booking.com",
+      url: `https://www.booking.com/searchresults.html?ss=${dest}&checkin=${startDate}&checkout=${endDate}&group_adults=${travelers}&no_rooms=1&lang=de`,
+      cardClass: "bg-amber-50 hover:bg-amber-100 border-amber-100",
+      labelClass: "text-amber-700",
+    },
+    {
+      icon: "🏠",
+      label: "Apartments",
+      sub: "Airbnb",
+      url: `https://www.airbnb.de/s/${encodeURIComponent(destRaw)}/homes?checkin=${startDate}&checkout=${endDate}&adults=${travelers}`,
+      cardClass: "bg-rose-50 hover:bg-rose-100 border-rose-100",
+      labelClass: "text-rose-700",
+    },
+    {
       icon: "🗺️",
-      label: "Aktivitäten buchen",
+      label: "Activities",
       sub: "GetYourGuide",
       url: `https://www.getyourguide.de/s/?q=${dest}${startDate ? `&date_from=${startDate}` : ""}`,
       cardClass: "bg-green-50 hover:bg-green-100 border-green-100",
@@ -605,22 +674,22 @@ function BookingSection({
   ];
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-8 mb-6">
+    <div className="bg-white rounded-2xl border border-gray-100 p-8 mb-6 no-print">
       <div className="flex items-center gap-2 mb-5">
         <span className="text-xl">🔗</span>
         <h3 className="font-semibold text-gray-900">Direkt buchen</h3>
       </div>
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {links.map((link) => (
           <a
-            key={link.label}
+            key={link.sub}
             href={link.url}
             target="_blank"
             rel="noopener noreferrer"
-            className={`flex flex-col items-center gap-2 p-5 rounded-xl border transition-colors ${link.cardClass}`}
+            className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors ${link.cardClass}`}
           >
-            <span className="text-3xl">{link.icon}</span>
-            <span className={`font-semibold text-sm ${link.labelClass}`}>{link.label}</span>
+            <span className="text-2xl">{link.icon}</span>
+            <span className={`font-semibold text-xs ${link.labelClass}`}>{link.label}</span>
             <span className="text-xs text-gray-400">{link.sub}</span>
           </a>
         ))}

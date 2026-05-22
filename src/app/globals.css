@@ -129,3 +129,46 @@
     @apply font-sans;
   }
 }
+
+@media print {
+  .no-print,
+  nav,
+  button,
+  a[href] {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+  }
+
+  .min-h-screen {
+    min-height: unset !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+
+  .rounded-2xl,
+  .rounded-xl {
+    border-radius: 4px !important;
+    box-shadow: none !important;
+    border: 1px solid #e5e7eb !important;
+  }
+
+  .bg-gray-50,
+  .bg-indigo-50 {
+    background: white !important;
+  }
+
+  h1 {
+    font-size: 18pt !important;
+  }
+
+  h2, h3 {
+    font-size: 14pt !important;
+  }
+}
