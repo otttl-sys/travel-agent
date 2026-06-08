@@ -19,6 +19,7 @@ export const AGENT_META: Record<string, { agent: string; icon: string }> = {
   search_current_hotels: { agent: "Price Agent", icon: "📉" },
   search_live_info: { agent: "Concierge", icon: "💬" },
   search_logistics: { agent: "Day Planner", icon: "🗓️" },
+  search_travel_essentials: { agent: "Briefing Agent", icon: "📋" },
 };
 
 export function formatToolParams(tool: string, input: Record<string, unknown>): string {
@@ -63,6 +64,7 @@ export function formatToolParams(tool: string, input: Record<string, unknown>): 
       break;
     case "search_live_info":
     case "search_logistics":
+    case "search_travel_essentials":
       parts = [str(input.query)];
       break;
     default:

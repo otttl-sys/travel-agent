@@ -5,10 +5,11 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getSavedTrips, deleteTrip, updatePriceWatch, updateDayPlan, type SavedTrip, type PriceWatch, type DayPlan } from "@/lib/saved-trips";
+import { getSavedTrips, deleteTrip, updatePriceWatch, updateDayPlan, updateBriefing, type SavedTrip, type PriceWatch, type DayPlan, type Briefing } from "@/lib/saved-trips";
 import { AgentTrace, type TraceEntry } from "@/components/agent-trace";
 import { ConciergeChat, type ChatMessage } from "@/components/concierge-chat";
 import { DayTimeline, type DaySchedule } from "@/components/day-timeline";
+import { BriefingCard, type BriefingSection } from "@/components/briefing-card";
 
 const TREND_META: Record<PriceWatch["trend"], { emoji: string; label: string }> = {
   down: { emoji: "📉", label: "Wirkt günstiger" },
@@ -44,6 +45,10 @@ export default function SavedPage() {
   const [openItineraryId, setOpenItineraryId] = useState<string | null>(null);
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [itineraryTraces, setItineraryTraces] = useState<Record<string, TraceEntry[]>>({});
+
+  const [openBriefingId, setOpenBriefingId] = useState<string | null>(null);
+  const [generatingBriefingId, setGeneratingBriefingId] = useState<string | null>(null);
+  const [briefingTraces, setBriefingTraces] = useState<Record<string, TraceEntry[]>>({});
 
   useEffect(() => {
     setTrips(getSavedTrips());
@@ -304,6 +309,80 @@ export default function SavedPage() {
     }
   }
 
+  async function generateBriefing(trip: SavedTrip) {
+    if (generatingBriefingId) return;
+    setGeneratingBriefingId(trip.id);
+    setBriefingTraces((prev) => ({ ...prev, [trip.id]: [] }));
+
+    const dayPlanSummary = trip.dayPlan?.days.map(
+      (d) => `${d.day}: ${d.blocks.map((b) => b.activity).join(", ")}`
+    );
+    const body = {
+      destination: trip.isMultiCity ? trip.cities.join(" → ") : trip.destination,
+      startDate: trip.startDate,
+      endDate: trip.endDate,
+      travelers: trip.travelers,
+      themes: trip.cards?.[0]?.themes ?? [],
+      priceWatch: trip.priceWatch ? { trend: trip.priceWatch.trend, summary: trip.priceWatch.summary } : undefined,
+      dayPlanSummary,
+    };
+
+    try {
+      const res = await fetch("/api/briefing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) return;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n").filter((l) => l.startsWith("data: "));
+
+        for (const line of lines) {
+          const data = line.replace("data: ", "");
+          if (data === "[DONE]") break;
+
+          let parsed: { type: string; id?: string; tool?: string; input?: Record<string, unknown>; iteration?: number; sections?: BriefingSection[]; message?: string };
+          try {
+            parsed = JSON.parse(data);
+          } catch {
+            continue;
+          }
+          if (parsed.type === "tool_call" && parsed.id && parsed.tool) {
+            setBriefingTraces((prev) => ({
+              ...prev,
+              [trip.id]: [
+                ...(prev[trip.id] ?? []),
+                { id: parsed.id!, iteration: parsed.iteration ?? 1, tool: parsed.tool!, input: parsed.input ?? {}, status: "running" },
+              ],
+            }));
+          }
+          if (parsed.type === "tool_done" && parsed.id) {
+            setBriefingTraces((prev) => ({
+              ...prev,
+              [trip.id]: (prev[trip.id] ?? []).map((entry) => (entry.id === parsed.id ? { ...entry, status: "done" } : entry)),
+            }));
+          }
+          if (parsed.type === "briefing" && parsed.sections) {
+            const briefing: Briefing = { generatedAt: new Date().toISOString(), sections: parsed.sections };
+            updateBriefing(trip.id, briefing);
+            setTrips((prev) => prev.map((t) => (t.id === trip.id ? { ...t, briefing } : t)));
+          }
+        }
+      }
+    } catch {
+      // Generation failure is non-fatal — the panel simply shows no briefing and the button stays available to retry.
+    } finally {
+      setGeneratingBriefingId(null);
+      setBriefingTraces((prev) => ({ ...prev, [trip.id]: [] }));
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <nav className="bg-white border-b border-gray-100 px-6 py-4">
@@ -452,6 +531,13 @@ export default function SavedPage() {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => setOpenBriefingId((prev) => (prev === trip.id ? null : trip.id))}
+                        >
+                          {openBriefingId === trip.id ? "📋 Schließen" : trip.briefing ? "📋 Briefing ansehen" : "📋 Briefing erstellen"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() =>
                             setExpanded((prev) =>
                               prev === trip.id ? null : trip.id
@@ -541,6 +627,54 @@ export default function SavedPage() {
                           </p>
                           <Button size="sm" onClick={() => generateItinerary(trip)}>
                             🗓️ Tagesplan erstellen
+                          </Button>
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
+
+                  {openBriefingId === trip.id && (
+                    <div className="border-t border-gray-100 p-6 bg-gray-50/50">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                          Briefing Agent
+                        </p>
+                        {trip.briefing && (
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-gray-400">
+                              erstellt am {formatCheckedDate(trip.briefing.generatedAt)}
+                            </span>
+                            <button
+                              onClick={() => generateBriefing(trip)}
+                              disabled={generatingBriefingId !== null}
+                              className="text-xs font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
+                            >
+                              🔄 Neu erstellen
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {generatingBriefingId === trip.id && (
+                        <div className="mb-4">
+                          <AgentTrace trace={briefingTraces[trip.id] ?? []} />
+                          {(briefingTraces[trip.id]?.length ?? 0) === 0 && (
+                            <p className="text-sm text-gray-400">Briefing wird erstellt…</p>
+                          )}
+                        </div>
+                      )}
+
+                      {trip.briefing ? (
+                        <div className="rounded-lg bg-white border border-gray-100 p-5">
+                          <BriefingCard sections={trip.briefing.sections} />
+                        </div>
+                      ) : generatingBriefingId !== trip.id ? (
+                        <div className="text-center py-6">
+                          <p className="text-sm text-gray-500 mb-4">
+                            Lass dir aus deinem Preis-Trend, Tagesplan und frischer Recherche ein vollständiges Vorab-Briefing erstellen.
+                          </p>
+                          <Button size="sm" onClick={() => generateBriefing(trip)}>
+                            📋 Briefing erstellen
                           </Button>
                         </div>
                       ) : null}
