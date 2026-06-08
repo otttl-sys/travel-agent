@@ -179,9 +179,9 @@ Recherchiere zuerst gezielt nach datumsgebundenen Veranstaltungen in genau diese
               } else {
                 const debug = {
                   stop_reason: eventsResponse.stop_reason,
-                  blocks: eventsResponse.content.map((b) =>
-                    b.type === "tool_use" ? { type: b.type, name: b.name, inputKeys: Object.keys(b.input as object) } : { type: b.type, text: b.type === "text" ? b.text.slice(0, 300) : undefined }
-                  ),
+                  resultIsArray: Array.isArray(result),
+                  resultLength: Array.isArray(result) ? result.length : null,
+                  rawInput: eventsBlock ? JSON.stringify(eventsBlock.input).slice(0, 1500) : null,
                 };
                 controller.enqueue(
                   encoder.encode(`data: ${JSON.stringify({ type: "error", message: `Events konnten nicht ermittelt werden. DEBUG: ${JSON.stringify(debug)}` })}\n\n`)
