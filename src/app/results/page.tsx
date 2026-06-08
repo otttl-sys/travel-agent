@@ -698,6 +698,48 @@ function BookingSection({
   );
 }
 
+const ACTIVITY_ICONS: { match: RegExp; icon: string }[] = [
+  { match: /ankunft|abflug|rückflug|flughafen|transfer/i, icon: "✈️" },
+  { match: /shinkansen|zug|bahn|fähre|boot|rafting|bootsfahrt/i, icon: "🚄" },
+  { match: /hotel|ryokan|check-in|übernachtung|onsen/i, icon: "🛏️" },
+  { match: /tempel|schrein|pavillon|kloster|burg|palast/i, icon: "⛩️" },
+  { match: /museum|galerie|ausstellung/i, icon: "🏛️" },
+  { match: /strand|küste|beach|surfen|insel/i, icon: "🏖️" },
+  { match: /berg|vulkan|wanderung|hängebrücke|nationalpark|wald|regenwald/i, icon: "🥾" },
+  { match: /markt|streetfood|restaurant|kulinarik|wein|tour|verkostung|nata/i, icon: "🍽️" },
+  { match: /shopping|souvenir|akihabara/i, icon: "🛍️" },
+  { match: /tagesausflug|sightseeing|altstadt|city/i, icon: "🗺️" },
+];
+
+function activityIcon(activity: string): string {
+  const found = ACTIVITY_ICONS.find((a) => a.match.test(activity));
+  return found?.icon ?? "📍";
+}
+
+function ItineraryTimeline({ itinerary }: { itinerary: { day: string; activities: string[] }[] }) {
+  return (
+    <ol className="relative mb-6 pl-9">
+      <span className="absolute left-[15px] top-2 bottom-2 w-px bg-gradient-to-b from-indigo-300 via-indigo-200 to-indigo-50" aria-hidden />
+      {itinerary.map((block, i) => (
+        <li key={block.day} className="relative pb-6 last:pb-0">
+          <span className="absolute -left-9 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white ring-4 ring-white">
+            {i + 1}
+          </span>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-indigo-600">{block.day}</p>
+          <div className="space-y-1.5">
+            {block.activities.map((activity) => (
+              <div key={activity} className="flex items-start gap-2.5 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-600">
+                <span className="text-base leading-none">{activityIcon(activity)}</span>
+                <span className="leading-snug">{activity}</span>
+              </div>
+            ))}
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 function TripCard({ trip, featured }: { trip: Trip; featured: boolean }) {
   const [open, setOpen] = useState(false);
 
@@ -767,23 +809,10 @@ function TripCard({ trip, featured }: { trip: Trip; featured: boolean }) {
 
         <p className="text-sm text-gray-500 mb-4">{trip.description}</p>
 
-        {/* Itinerary */}
-        <h4 className="font-semibold text-gray-900 mb-3">Reiseverlauf</h4>
-        <div className="space-y-3 mb-5">
-          {trip.itinerary.map((block) => (
-            <div key={block.day}>
-              <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wide mb-1">{block.day}</p>
-              <ul className="space-y-1">
-                {block.activities.map((a) => (
-                  <li key={a} className="flex items-start gap-2 text-sm text-gray-600">
-                    <span className="text-indigo-300 mt-0.5">•</span>
-                    {a}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
+        {/* Itinerary Timeline */}
+        <h4 className="font-semibold text-gray-900 mb-4">Reiseverlauf</h4>
+        <ItineraryTimeline itinerary={trip.itinerary} />
+        <div className="mb-1" />
 
         {/* Budget breakdown */}
         <h4 className="font-semibold text-gray-900 mb-3">Budget-Aufteilung <span className="text-gray-400 font-normal text-sm">pro Person</span></h4>
