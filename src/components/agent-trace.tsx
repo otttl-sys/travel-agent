@@ -17,6 +17,7 @@ export const AGENT_META: Record<string, { agent: string; icon: string }> = {
   generate_trip_cards: { agent: "Card Designer", icon: "🎴" },
   search_current_flights: { agent: "Price Agent", icon: "📉" },
   search_current_hotels: { agent: "Price Agent", icon: "📉" },
+  search_live_info: { agent: "Concierge", icon: "💬" },
 };
 
 export function formatToolParams(tool: string, input: Record<string, unknown>): string {
@@ -58,6 +59,9 @@ export function formatToolParams(tool: string, input: Record<string, unknown>): 
       break;
     case "search_current_hotels":
       parts = [str(input.destination), range(input.check_in, input.check_out), str(input.style)];
+      break;
+    case "search_live_info":
+      parts = [str(input.query)];
       break;
     default:
       parts = Object.values(input).slice(0, 3).map(str);

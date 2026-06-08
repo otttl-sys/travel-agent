@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getSavedTrips, deleteTrip, updatePriceWatch, type SavedTrip, type PriceWatch } from "@/lib/saved-trips";
 import { AgentTrace, type TraceEntry } from "@/components/agent-trace";
+import { ConciergeChat, type ChatMessage } from "@/components/concierge-chat";
 
 const TREND_META: Record<PriceWatch["trend"], { emoji: string; label: string }> = {
   down: { emoji: "📉", label: "Wirkt günstiger" },
@@ -33,6 +34,11 @@ export default function SavedPage() {
   const [checkingId, setCheckingId] = useState<string | null>(null);
   const [traces, setTraces] = useState<Record<string, TraceEntry[]>>({});
   const [verdicts, setVerdicts] = useState<Record<string, string>>({});
+
+  const [openChatId, setOpenChatId] = useState<string | null>(null);
+  const [sendingId, setSendingId] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<Record<string, ChatMessage[]>>({});
+  const [conciergeTraces, setConciergeTraces] = useState<Record<string, TraceEntry[]>>({});
 
   useEffect(() => {
     setTrips(getSavedTrips());
@@ -134,6 +140,94 @@ export default function SavedPage() {
       setVerdicts((prev) => ({ ...prev, [trip.id]: "Verbindungsfehler beim Preis-Check. Bitte erneut versuchen." }));
     } finally {
       setCheckingId(null);
+    }
+  }
+
+  async function sendMessage(trip: SavedTrip, text: string) {
+    if (sendingId) return;
+    const history = [...(conversations[trip.id] ?? []), { role: "user" as const, content: text }];
+    setConversations((prev) => ({ ...prev, [trip.id]: history }));
+    setConciergeTraces((prev) => ({ ...prev, [trip.id]: [] }));
+    setSendingId(trip.id);
+
+    const card = trip.cards?.[0];
+    const body = {
+      trip: {
+        destination: trip.isMultiCity ? trip.cities.join(" → ") : trip.destination,
+        startDate: trip.startDate,
+        endDate: trip.endDate,
+        travelers: trip.travelers,
+        themes: card?.themes ?? [],
+        itinerary: card?.itinerary ?? [],
+      },
+      messages: history,
+    };
+
+    try {
+      const res = await fetch("/api/concierge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let result = "";
+      if (!reader) return;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n").filter((l) => l.startsWith("data: "));
+
+        for (const line of lines) {
+          const data = line.replace("data: ", "");
+          if (data === "[DONE]") break;
+
+          let parsed: { type: string; id?: string; tool?: string; input?: Record<string, unknown>; iteration?: number; text?: string; message?: string };
+          try {
+            parsed = JSON.parse(data);
+          } catch {
+            continue;
+          }
+          if (parsed.type === "tool_call" && parsed.id && parsed.tool) {
+            setConciergeTraces((prev) => ({
+              ...prev,
+              [trip.id]: [
+                ...(prev[trip.id] ?? []),
+                { id: parsed.id!, iteration: parsed.iteration ?? 1, tool: parsed.tool!, input: parsed.input ?? {}, status: "running" },
+              ],
+            }));
+          }
+          if (parsed.type === "tool_done" && parsed.id) {
+            setConciergeTraces((prev) => ({
+              ...prev,
+              [trip.id]: (prev[trip.id] ?? []).map((entry) => (entry.id === parsed.id ? { ...entry, status: "done" } : entry)),
+            }));
+          }
+          if (parsed.type === "token") {
+            result = result + (parsed.text ?? "");
+          }
+          if (parsed.type === "result") {
+            result = parsed.text ?? result;
+          }
+          if (parsed.type === "error") {
+            result = parsed.message ?? "Antwort fehlgeschlagen.";
+          }
+        }
+      }
+
+      const reply = result.trim();
+      if (reply) {
+        const assistantMsg: ChatMessage = { role: "assistant", content: reply };
+        setConversations((prev) => ({ ...prev, [trip.id]: [...(prev[trip.id] ?? history), assistantMsg] }));
+      }
+    } catch {
+      const errorMsg: ChatMessage = { role: "assistant", content: "Verbindungsfehler. Bitte erneut versuchen." };
+      setConversations((prev) => ({ ...prev, [trip.id]: [...(prev[trip.id] ?? history), errorMsg] }));
+    } finally {
+      setSendingId(null);
+      setConciergeTraces((prev) => ({ ...prev, [trip.id]: [] }));
     }
   }
 
@@ -271,6 +365,13 @@ export default function SavedPage() {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => setOpenChatId((prev) => (prev === trip.id ? null : trip.id))}
+                        >
+                          {openChatId === trip.id ? "💬 Schließen" : "💬 Frag den Concierge"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() =>
                             setExpanded((prev) =>
                               prev === trip.id ? null : trip.id
@@ -301,6 +402,20 @@ export default function SavedPage() {
                           {verdicts[trip.id]}
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {openChatId === trip.id && (
+                    <div className="border-t border-gray-100 p-6 bg-gray-50/50">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
+                        Trip Concierge
+                      </p>
+                      <ConciergeChat
+                        messages={conversations[trip.id] ?? []}
+                        trace={conciergeTraces[trip.id] ?? []}
+                        sending={sendingId === trip.id}
+                        onSend={(text) => sendMessage(trip, text)}
+                      />
                     </div>
                   )}
 
