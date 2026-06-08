@@ -171,20 +171,21 @@ Recherchiere zuerst gezielt nach datumsgebundenen Veranstaltungen in genau diese
               const eventsBlock = eventsResponse.content.find(
                 (b): b is Anthropic.ToolUseBlock => b.type === "tool_use" && b.name === "generate_events_list"
               );
-              const result = eventsBlock ? (eventsBlock.input as { events?: unknown[] }).events : undefined;
+              let result: unknown = eventsBlock ? (eventsBlock.input as { events?: unknown }).events : undefined;
+              if (typeof result === "string") {
+                try {
+                  result = JSON.parse(result);
+                } catch {
+                  // leave as-is — falls through to the error branch below
+                }
+              }
               if (Array.isArray(result) && result.length > 0) {
                 controller.enqueue(
                   encoder.encode(`data: ${JSON.stringify({ type: "events", events: result })}\n\n`)
                 );
               } else {
-                const debug = {
-                  stop_reason: eventsResponse.stop_reason,
-                  resultIsArray: Array.isArray(result),
-                  resultLength: Array.isArray(result) ? result.length : null,
-                  rawInput: eventsBlock ? JSON.stringify(eventsBlock.input).slice(0, 1500) : null,
-                };
                 controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify({ type: "error", message: `Events konnten nicht ermittelt werden. DEBUG: ${JSON.stringify(debug)}` })}\n\n`)
+                  encoder.encode(`data: ${JSON.stringify({ type: "error", message: "Events konnten nicht ermittelt werden." })}\n\n`)
                 );
               }
             } catch (err) {
