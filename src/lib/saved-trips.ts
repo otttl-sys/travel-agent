@@ -1,3 +1,9 @@
+export type PriceWatch = {
+  lastChecked: string;
+  trend: "down" | "up" | "same";
+  summary: string;
+};
+
 export type SavedTrip = {
   id: string;
   destination: string;
@@ -11,6 +17,7 @@ export type SavedTrip = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   cards: any[] | null;
   savedAt: string;
+  priceWatch?: PriceWatch;
 };
 
 const KEY = "ta_saved_trips";
@@ -36,5 +43,10 @@ export function saveTrip(trip: Omit<SavedTrip, "id" | "savedAt">): void {
 
 export function deleteTrip(id: string): void {
   const trips = getSavedTrips().filter((t) => t.id !== id);
+  localStorage.setItem(KEY, JSON.stringify(trips));
+}
+
+export function updatePriceWatch(id: string, priceWatch: PriceWatch): void {
+  const trips = getSavedTrips().map((t) => (t.id === id ? { ...t, priceWatch } : t));
   localStorage.setItem(KEY, JSON.stringify(trips));
 }
