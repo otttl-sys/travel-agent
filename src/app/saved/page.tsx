@@ -5,11 +5,12 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getSavedTrips, deleteTrip, updatePriceWatch, updateDayPlan, updateBriefing, type SavedTrip, type PriceWatch, type DayPlan, type Briefing } from "@/lib/saved-trips";
+import { getSavedTrips, deleteTrip, updatePriceWatch, updateDayPlan, updateBriefing, updateEvents, type SavedTrip, type PriceWatch, type DayPlan, type Briefing, type EventsResult } from "@/lib/saved-trips";
 import { AgentTrace, type TraceEntry } from "@/components/agent-trace";
 import { ConciergeChat, type ChatMessage } from "@/components/concierge-chat";
 import { DayTimeline, type DaySchedule } from "@/components/day-timeline";
 import { BriefingCard, type BriefingSection } from "@/components/briefing-card";
+import { EventsList, type EventItem } from "@/components/events-list";
 
 const TREND_META: Record<PriceWatch["trend"], { emoji: string; label: string }> = {
   down: { emoji: "📉", label: "Wirkt günstiger" },
@@ -49,6 +50,10 @@ export default function SavedPage() {
   const [openBriefingId, setOpenBriefingId] = useState<string | null>(null);
   const [generatingBriefingId, setGeneratingBriefingId] = useState<string | null>(null);
   const [briefingTraces, setBriefingTraces] = useState<Record<string, TraceEntry[]>>({});
+
+  const [openEventsId, setOpenEventsId] = useState<string | null>(null);
+  const [generatingEventsId, setGeneratingEventsId] = useState<string | null>(null);
+  const [eventsTraces, setEventsTraces] = useState<Record<string, TraceEntry[]>>({});
 
   useEffect(() => {
     setTrips(getSavedTrips());
@@ -383,6 +388,74 @@ export default function SavedPage() {
     }
   }
 
+  async function generateEvents(trip: SavedTrip) {
+    if (generatingEventsId) return;
+    setGeneratingEventsId(trip.id);
+    setEventsTraces((prev) => ({ ...prev, [trip.id]: [] }));
+
+    const body = {
+      destination: trip.isMultiCity ? trip.cities.join(" → ") : trip.destination,
+      startDate: trip.startDate,
+      endDate: trip.endDate,
+      themes: trip.cards?.[0]?.themes ?? [],
+    };
+
+    try {
+      const res = await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) return;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n").filter((l) => l.startsWith("data: "));
+
+        for (const line of lines) {
+          const data = line.replace("data: ", "");
+          if (data === "[DONE]") break;
+
+          let parsed: { type: string; id?: string; tool?: string; input?: Record<string, unknown>; iteration?: number; events?: EventItem[]; message?: string };
+          try {
+            parsed = JSON.parse(data);
+          } catch {
+            continue;
+          }
+          if (parsed.type === "tool_call" && parsed.id && parsed.tool) {
+            setEventsTraces((prev) => ({
+              ...prev,
+              [trip.id]: [
+                ...(prev[trip.id] ?? []),
+                { id: parsed.id!, iteration: parsed.iteration ?? 1, tool: parsed.tool!, input: parsed.input ?? {}, status: "running" },
+              ],
+            }));
+          }
+          if (parsed.type === "tool_done" && parsed.id) {
+            setEventsTraces((prev) => ({
+              ...prev,
+              [trip.id]: (prev[trip.id] ?? []).map((entry) => (entry.id === parsed.id ? { ...entry, status: "done" } : entry)),
+            }));
+          }
+          if (parsed.type === "events" && parsed.events) {
+            const events: EventsResult = { generatedAt: new Date().toISOString(), events: parsed.events };
+            updateEvents(trip.id, events);
+            setTrips((prev) => prev.map((t) => (t.id === trip.id ? { ...t, events } : t)));
+          }
+        }
+      }
+    } catch {
+      // Generation failure is non-fatal — the panel simply shows no list and the button stays available to retry.
+    } finally {
+      setGeneratingEventsId(null);
+      setEventsTraces((prev) => ({ ...prev, [trip.id]: [] }));
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <nav className="bg-white border-b border-gray-100 px-6 py-4">
@@ -538,6 +611,13 @@ export default function SavedPage() {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => setOpenEventsId((prev) => (prev === trip.id ? null : trip.id))}
+                        >
+                          {openEventsId === trip.id ? "🎉 Schließen" : trip.events ? "🎉 Events ansehen" : "🎉 Events entdecken"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() =>
                             setExpanded((prev) =>
                               prev === trip.id ? null : trip.id
@@ -675,6 +755,52 @@ export default function SavedPage() {
                           </p>
                           <Button size="sm" onClick={() => generateBriefing(trip)}>
                             📋 Briefing erstellen
+                          </Button>
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
+
+                  {openEventsId === trip.id && (
+                    <div className="border-t border-gray-100 p-6 bg-gray-50/50">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                          Events Agent
+                        </p>
+                        {trip.events && (
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-gray-400">
+                              erstellt am {formatCheckedDate(trip.events.generatedAt)}
+                            </span>
+                            <button
+                              onClick={() => generateEvents(trip)}
+                              disabled={generatingEventsId !== null}
+                              className="text-xs font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
+                            >
+                              🔄 Neu suchen
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {generatingEventsId === trip.id && (
+                        <div className="mb-4">
+                          <AgentTrace trace={eventsTraces[trip.id] ?? []} />
+                          {(eventsTraces[trip.id]?.length ?? 0) === 0 && (
+                            <p className="text-sm text-gray-400">Programm wird recherchiert…</p>
+                          )}
+                        </div>
+                      )}
+
+                      {trip.events ? (
+                        <EventsList events={trip.events.events} />
+                      ) : generatingEventsId !== trip.id ? (
+                        <div className="text-center py-6">
+                          <p className="text-sm text-gray-500 mb-4">
+                            Finde heraus, was während deiner Reise vor Ort los ist — Festivals, Ausstellungen, Märkte und saisonale Highlights.
+                          </p>
+                          <Button size="sm" onClick={() => generateEvents(trip)}>
+                            🎉 Events entdecken
                           </Button>
                         </div>
                       ) : null}

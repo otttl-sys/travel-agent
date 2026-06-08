@@ -1,5 +1,6 @@
 import type { DaySchedule } from "@/components/day-timeline";
 import type { BriefingSection } from "@/components/briefing-card";
+import type { EventItem } from "@/components/events-list";
 
 export type PriceWatch = {
   lastChecked: string;
@@ -15,6 +16,11 @@ export type DayPlan = {
 export type Briefing = {
   generatedAt: string;
   sections: BriefingSection[];
+};
+
+export type EventsResult = {
+  generatedAt: string;
+  events: EventItem[];
 };
 
 export type SavedTrip = {
@@ -33,6 +39,7 @@ export type SavedTrip = {
   priceWatch?: PriceWatch;
   dayPlan?: DayPlan;
   briefing?: Briefing;
+  events?: EventsResult;
 };
 
 const KEY = "ta_saved_trips";
@@ -73,5 +80,10 @@ export function updateDayPlan(id: string, dayPlan: DayPlan): void {
 
 export function updateBriefing(id: string, briefing: Briefing): void {
   const trips = getSavedTrips().map((t) => (t.id === id ? { ...t, briefing } : t));
+  localStorage.setItem(KEY, JSON.stringify(trips));
+}
+
+export function updateEvents(id: string, events: EventsResult): void {
+  const trips = getSavedTrips().map((t) => (t.id === id ? { ...t, events } : t));
   localStorage.setItem(KEY, JSON.stringify(trips));
 }
