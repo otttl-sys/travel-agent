@@ -149,51 +149,47 @@ Recherchiere zuerst gezielt nach datumsgebundenen Veranstaltungen in genau diese
                 encoder.encode(`data: ${JSON.stringify({ type: "tool_call", id: "events", tool: "generate_events_list", input: { destination }, iteration: iterations + 1 })}\n\n`)
               );
 
-              const eventsResponse = await client.messages.create({
-                model: "claude-sonnet-4-6",
-                max_tokens: 8192,
-                tool_choice: { type: "any" },
-                tools: [eventsTool],
-                messages: [
-                  ...messages,
-                  { role: "assistant", content: finalMessage.content },
-                  {
-                    role: "user",
-                    content: "Erstelle jetzt die finale Liste mit generate_events_list — 3-6 Einträge, auf Deutsch, ehrlich recherchiert vs. saisonal gekennzeichnet.",
-                  },
-                ],
-              });
+              let result: unknown;
+              const baseInstruction = "Erstelle jetzt die finale Liste mit generate_events_list — 3-6 Einträge, auf Deutsch, ehrlich recherchiert vs. saisonal gekennzeichnet.";
+              const retryInstruction = "Achtung: 'events' muss ein natives JSON-Array von Objekten sein — NICHT als String/Text serialisiert. Erstelle die Liste erneut, diesmal mit 'events' als echtem Array.";
+
+              for (let attempt = 0; attempt < 2 && !(Array.isArray(result) && result.length > 0); attempt++) {
+                const eventsResponse = await client.messages.create({
+                  model: "claude-sonnet-4-6",
+                  max_tokens: 8192,
+                  tool_choice: { type: "any" },
+                  tools: [eventsTool],
+                  messages: [
+                    ...messages,
+                    { role: "assistant", content: finalMessage.content },
+                    { role: "user", content: attempt === 0 ? baseInstruction : retryInstruction },
+                  ],
+                });
+
+                const eventsBlock = eventsResponse.content.find(
+                  (b): b is Anthropic.ToolUseBlock => b.type === "tool_use" && b.name === "generate_events_list"
+                );
+                result = eventsBlock ? (eventsBlock.input as { events?: unknown }).events : undefined;
+                if (typeof result === "string") {
+                  try {
+                    result = JSON.parse(result);
+                  } catch {
+                    // leave as-is — loop will retry or fall through to the error branch
+                  }
+                }
+              }
 
               controller.enqueue(
                 encoder.encode(`data: ${JSON.stringify({ type: "tool_done", id: "events", tool: "generate_events_list" })}\n\n`)
               );
 
-              const eventsBlock = eventsResponse.content.find(
-                (b): b is Anthropic.ToolUseBlock => b.type === "tool_use" && b.name === "generate_events_list"
-              );
-              let result: unknown = eventsBlock ? (eventsBlock.input as { events?: unknown }).events : undefined;
-              let parseError: string | null = null;
-              if (typeof result === "string") {
-                try {
-                  result = JSON.parse(result);
-                } catch (e) {
-                  parseError = e instanceof Error ? e.message : String(e);
-                }
-              }
               if (Array.isArray(result) && result.length > 0) {
                 controller.enqueue(
                   encoder.encode(`data: ${JSON.stringify({ type: "events", events: result })}\n\n`)
                 );
               } else {
-                const raw = eventsBlock ? (eventsBlock.input as { events?: unknown }).events : undefined;
-                const debug = {
-                  rawType: typeof raw,
-                  rawLength: typeof raw === "string" ? raw.length : Array.isArray(raw) ? raw.length : null,
-                  parseError,
-                  tail: typeof raw === "string" ? raw.slice(-300) : null,
-                };
                 controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify({ type: "error", message: `Events konnten nicht ermittelt werden. DEBUG2: ${JSON.stringify(debug)}` })}\n\n`)
+                  encoder.encode(`data: ${JSON.stringify({ type: "error", message: "Events konnten nicht ermittelt werden." })}\n\n`)
                 );
               }
             } catch (err) {
