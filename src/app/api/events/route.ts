@@ -177,8 +177,14 @@ Recherchiere zuerst gezielt nach datumsgebundenen Veranstaltungen in genau diese
                   encoder.encode(`data: ${JSON.stringify({ type: "events", events: result })}\n\n`)
                 );
               } else {
+                const debug = {
+                  stop_reason: eventsResponse.stop_reason,
+                  blocks: eventsResponse.content.map((b) =>
+                    b.type === "tool_use" ? { type: b.type, name: b.name, inputKeys: Object.keys(b.input as object) } : { type: b.type, text: b.type === "text" ? b.text.slice(0, 300) : undefined }
+                  ),
+                };
                 controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify({ type: "error", message: "Events konnten nicht ermittelt werden." })}\n\n`)
+                  encoder.encode(`data: ${JSON.stringify({ type: "error", message: `Events konnten nicht ermittelt werden. DEBUG: ${JSON.stringify(debug)}` })}\n\n`)
                 );
               }
             } catch (err) {
