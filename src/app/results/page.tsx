@@ -112,30 +112,119 @@ export default function ResultsPage() {
   );
 }
 
-const loadingStepsSingle = [
-  "Orchestrator Agent startet...",
-  "Flight Agent sucht beste Verbindungen...",
-  "Hotel Agent prüft Verfügbarkeiten...",
-  "Activity Agent plant Erlebnisse...",
-  "Budget Agent optimiert Kosten...",
-  "Reisepläne werden zusammengestellt...",
-];
+type TraceEntry = {
+  id: string;
+  iteration: number;
+  tool: string;
+  input: Record<string, unknown>;
+  status: "running" | "done";
+};
 
-const loadingStepsMulti = [
-  "Multi-City Agent startet...",
-  "Flüge für alle Legs werden gesucht...",
-  "Hotels werden für jede Stadt geplant...",
-  "Aktivitäten pro Stadt werden recherchiert...",
-  "Gesamtbudget wird optimiert...",
-  "Kompletter Reiseplan wird erstellt...",
-];
+const AGENT_META: Record<string, { agent: string; icon: string }> = {
+  search_flights: { agent: "Flight Agent", icon: "✈️" },
+  search_hotels: { agent: "Hotel Agent", icon: "🏨" },
+  get_activities: { agent: "Activity Agent", icon: "🎒" },
+  optimize_budget: { agent: "Budget Agent", icon: "💰" },
+  search_flight_leg: { agent: "Flight Agent", icon: "✈️" },
+  plan_city_stop: { agent: "City Agent", icon: "🏙️" },
+  optimize_total_budget: { agent: "Budget Agent", icon: "💰" },
+  generate_trip_cards: { agent: "Card Designer", icon: "🎴" },
+};
+
+function formatToolParams(tool: string, input: Record<string, unknown>): string {
+  const str = (v: unknown) => (v === null || v === undefined || v === "" ? null : String(v));
+  const range = (a: unknown, b: unknown) => [str(a), str(b)].filter(Boolean).join("–") || null;
+  const list = (v: unknown) => (Array.isArray(v) && v.length > 0 ? v.join(", ") : null);
+  const route = (a: unknown, b: unknown) => (str(a) && str(b) ? `${str(a)} → ${str(b)}` : str(b));
+  const days = (v: unknown) => (str(v) ? `${v} Tage` : null);
+  const pax = (v: unknown) => (str(v) ? `${v} Reisende` : null);
+
+  let parts: (string | null)[];
+  switch (tool) {
+    case "search_flights":
+      parts = [route(input.origin, input.destination), range(input.departure_date, input.return_date), pax(input.travelers)];
+      break;
+    case "search_hotels":
+      parts = [str(input.destination), range(input.check_in, input.check_out), str(input.style)];
+      break;
+    case "get_activities":
+      parts = [str(input.destination), days(input.duration_days), list(input.interests)];
+      break;
+    case "optimize_budget":
+      parts = [str(input.destination), str(input.budget_per_person) ? `€${input.budget_per_person} p.P.` : null, pax(input.travelers)];
+      break;
+    case "search_flight_leg":
+      parts = [route(input.origin, input.destination), str(input.date), pax(input.travelers)];
+      break;
+    case "plan_city_stop":
+      parts = [str(input.city), days(input.duration_days), str(input.style) ?? list(input.interests)];
+      break;
+    case "optimize_total_budget":
+      parts = [list(input.cities), str(input.total_days) ? `${input.total_days} Tage gesamt` : null, str(input.budget_per_person) ? `€${input.budget_per_person} p.P.` : null];
+      break;
+    case "generate_trip_cards":
+      parts = [str(input.destination), "3 Varianten"];
+      break;
+    default:
+      parts = Object.values(input).slice(0, 3).map(str);
+  }
+  return parts.filter((p): p is string => Boolean(p)).join(" · ");
+}
+
+function AgentTrace({ trace }: { trace: TraceEntry[] }) {
+  if (trace.length === 0) return null;
+  const rounds = Array.from(new Set(trace.map((t) => t.iteration))).sort((a, b) => a - b);
+
+  return (
+    <div className="space-y-4">
+      {rounds.map((round) => {
+        const entries = trace.filter((t) => t.iteration === round);
+        return (
+          <div key={round}>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">
+              Runde {round}
+              {entries.length > 1 ? " — parallel ausgeführt" : ""}
+            </p>
+            <div className="space-y-1.5">
+              {entries.map((entry) => {
+                const meta = AGENT_META[entry.tool] ?? { agent: entry.tool, icon: "🤖" };
+                const params = formatToolParams(entry.tool, entry.input);
+                return (
+                  <div key={entry.id} className="flex items-start gap-2.5 rounded-lg bg-gray-50 px-3 py-2 text-sm">
+                    <span className="text-base leading-none shrink-0 mt-0.5">{meta.icon}</span>
+                    <div className="min-w-0 flex-1">
+                      <span className="font-medium text-gray-700">{meta.agent}</span>
+                      <span className="text-gray-400"> · </span>
+                      <span className="text-gray-500 break-words">
+                        {entry.tool}
+                        {params ? `(${params})` : ""}
+                      </span>
+                    </div>
+                    <span className="ml-auto shrink-0 pl-2 mt-1">
+                      {entry.status === "running" ? (
+                        <span className="inline-block h-2 w-2 rounded-full bg-indigo-400 animate-pulse" aria-label="läuft" />
+                      ) : (
+                        <span className="text-green-600 text-xs font-bold" aria-label="fertig">✓</span>
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 function ResultsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
-  const [loadingStep, setLoadingStep] = useState(0);
+  const [trace, setTrace] = useState<TraceEntry[]>([]);
+  const [showTrace, setShowTrace] = useState(false);
   const [aiResult, setAiResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [toolCounts, setToolCounts] = useState({ search_flights: 0, search_hotels: 0, get_activities: 0, optimize_budget: 0, search_flight_leg: 0, plan_city_stop: 0, optimize_total_budget: 0 });
@@ -160,7 +249,6 @@ function ResultsContent() {
     setSaved(true);
   }
   const isMultiCity = searchParams.get("multiCity") === "1";
-  const loadingSteps = isMultiCity ? loadingStepsMulti : loadingStepsSingle;
   const citiesParam = searchParams.get("cities") || "";
   const cityDaysParam = searchParams.get("cityDays") || "";
   const cityNames = isMultiCity ? citiesParam.split(",").filter(Boolean) : [];
@@ -186,18 +274,8 @@ function ResultsContent() {
           budget,
         };
 
-    let stepIndex = 0;
-
     const progressInterval = setInterval(() => {
-      setProgress((p) => {
-        const next = Math.min(p + 1.5, 90);
-        const newStep = Math.floor((next / 100) * loadingSteps.length);
-        if (newStep !== stepIndex && newStep < loadingSteps.length) {
-          stepIndex = newStep;
-          setLoadingStep(newStep);
-        }
-        return next;
-      });
+      setProgress((p) => Math.min(p + 1.5, 90));
     }, 200);
 
     fetch("/api/plan", {
@@ -209,6 +287,7 @@ function ResultsContent() {
       const reader = res.body?.getReader();
       const decoder = new TextDecoder();
       let result = "";
+      let agentsStarted = false;
 
       if (!reader) return;
 
@@ -223,7 +302,7 @@ function ResultsContent() {
           const data = line.replace("data: ", "");
           if (data === "[DONE]") break;
 
-          let parsed: { type: string; tool?: string; text?: string; message?: string; cards?: Trip[] };
+          let parsed: { type: string; id?: string; tool?: string; input?: Record<string, unknown>; iteration?: number; text?: string; message?: string; cards?: Trip[] };
           try {
             parsed = JSON.parse(data);
           } catch {
@@ -234,21 +313,28 @@ function ResultsContent() {
             setLoading(false);
             break;
           }
-          if (parsed.type === "tool_call") {
-            const toolIdx = loadingSteps.findIndex((s) =>
-              s.toLowerCase().includes((parsed.tool ?? "").split("_")[1] || "")
-            );
-            if (toolIdx >= 0) setLoadingStep(toolIdx);
+          if (parsed.type === "tool_call" && parsed.id && parsed.tool) {
+            agentsStarted = true;
+            setTrace((prev) => [
+              ...prev,
+              { id: parsed.id!, iteration: parsed.iteration ?? 1, tool: parsed.tool!, input: parsed.input ?? {}, status: "running" },
+            ]);
             const tool = parsed.tool as keyof typeof toolCounts;
             if (tool in toolCounts) {
               setToolCounts((prev) => ({ ...prev, [tool]: prev[tool] + 1 }));
             }
           }
+          if (parsed.type === "tool_done" && parsed.id) {
+            setTrace((prev) => prev.map((entry) => (entry.id === parsed.id ? { ...entry, status: "done" } : entry)));
+          }
           if (parsed.type === "token") {
             // Streaming token — show result panel immediately, append tokens live
             result += parsed.text ?? "";
             setAiResult(result);
-            if (loading) {
+            // Wait until the agents have actually started before leaving the loading
+            // screen — otherwise a short intro sentence Claude streams before calling
+            // its tools would flip us to results before the live trace ever appears.
+            if (loading && agentsStarted) {
               setProgress(100);
               setLoading(false);
             }
@@ -263,7 +349,6 @@ function ResultsContent() {
       }
 
       setProgress(100);
-      setLoadingStep(loadingSteps.length - 1);
       setTimeout(() => {
         setAiResult(result);
         setLoading(false);
@@ -278,8 +363,8 @@ function ResultsContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6">
-        <div className="w-full max-w-md text-center">
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6 py-12">
+        <div className="w-full max-w-lg text-center">
           <div className="text-5xl mb-6 animate-pulse">🤖</div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">AI analysiert deine Reise</h2>
           <p className="text-gray-500 text-sm mb-8">
@@ -289,22 +374,12 @@ function ResultsContent() {
             <Progress value={progress} className="h-2" />
             <p className="text-xs text-gray-400">{progress}%</p>
           </div>
-          <div className="space-y-2">
-            {loadingSteps.map((step, i) => (
-              <div
-                key={step}
-                className={`flex items-center gap-3 text-sm transition-all duration-300 ${
-                  i < loadingStep
-                    ? "text-green-600"
-                    : i === loadingStep
-                    ? "text-indigo-600 font-medium"
-                    : "text-gray-300"
-                }`}
-              >
-                <span>{i < loadingStep ? "✓" : i === loadingStep ? "→" : "○"}</span>
-                <span>{step}</span>
-              </div>
-            ))}
+          <div className="text-left">
+            {trace.length > 0 ? (
+              <AgentTrace trace={trace} />
+            ) : (
+              <p className="text-sm text-gray-400 text-center">Orchestrator Agent startet…</p>
+            )}
           </div>
         </div>
       </div>
@@ -471,6 +546,22 @@ function ResultsContent() {
                 </div>
               ))}
             </div>
+            {trace.length > 0 && (
+              <div className="mt-5 pt-5 border-t border-gray-100">
+                <button
+                  onClick={() => setShowTrace((v) => !v)}
+                  className="text-sm font-medium text-indigo-600 hover:text-indigo-700 flex items-center gap-1.5"
+                >
+                  {showTrace ? "Agent-Protokoll ausblenden" : "Agent-Protokoll anzeigen"}
+                  <span className={`transition-transform ${showTrace ? "rotate-180" : ""}`}>▾</span>
+                </button>
+                {showTrace && (
+                  <div className="mt-4">
+                    <AgentTrace trace={trace} />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </main>

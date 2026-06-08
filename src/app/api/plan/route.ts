@@ -308,18 +308,6 @@ Erstelle dann einen konkreten, strukturierten Reisevorschlag auf Deutsch.
             );
           });
 
-          // Also forward tool_call events immediately
-          stream.on("streamEvent", (event) => {
-            if (
-              event.type === "content_block_start" &&
-              event.content_block.type === "tool_use"
-            ) {
-              controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify({ type: "tool_call", tool: event.content_block.name })}\n\n`)
-              );
-            }
-          });
-
           // Wait for full message (needed for tool_use input blocks)
           const finalMessage = await stream.finalMessage();
 
@@ -331,13 +319,22 @@ Erstelle dann einen konkreten, strukturierten Reisevorschlag auf Deutsch.
             messages.push({ role: "assistant", content: finalMessage.content });
 
             const toolResults: Anthropic.ToolResultBlockParam[] = await Promise.all(
-              toolUseBlocks.map(async (toolUse) => ({
-                type: "tool_result" as const,
-                tool_use_id: toolUse.id,
-                content: isMultiCity
+              toolUseBlocks.map(async (toolUse) => {
+                controller.enqueue(
+                  encoder.encode(`data: ${JSON.stringify({ type: "tool_call", id: toolUse.id, tool: toolUse.name, input: toolUse.input, iteration: iterations })}\n\n`)
+                );
+                const content = isMultiCity
                   ? await executeMultiCityTool(toolUse.name, toolUse.input as Record<string, unknown>)
-                  : await executeTool(toolUse.name, toolUse.input as Record<string, unknown>),
-              }))
+                  : await executeTool(toolUse.name, toolUse.input as Record<string, unknown>);
+                controller.enqueue(
+                  encoder.encode(`data: ${JSON.stringify({ type: "tool_done", id: toolUse.id, tool: toolUse.name })}\n\n`)
+                );
+                return {
+                  type: "tool_result" as const,
+                  tool_use_id: toolUse.id,
+                  content,
+                };
+              })
             );
 
             messages.push({ role: "user", content: toolResults });
@@ -418,6 +415,10 @@ Erstelle dann einen konkreten, strukturierten Reisevorschlag auf Deutsch.
                   },
                 };
 
+                controller.enqueue(
+                  encoder.encode(`data: ${JSON.stringify({ type: "tool_call", id: "cards", tool: "generate_trip_cards", input: { destination }, iteration: iterations + 1 })}\n\n`)
+                );
+
                 const cardResponse = await client.messages.create({
                   model: "claude-sonnet-4-6",
                   max_tokens: 2048,
@@ -432,6 +433,10 @@ Erstelle dann einen konkreten, strukturierten Reisevorschlag auf Deutsch.
                     },
                   ],
                 });
+
+                controller.enqueue(
+                  encoder.encode(`data: ${JSON.stringify({ type: "tool_done", id: "cards", tool: "generate_trip_cards" })}\n\n`)
+                );
 
                 const cardBlock = cardResponse.content.find(
                   (b): b is Anthropic.ToolUseBlock => b.type === "tool_use" && b.name === "generate_trip_cards"
