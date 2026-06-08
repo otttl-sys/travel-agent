@@ -52,7 +52,9 @@ Für jeden Eintrag:
 - name: Name der Veranstaltung ODER eine ehrliche Bezeichnung des saisonalen Brauchs (z. B. "Herbstmarkt-Saison in der Altstadt")
 - dates: konkretes recherchiertes Datum, ODER bei saisonalen Einträgen eine Zeitraum-Formulierung wie "üblicherweise im Oktober" / "während deines gesamten Aufenthalts"
 - category: Festival / Ausstellung / Konzert / Markt / Saisonal / Sport / Tradition
-- description: 2-3 Sätze Fließtext auf Deutsch, OHNE Markdown — was es ist, warum es sich lohnt, ggf. praktischer Hinweis`;
+- description: 2-3 Sätze Fließtext auf Deutsch, OHNE Markdown — was es ist, warum es sich lohnt, ggf. praktischer Hinweis
+
+WICHTIG für saubere Daten: Verwende in name, dates, category und description KEINE Anführungszeichen (weder „ " noch ' " oder "") — auch nicht für Eigennamen, Mottos oder Zitate. Schreibe Titel und Mottos ohne umschließende Anführungszeichen oder paraphrasiere sie (z. B. "unter dem Motto All Rise" statt 'unter dem Motto „All Rise"').`;
 
 export async function POST(req: NextRequest) {
   const { destination, startDate, endDate, themes } = await req.json() as {
@@ -150,10 +152,15 @@ Recherchiere zuerst gezielt nach datumsgebundenen Veranstaltungen in genau diese
               );
 
               let result: unknown;
-              const baseInstruction = "Erstelle jetzt die finale Liste mit generate_events_list — 3-6 Einträge, auf Deutsch, ehrlich recherchiert vs. saisonal gekennzeichnet.";
-              const retryInstruction = "Achtung: 'events' muss ein natives JSON-Array von Objekten sein — NICHT als String/Text serialisiert. Erstelle die Liste erneut, diesmal mit 'events' als echtem Array.";
+              let lastError: string | null = null;
+              const baseInstruction = "Erstelle jetzt die finale Liste mit generate_events_list — 3-6 Einträge, auf Deutsch, ehrlich recherchiert vs. saisonal gekennzeichnet. 'events' muss ein natives JSON-Array von Objekten sein (kein String). Verwende in den Texten keine Anführungszeichen.";
 
-              for (let attempt = 0; attempt < 2 && !(Array.isArray(result) && result.length > 0); attempt++) {
+              for (let attempt = 0; attempt < 3 && !(Array.isArray(result) && result.length > 0); attempt++) {
+                const instruction =
+                  attempt === 0
+                    ? baseInstruction
+                    : `Der vorherige Versuch war ungültig (${lastError}). 'events' muss ein natives JSON-Array von Objekten sein — kein String, kein zusätzliches Escaping, und keine Anführungszeichen in den Texten. Erstelle die Liste jetzt erneut, korrekt strukturiert.`;
+
                 const eventsResponse = await client.messages.create({
                   model: "claude-sonnet-4-6",
                   max_tokens: 8192,
@@ -162,7 +169,7 @@ Recherchiere zuerst gezielt nach datumsgebundenen Veranstaltungen in genau diese
                   messages: [
                     ...messages,
                     { role: "assistant", content: finalMessage.content },
-                    { role: "user", content: attempt === 0 ? baseInstruction : retryInstruction },
+                    { role: "user", content: instruction },
                   ],
                 });
 
@@ -173,9 +180,12 @@ Recherchiere zuerst gezielt nach datumsgebundenen Veranstaltungen in genau diese
                 if (typeof result === "string") {
                   try {
                     result = JSON.parse(result);
-                  } catch {
-                    // leave as-is — loop will retry or fall through to the error branch
+                  } catch (e) {
+                    lastError = e instanceof Error ? e.message : "ungültiges JSON";
+                    result = undefined;
                   }
+                } else if (!Array.isArray(result) || result.length === 0) {
+                  lastError = "'events' fehlt oder ist leer";
                 }
               }
 
