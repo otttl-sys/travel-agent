@@ -5,9 +5,10 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getSavedTrips, deleteTrip, updatePriceWatch, type SavedTrip, type PriceWatch } from "@/lib/saved-trips";
+import { getSavedTrips, deleteTrip, updatePriceWatch, updateDayPlan, type SavedTrip, type PriceWatch, type DayPlan } from "@/lib/saved-trips";
 import { AgentTrace, type TraceEntry } from "@/components/agent-trace";
 import { ConciergeChat, type ChatMessage } from "@/components/concierge-chat";
+import { DayTimeline, type DaySchedule } from "@/components/day-timeline";
 
 const TREND_META: Record<PriceWatch["trend"], { emoji: string; label: string }> = {
   down: { emoji: "📉", label: "Wirkt günstiger" },
@@ -39,6 +40,10 @@ export default function SavedPage() {
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<Record<string, ChatMessage[]>>({});
   const [conciergeTraces, setConciergeTraces] = useState<Record<string, TraceEntry[]>>({});
+
+  const [openItineraryId, setOpenItineraryId] = useState<string | null>(null);
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [itineraryTraces, setItineraryTraces] = useState<Record<string, TraceEntry[]>>({});
 
   useEffect(() => {
     setTrips(getSavedTrips());
@@ -231,6 +236,74 @@ export default function SavedPage() {
     }
   }
 
+  async function generateItinerary(trip: SavedTrip) {
+    if (generatingId) return;
+    setGeneratingId(trip.id);
+    setItineraryTraces((prev) => ({ ...prev, [trip.id]: [] }));
+
+    const card = trip.cards?.[0];
+    const body = {
+      destination: trip.isMultiCity ? trip.cities.join(" → ") : trip.destination,
+      themes: card?.themes ?? [],
+      itinerary: card?.itinerary ?? [],
+    };
+
+    try {
+      const res = await fetch("/api/itinerary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) return;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n").filter((l) => l.startsWith("data: "));
+
+        for (const line of lines) {
+          const data = line.replace("data: ", "");
+          if (data === "[DONE]") break;
+
+          let parsed: { type: string; id?: string; tool?: string; input?: Record<string, unknown>; iteration?: number; days?: DaySchedule[]; message?: string };
+          try {
+            parsed = JSON.parse(data);
+          } catch {
+            continue;
+          }
+          if (parsed.type === "tool_call" && parsed.id && parsed.tool) {
+            setItineraryTraces((prev) => ({
+              ...prev,
+              [trip.id]: [
+                ...(prev[trip.id] ?? []),
+                { id: parsed.id!, iteration: parsed.iteration ?? 1, tool: parsed.tool!, input: parsed.input ?? {}, status: "running" },
+              ],
+            }));
+          }
+          if (parsed.type === "tool_done" && parsed.id) {
+            setItineraryTraces((prev) => ({
+              ...prev,
+              [trip.id]: (prev[trip.id] ?? []).map((entry) => (entry.id === parsed.id ? { ...entry, status: "done" } : entry)),
+            }));
+          }
+          if (parsed.type === "schedule" && parsed.days) {
+            const dayPlan: DayPlan = { generatedAt: new Date().toISOString(), days: parsed.days };
+            updateDayPlan(trip.id, dayPlan);
+            setTrips((prev) => prev.map((t) => (t.id === trip.id ? { ...t, dayPlan } : t)));
+          }
+        }
+      }
+    } catch {
+      // Generation failure is non-fatal — the panel simply shows no plan and the button stays available to retry.
+    } finally {
+      setGeneratingId(null);
+      setItineraryTraces((prev) => ({ ...prev, [trip.id]: [] }));
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <nav className="bg-white border-b border-gray-100 px-6 py-4">
@@ -372,6 +445,13 @@ export default function SavedPage() {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => setOpenItineraryId((prev) => (prev === trip.id ? null : trip.id))}
+                        >
+                          {openItineraryId === trip.id ? "🗓️ Schließen" : trip.dayPlan ? "🗓️ Tagesplan ansehen" : "🗓️ Tagesplan erstellen"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() =>
                             setExpanded((prev) =>
                               prev === trip.id ? null : trip.id
@@ -416,6 +496,54 @@ export default function SavedPage() {
                         sending={sendingId === trip.id}
                         onSend={(text) => sendMessage(trip, text)}
                       />
+                    </div>
+                  )}
+
+                  {openItineraryId === trip.id && (
+                    <div className="border-t border-gray-100 p-6 bg-gray-50/50">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                          Day Planner Agent
+                        </p>
+                        {trip.dayPlan && (
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-gray-400">
+                              erstellt am {formatCheckedDate(trip.dayPlan.generatedAt)}
+                            </span>
+                            <button
+                              onClick={() => generateItinerary(trip)}
+                              disabled={generatingId !== null}
+                              className="text-xs font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
+                            >
+                              🔄 Neu erstellen
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {generatingId === trip.id && (
+                        <div className="mb-4">
+                          <AgentTrace trace={itineraryTraces[trip.id] ?? []} />
+                          {(itineraryTraces[trip.id]?.length ?? 0) === 0 && (
+                            <p className="text-sm text-gray-400">Tagesplan wird erstellt…</p>
+                          )}
+                        </div>
+                      )}
+
+                      {trip.dayPlan ? (
+                        <div className="rounded-lg bg-white border border-gray-100 p-5">
+                          <DayTimeline days={trip.dayPlan.days} />
+                        </div>
+                      ) : generatingId !== trip.id ? (
+                        <div className="text-center py-6">
+                          <p className="text-sm text-gray-500 mb-4">
+                            Lass dir aus dem groben Tagesprogramm einen realistischen Stunden-für-Stunde-Plan erstellen.
+                          </p>
+                          <Button size="sm" onClick={() => generateItinerary(trip)}>
+                            🗓️ Tagesplan erstellen
+                          </Button>
+                        </div>
+                      ) : null}
                     </div>
                   )}
 

@@ -1,7 +1,14 @@
+import type { DaySchedule } from "@/components/day-timeline";
+
 export type PriceWatch = {
   lastChecked: string;
   trend: "down" | "up" | "same";
   summary: string;
+};
+
+export type DayPlan = {
+  generatedAt: string;
+  days: DaySchedule[];
 };
 
 export type SavedTrip = {
@@ -18,6 +25,7 @@ export type SavedTrip = {
   cards: any[] | null;
   savedAt: string;
   priceWatch?: PriceWatch;
+  dayPlan?: DayPlan;
 };
 
 const KEY = "ta_saved_trips";
@@ -48,5 +56,10 @@ export function deleteTrip(id: string): void {
 
 export function updatePriceWatch(id: string, priceWatch: PriceWatch): void {
   const trips = getSavedTrips().map((t) => (t.id === id ? { ...t, priceWatch } : t));
+  localStorage.setItem(KEY, JSON.stringify(trips));
+}
+
+export function updateDayPlan(id: string, dayPlan: DayPlan): void {
+  const trips = getSavedTrips().map((t) => (t.id === id ? { ...t, dayPlan } : t));
   localStorage.setItem(KEY, JSON.stringify(trips));
 }
