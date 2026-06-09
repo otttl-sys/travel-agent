@@ -83,7 +83,45 @@ function fromRow(row: Record<string, any>): SavedTrip {
   };
 }
 
+// One-time migration: import any trips still in localStorage into Supabase
+async function migrateFromLocalStorage(): Promise<void> {
+  if (typeof window === 'undefined') return;
+  const raw = localStorage.getItem('ta_saved_trips');
+  if (!raw) return;
+  let local: SavedTrip[];
+  try { local = JSON.parse(raw); } catch { return; }
+  if (!local.length) return;
+
+  const { data: existing } = await supabase.from('trips').select('id');
+  const existingIds = new Set((existing ?? []).map((r: { id: string }) => r.id));
+  const toInsert = local.filter(t => !existingIds.has(t.id));
+
+  if (toInsert.length) {
+    await supabase.from('trips').insert(toInsert.map(t => ({
+      id: t.id,
+      destination: t.destination,
+      is_multi_city: t.isMultiCity,
+      cities: t.cities,
+      start_date: t.startDate,
+      end_date: t.endDate,
+      travelers: t.travelers,
+      budget: t.budget,
+      ai_result: t.aiResult,
+      cards: t.cards,
+      saved_at: t.savedAt,
+      price_watch: t.priceWatch ?? null,
+      day_plan: t.dayPlan ?? null,
+      briefing: t.briefing ?? null,
+      events: t.events ?? null,
+      visa: t.visa ?? null,
+      budget_result: t.budgetResult ?? null,
+    })));
+  }
+  localStorage.removeItem('ta_saved_trips');
+}
+
 export async function getSavedTrips(): Promise<SavedTrip[]> {
+  await migrateFromLocalStorage();
   const { data, error } = await supabase
     .from('trips')
     .select('*')
