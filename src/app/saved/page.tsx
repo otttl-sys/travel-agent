@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getSavedTrips, deleteTrip, updatePriceWatch, updateDayPlan, updateBriefing, updateEvents, updateVisa, updateBudget, type SavedTrip, type PriceWatch, type DayPlan, type Briefing, type EventsResult, type VisaResult, type BudgetResult } from "@/lib/saved-trips";
@@ -429,7 +430,7 @@ export default function SavedPage() {
                             {trip.isMultiCity && <Badge variant="secondary" className="text-xs shrink-0">Multi-City</Badge>}
                           </div>
                           <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500 mt-1">
-                            {trip.startDate && <span>📅 {trip.startDate}{trip.endDate ? ` → ${trip.endDate}` : ""}</span>}
+                            {trip.startDate && <span>📅 {formatDate(trip.startDate)}{trip.endDate ? ` → ${formatDate(trip.endDate)}` : ""}</span>}
                             <span>👥 {trip.travelers} {trip.travelers === 1 ? "person" : "people"}</span>
                             <span>💶 €{trip.budget.toLocaleString()} / person</span>
                             <span className="text-gray-400">Saved {new Date(trip.savedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
@@ -498,7 +499,7 @@ export default function SavedPage() {
                         {tab === "plan" && (
                           trip.aiResult ? (
                             <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed">
-                              <ReactMarkdown>{trip.aiResult}</ReactMarkdown>
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>{trip.aiResult}</ReactMarkdown>
                             </div>
                           ) : (
                             <p className="text-sm text-gray-400 text-center py-6">No plan content saved.</p>
