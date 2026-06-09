@@ -5,13 +5,14 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getSavedTrips, deleteTrip, updatePriceWatch, updateDayPlan, updateBriefing, updateEvents, updateVisa, type SavedTrip, type PriceWatch, type DayPlan, type Briefing, type EventsResult, type VisaResult } from "@/lib/saved-trips";
+import { getSavedTrips, deleteTrip, updatePriceWatch, updateDayPlan, updateBriefing, updateEvents, updateVisa, updateBudget, type SavedTrip, type PriceWatch, type DayPlan, type Briefing, type EventsResult, type VisaResult, type BudgetResult } from "@/lib/saved-trips";
 import { AgentTrace, type TraceEntry } from "@/components/agent-trace";
 import { ConciergeChat, type ChatMessage } from "@/components/concierge-chat";
 import { DayTimeline, type DaySchedule } from "@/components/day-timeline";
 import { BriefingCard, type BriefingSection } from "@/components/briefing-card";
 import { EventsList, type EventItem } from "@/components/events-list";
 import { VisaCard, type VisaRequirement, type EVisaAction } from "@/components/visa-card";
+import { BudgetBreakdown, type BudgetLine } from "@/components/budget-breakdown";
 
 const TREND_META: Record<PriceWatch["trend"], { emoji: string; label: string }> = {
   down: { emoji: "📉", label: "Wirkt günstiger" },
@@ -60,6 +61,10 @@ export default function SavedPage() {
   const [generatingVisaId, setGeneratingVisaId] = useState<string | null>(null);
   const [visaTraces, setVisaTraces] = useState<Record<string, TraceEntry[]>>({});
   const [visaPassport, setVisaPassport] = useState<Record<string, string>>({});
+
+  const [openBudgetId, setOpenBudgetId] = useState<string | null>(null);
+  const [generatingBudgetId, setGeneratingBudgetId] = useState<string | null>(null);
+  const [budgetTraces, setBudgetTraces] = useState<Record<string, TraceEntry[]>>({});
 
   useEffect(() => {
     setTrips(getSavedTrips());
@@ -462,6 +467,84 @@ export default function SavedPage() {
     }
   }
 
+  async function generateBudget(trip: SavedTrip) {
+    if (generatingBudgetId) return;
+    setGeneratingBudgetId(trip.id);
+    setBudgetTraces((prev) => ({ ...prev, [trip.id]: [] }));
+
+    const body = {
+      destination: trip.isMultiCity ? trip.cities.join(" → ") : trip.destination,
+      startDate: trip.startDate,
+      endDate: trip.endDate,
+      travelers: trip.travelers,
+      budget: trip.budget,
+    };
+
+    try {
+      const res = await fetch("/api/budget", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) return;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n").filter((l) => l.startsWith("data: "));
+
+        for (const line of lines) {
+          const data = line.replace("data: ", "");
+          if (data === "[DONE]") break;
+
+          let parsed: { type: string; id?: string; tool?: string; input?: Record<string, unknown>; iteration?: number; lines?: BudgetLine[]; totalPerPerson?: number; totalAll?: number; verdict?: string; verdictNote?: string; message?: string };
+          try {
+            parsed = JSON.parse(data);
+          } catch {
+            continue;
+          }
+          if (parsed.type === "tool_call" && parsed.id && parsed.tool) {
+            setBudgetTraces((prev) => ({
+              ...prev,
+              [trip.id]: [
+                ...(prev[trip.id] ?? []),
+                { id: parsed.id!, iteration: parsed.iteration ?? 1, tool: parsed.tool!, input: parsed.input ?? {}, status: "running" },
+              ],
+            }));
+          }
+          if (parsed.type === "tool_done" && parsed.id) {
+            setBudgetTraces((prev) => ({
+              ...prev,
+              [trip.id]: (prev[trip.id] ?? []).map((entry) => (entry.id === parsed.id ? { ...entry, status: "done" } : entry)),
+            }));
+          }
+          if (parsed.type === "budget" && parsed.lines) {
+            const budgetResult: BudgetResult = {
+              generatedAt: new Date().toISOString(),
+              estimate: {
+                lines: parsed.lines,
+                totalPerPerson: parsed.totalPerPerson ?? 0,
+                totalAll: parsed.totalAll ?? 0,
+                verdict: (parsed.verdict as BudgetResult["estimate"]["verdict"]) ?? "tight",
+                verdictNote: parsed.verdictNote ?? "",
+              },
+            };
+            updateBudget(trip.id, budgetResult);
+            setTrips((prev) => prev.map((t) => (t.id === trip.id ? { ...t, budgetResult } : t)));
+          }
+        }
+      }
+    } catch {
+      // Generation failure is non-fatal.
+    } finally {
+      setGeneratingBudgetId(null);
+      setBudgetTraces((prev) => ({ ...prev, [trip.id]: [] }));
+    }
+  }
+
   async function generateVisa(trip: SavedTrip, passport: string) {
     if (generatingVisaId) return;
     setGeneratingVisaId(trip.id);
@@ -717,6 +800,13 @@ export default function SavedPage() {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => setOpenBudgetId((prev) => (prev === trip.id ? null : trip.id))}
+                        >
+                          {openBudgetId === trip.id ? "💶 Close" : trip.budgetResult ? "💶 Budget Estimate" : "💶 Estimate Budget"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() =>
                             setExpanded((prev) =>
                               prev === trip.id ? null : trip.id
@@ -900,6 +990,58 @@ export default function SavedPage() {
                           </p>
                           <Button size="sm" onClick={() => generateEvents(trip)}>
                             🎉 Events entdecken
+                          </Button>
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
+
+                  {openBudgetId === trip.id && (
+                    <div className="border-t border-gray-100 p-6 bg-gray-50/50">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                          Budget Estimator Agent
+                        </p>
+                        {trip.budgetResult && (
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-gray-400">
+                              estimated {formatCheckedDate(trip.budgetResult.generatedAt)}
+                            </span>
+                            <button
+                              onClick={() => generateBudget(trip)}
+                              disabled={generatingBudgetId !== null}
+                              className="text-xs font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
+                            >
+                              🔄 Re-estimate
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {generatingBudgetId === trip.id && (
+                        <div className="mb-4">
+                          <AgentTrace trace={budgetTraces[trip.id] ?? []} />
+                          {(budgetTraces[trip.id]?.length ?? 0) === 0 && (
+                            <p className="text-sm text-gray-400">Researching current prices…</p>
+                          )}
+                        </div>
+                      )}
+
+                      {trip.budgetResult ? (
+                        <div className="rounded-lg bg-white border border-gray-100 p-5">
+                          <BudgetBreakdown
+                            estimate={trip.budgetResult.estimate}
+                            userBudget={trip.budget}
+                            travelers={trip.travelers}
+                          />
+                        </div>
+                      ) : generatingBudgetId !== trip.id ? (
+                        <div className="text-center py-6">
+                          <p className="text-sm text-gray-500 mb-4">
+                            Get a realistic cost breakdown for flights, hotel, food, activities, and transport — and see if your budget adds up.
+                          </p>
+                          <Button size="sm" onClick={() => generateBudget(trip)}>
+                            💶 Estimate Budget
                           </Button>
                         </div>
                       ) : null}

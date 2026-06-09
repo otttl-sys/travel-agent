@@ -2,6 +2,7 @@ import type { DaySchedule } from "@/components/day-timeline";
 import type { BriefingSection } from "@/components/briefing-card";
 import type { EventItem } from "@/components/events-list";
 import type { VisaRequirement, EVisaAction } from "@/components/visa-card";
+import type { BudgetEstimate } from "@/components/budget-breakdown";
 
 export type PriceWatch = {
   lastChecked: string;
@@ -22,6 +23,11 @@ export type Briefing = {
 export type EventsResult = {
   generatedAt: string;
   events: EventItem[];
+};
+
+export type BudgetResult = {
+  generatedAt: string;
+  estimate: BudgetEstimate;
 };
 
 export type VisaResult = {
@@ -50,6 +56,7 @@ export type SavedTrip = {
   briefing?: Briefing;
   events?: EventsResult;
   visa?: VisaResult;
+  budgetResult?: BudgetResult;
 };
 
 const KEY = "ta_saved_trips";
@@ -102,3 +109,9 @@ export function updateVisa(id: string, visa: VisaResult): void {
   const trips = getSavedTrips().map((t) => (t.id === id ? { ...t, visa } : t));
   localStorage.setItem(KEY, JSON.stringify(trips));
 }
+
+export function updateBudget(id: string, budgetResult: BudgetResult): void {
+  const trips = getSavedTrips().map((t) => (t.id === id ? { ...t, budgetResult } : t));
+  localStorage.setItem(KEY, JSON.stringify(trips));
+}
+
