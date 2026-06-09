@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { tavily } from "@tavily/core";
 import { NextRequest, NextResponse } from "next/server";
+import { geocode, searchNearby, type NearbyPlace } from "@/lib/google-maps";
 
 export const maxDuration = 300;
 
@@ -84,6 +85,19 @@ Recherchiere zuerst kurz die fehlenden Bausteine (Wetter, praktische Hinweise, g
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
+      // Fetch nearby places and emit immediately — independent of the briefing generation
+      let nearbyPlaces: NearbyPlace[] = [];
+      try {
+        const { latlng } = await geocode(destination ?? "");
+        const [attractions, restaurants, museums] = await Promise.all([
+          searchNearby(latlng, "tourist_attraction", 5),
+          searchNearby(latlng, "restaurant", 4),
+          searchNearby(latlng, "museum", 3),
+        ]);
+        nearbyPlaces = [...attractions, ...museums, ...restaurants];
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "nearby_places", places: nearbyPlaces })}\n\n`));
+      } catch { /* non-fatal */ }
+
       try {
         const messages: Anthropic.MessageParam[] = [{ role: "user", content: userMessage }];
         let continueLoop = true;
@@ -198,6 +212,7 @@ Recherchiere zuerst kurz die fehlenden Bausteine (Wetter, praktische Hinweise, g
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "error", message })}\n\n`));
       } finally {
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        void nearbyPlaces; // suppress unused warning
         controller.close();
       }
     },

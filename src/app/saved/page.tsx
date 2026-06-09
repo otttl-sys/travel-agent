@@ -15,6 +15,7 @@ import { EventsList, type EventItem } from "@/components/events-list";
 import { VisaCard, type VisaRequirement, type EVisaAction } from "@/components/visa-card";
 import { BudgetBreakdown, type BudgetLine } from "@/components/budget-breakdown";
 import { WeatherForecast, type WeatherResult } from "@/components/weather-forecast";
+import type { NearbyPlace } from "@/lib/google-maps";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -86,7 +87,9 @@ export default function SavedPage() {
   const [loadingWeatherId, setLoadingWeatherId] = useState<string | null>(null);
   const [weatherError, setWeatherError] = useState<Record<string, string>>({});
 
-  useEffect(() => { setTrips(getSavedTrips()); }, []);
+  const [nearbyPlaces, setNearbyPlaces] = useState<Record<string, NearbyPlace[]>>({});
+
+  useEffect(() => { getSavedTrips().then(setTrips); }, []);
 
   // Auto-fetch weather when weather tab is opened
   useEffect(() => {
@@ -138,7 +141,7 @@ export default function SavedPage() {
   // ── Handlers ─────────────────────────────────────────────────────────────────
 
   function handleDelete(id: string) {
-    deleteTrip(id);
+    void deleteTrip(id);
     setTrips(prev => prev.filter(t => t.id !== id));
     setActiveTab(prev => { const next = { ...prev }; delete next[id]; return next; });
   }
@@ -289,12 +292,14 @@ export default function SavedPage() {
         for (const line of decoder.decode(value).split("\n").filter(l => l.startsWith("data: "))) {
           const data = line.replace("data: ", "");
           if (data === "[DONE]") break;
-          let parsed: { type: string; id?: string; tool?: string; input?: Record<string, unknown>; iteration?: number; sections?: BriefingSection[]; message?: string };
+          let parsed: { type: string; id?: string; tool?: string; input?: Record<string, unknown>; iteration?: number; sections?: BriefingSection[]; places?: NearbyPlace[]; message?: string };
           try { parsed = JSON.parse(data); } catch { continue; }
           if (parsed.type === "tool_call" && parsed.id && parsed.tool)
             setBriefingTraces(prev => ({ ...prev, [trip.id]: [...(prev[trip.id] ?? []), { id: parsed.id!, iteration: parsed.iteration ?? 1, tool: parsed.tool!, input: parsed.input ?? {}, status: "running" }] }));
           if (parsed.type === "tool_done" && parsed.id)
             setBriefingTraces(prev => ({ ...prev, [trip.id]: (prev[trip.id] ?? []).map(e => e.id === parsed.id ? { ...e, status: "done" } : e) }));
+          if (parsed.type === "nearby_places" && parsed.places)
+            setNearbyPlaces(prev => ({ ...prev, [trip.id]: parsed.places! }));
           if (parsed.type === "briefing" && parsed.sections) {
             const briefing: Briefing = { generatedAt: new Date().toISOString(), sections: parsed.sections };
             updateBriefing(trip.id, briefing);
@@ -420,12 +425,12 @@ export default function SavedPage() {
   // ─── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <nav className="bg-white border-b border-gray-100 px-6 py-4">
+    <div className="min-h-screen bg-[#fffbf7] flex flex-col">
+      <nav className="bg-[#fffbf7] border-b border-[#e8e4e0] px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <Link href="/" className="font-semibold text-gray-900">✈ TravelAgent</Link>
           <div className="flex items-center gap-4">
-            <Link href="/packing" className="text-sm text-gray-500 hidden sm:block hover:text-indigo-600 transition-colors">
+            <Link href="/packing" className="text-sm text-gray-500 hidden sm:block hover:text-[#e85d3a] transition-colors">
               Packing List
             </Link>
             <Link href="/plan"><Button size="sm">Plan a trip</Button></Link>
@@ -471,7 +476,7 @@ export default function SavedPage() {
                             <span className="text-gray-400">Saved {new Date(trip.savedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
                           </div>
                           {trip.priceWatch && (
-                            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-3 py-1 text-xs text-gray-600">
+                            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#f5f0eb] px-3 py-1 text-xs text-gray-600">
                               <span>{TREND_META[trip.priceWatch.trend].emoji}</span>
                               <span className="font-medium">{TREND_META[trip.priceWatch.trend].label}</span>
                               <span className="text-gray-400">· {formatDate(trip.priceWatch.lastChecked)}</span>
@@ -489,7 +494,7 @@ export default function SavedPage() {
 
                     {/* ── Price watcher trace (runs inline, not in a tab) ── */}
                     {(checkingId === trip.id || (priceTraces[trip.id]?.length ?? 0) > 0) && (
-                      <div className="border-t border-gray-100 px-6 py-4 bg-gray-50/50">
+                      <div className="border-t border-gray-100 px-6 py-4 bg-[#f5f0eb]/50">
                         <AgentTrace trace={priceTraces[trip.id] ?? []} />
                         {verdicts[trip.id] && (
                           <div className="mt-3 rounded-lg bg-white border border-gray-100 px-4 py-3 text-sm text-gray-700 leading-relaxed">
@@ -511,14 +516,14 @@ export default function SavedPage() {
                               onClick={() => openTab(trip.id, t.id)}
                               className={`relative flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors shrink-0 ${
                                 active
-                                  ? "border-indigo-600 text-indigo-600 bg-indigo-50/40"
-                                  : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                                  ? "border-[#e85d3a] text-[#e85d3a] bg-[#fdf0ec]/40"
+                                  : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-[#f5f0eb]"
                               }`}
                             >
                               <span>{t.icon}</span>
                               <span>{t.label}</span>
                               {ready && !active && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 absolute top-2.5 right-1.5" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#e85d3a] absolute top-2.5 right-1.5" />
                               )}
                             </button>
                           );
@@ -528,17 +533,29 @@ export default function SavedPage() {
 
                     {/* ── Tab content ── */}
                     {tab && (
-                      <div className="border-t border-gray-100 p-6 bg-gray-50/30">
+                      <div className="border-t border-gray-100 p-6 bg-[#fffbf7]">
 
                         {/* Plan */}
                         {tab === "plan" && (
-                          trip.aiResult ? (
-                            <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed">
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>{trip.aiResult}</ReactMarkdown>
+                          <>
+                            {/* Static map */}
+                            <div className="mb-5 rounded-xl overflow-hidden border border-gray-100">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={`/api/map-image?destination=${encodeURIComponent(dest)}`}
+                                alt={`Map of ${dest}`}
+                                className="w-full object-cover"
+                                style={{ height: 220 }}
+                              />
                             </div>
-                          ) : (
-                            <p className="text-sm text-gray-400 text-center py-6">No plan content saved.</p>
-                          )
+                            {trip.aiResult ? (
+                              <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{trip.aiResult}</ReactMarkdown>
+                              </div>
+                            ) : (
+                              <p className="text-sm text-gray-400 text-center py-6">No plan content saved.</p>
+                            )}
+                          </>
                         )}
 
                         {/* Concierge */}
@@ -559,7 +576,7 @@ export default function SavedPage() {
                               {trip.dayPlan && (
                                 <div className="flex items-center gap-3">
                                   <span className="text-xs text-gray-400">Generated {formatDate(trip.dayPlan.generatedAt)}</span>
-                                  <button onClick={() => generateItinerary(trip)} disabled={generatingId !== null} className="text-xs font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50">🔄 Regenerate</button>
+                                  <button onClick={() => generateItinerary(trip)} disabled={generatingId !== null} className="text-xs font-medium text-[#e85d3a] hover:text-[#d04e2d] disabled:opacity-50">🔄 Regenerate</button>
                                 </div>
                               )}
                             </div>
@@ -588,7 +605,7 @@ export default function SavedPage() {
                               {trip.briefing && (
                                 <div className="flex items-center gap-3">
                                   <span className="text-xs text-gray-400">Generated {formatDate(trip.briefing.generatedAt)}</span>
-                                  <button onClick={() => generateBriefing(trip)} disabled={generatingBriefingId !== null} className="text-xs font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50">🔄 Regenerate</button>
+                                  <button onClick={() => generateBriefing(trip)} disabled={generatingBriefingId !== null} className="text-xs font-medium text-[#e85d3a] hover:text-[#d04e2d] disabled:opacity-50">🔄 Regenerate</button>
                                 </div>
                               )}
                             </div>
@@ -606,6 +623,24 @@ export default function SavedPage() {
                                 <Button size="sm" onClick={() => generateBriefing(trip)}>📋 Create Briefing</Button>
                               </div>
                             ) : null}
+                            {/* Nearby Places — emitted at start of briefing SSE stream */}
+                            {nearbyPlaces[trip.id]?.length ? (
+                              <div className="mt-5">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">📍 Nearby on Google Maps</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  {nearbyPlaces[trip.id].map((place, i) => (
+                                    <div key={i} className="flex items-start gap-2 rounded-lg bg-white border border-gray-100 px-3 py-2.5">
+                                      <span className="text-base leading-tight mt-0.5 shrink-0">{place.icon}</span>
+                                      <div className="min-w-0">
+                                        <p className="text-sm font-medium text-gray-800 truncate">{place.name}</p>
+                                        <p className="text-xs text-gray-400 truncate">{place.address}</p>
+                                        {place.rating && <p className="text-xs text-amber-500">★ {place.rating}</p>}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : null}
                           </>
                         )}
 
@@ -617,7 +652,7 @@ export default function SavedPage() {
                               {trip.events && (
                                 <div className="flex items-center gap-3">
                                   <span className="text-xs text-gray-400">Found {formatDate(trip.events.generatedAt)}</span>
-                                  <button onClick={() => generateEvents(trip)} disabled={generatingEventsId !== null} className="text-xs font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50">🔄 Refresh</button>
+                                  <button onClick={() => generateEvents(trip)} disabled={generatingEventsId !== null} className="text-xs font-medium text-[#e85d3a] hover:text-[#d04e2d] disabled:opacity-50">🔄 Refresh</button>
                                 </div>
                               )}
                             </div>
@@ -646,7 +681,7 @@ export default function SavedPage() {
                               {trip.visa && (
                                 <div className="flex items-center gap-3">
                                   <span className="text-xs text-gray-400">Checked {formatDate(trip.visa.generatedAt)}</span>
-                                  <button onClick={() => generateVisa(trip, visaPassport[trip.id] || trip.visa?.passport || "German")} disabled={generatingVisaId !== null} className="text-xs font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50">🔄 Re-check</button>
+                                  <button onClick={() => generateVisa(trip, visaPassport[trip.id] || trip.visa?.passport || "German")} disabled={generatingVisaId !== null} className="text-xs font-medium text-[#e85d3a] hover:text-[#d04e2d] disabled:opacity-50">🔄 Re-check</button>
                                 </div>
                               )}
                             </div>
@@ -664,7 +699,7 @@ export default function SavedPage() {
                               <div className="space-y-4 max-w-sm py-2">
                                 <p className="text-sm text-gray-500">Check visa requirements, health rules, and entry conditions for your passport.</p>
                                 <div className="flex gap-2">
-                                  <input type="text" placeholder="Your passport (e.g. German, US, UK)" value={visaPassport[trip.id] ?? ""} onChange={(e) => setVisaPassport(prev => ({ ...prev, [trip.id]: e.target.value }))} className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                                  <input type="text" placeholder="Your passport (e.g. German, US, UK)" value={visaPassport[trip.id] ?? ""} onChange={(e) => setVisaPassport(prev => ({ ...prev, [trip.id]: e.target.value }))} className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#f0a898]" />
                                   <Button size="sm" onClick={() => generateVisa(trip, visaPassport[trip.id] || "German")} disabled={generatingVisaId !== null}>Check</Button>
                                 </div>
                               </div>
@@ -680,7 +715,7 @@ export default function SavedPage() {
                               {trip.budgetResult && (
                                 <div className="flex items-center gap-3">
                                   <span className="text-xs text-gray-400">Estimated {formatDate(trip.budgetResult.generatedAt)}</span>
-                                  <button onClick={() => generateBudget(trip)} disabled={generatingBudgetId !== null} className="text-xs font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50">🔄 Re-estimate</button>
+                                  <button onClick={() => generateBudget(trip)} disabled={generatingBudgetId !== null} className="text-xs font-medium text-[#e85d3a] hover:text-[#d04e2d] disabled:opacity-50">🔄 Re-estimate</button>
                                 </div>
                               )}
                             </div>
@@ -709,7 +744,7 @@ export default function SavedPage() {
                             <div className="flex items-center justify-between mb-4">
                               <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Weather Forecast</p>
                               {weatherData[trip.id] && (
-                                <button onClick={() => { setWeatherData(prev => { const next = { ...prev }; delete next[trip.id]; return next; }); fetchWeather(trip); }} disabled={loadingWeatherId === trip.id} className="text-xs font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50">🔄 Refresh</button>
+                                <button onClick={() => { setWeatherData(prev => { const next = { ...prev }; delete next[trip.id]; return next; }); fetchWeather(trip); }} disabled={loadingWeatherId === trip.id} className="text-xs font-medium text-[#e85d3a] hover:text-[#d04e2d] disabled:opacity-50">🔄 Refresh</button>
                               )}
                             </div>
                             {loadingWeatherId === trip.id && (

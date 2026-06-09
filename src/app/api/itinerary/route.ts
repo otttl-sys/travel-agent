@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { tavily } from "@tavily/core";
 import { NextRequest, NextResponse } from "next/server";
+import { geocode, searchNearby } from "@/lib/google-maps";
 
 export const maxDuration = 300;
 
@@ -65,6 +66,21 @@ export async function POST(req: NextRequest) {
     ? days.map((d) => `${d.day}: ${d.activities.join(", ")}`).join("\n")
     : "Keine Tagesblöcke hinterlegt.";
 
+  // Fetch real venues from Google Maps to ground the schedule in actual places
+  let venuesContext = "";
+  try {
+    const { latlng } = await geocode(destination ?? "");
+    const [attractions, restaurants] = await Promise.all([
+      searchNearby(latlng, "tourist_attraction", 8),
+      searchNearby(latlng, "restaurant", 5),
+    ]);
+    const all = [...attractions, ...restaurants];
+    if (all.length) {
+      venuesContext = "\n\nVerfügbare Orte aus Google Maps (verwende diese für konkrete Empfehlungen — echte Namen, echte Adressen):\n"
+        + all.map(p => `${p.icon} ${p.name}${p.rating ? ` ★${p.rating}` : ""} — ${p.address}`).join("\n");
+    }
+  } catch { /* non-fatal — continue without places */ }
+
   const userMessage = `
 Erstelle einen Stunden-für-Stunde-Tagesplan für diese Reise:
 - Ziel: ${destination ?? "unbekannt"}
@@ -72,7 +88,7 @@ Erstelle einen Stunden-für-Stunde-Tagesplan für diese Reise:
 - Vorhandene Tagesblöcke:
 ${dayBlocksStr}
 
-Recherchiere zuerst kurz die Logistik (Öffnungszeiten, Besuchsdauer, Wege), dann erstelle den vollständigen Tagesplan mit generate_day_schedule — ein Eintrag pro Tagesblock.
+Recherchiere zuerst kurz die Logistik (Öffnungszeiten, Besuchsdauer, Wege), dann erstelle den vollständigen Tagesplan mit generate_day_schedule — ein Eintrag pro Tagesblock.${venuesContext}
 `.trim();
 
   const encoder = new TextEncoder();

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { geocode } from "@/lib/google-maps";
 
 export const maxDuration = 30;
 
@@ -46,22 +47,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
   }
 
-  // Geocoding via Nominatim — handles multilingual city names (e.g. "Lissabon" → Lisbon, Portugal)
+  // Geocoding via Google Maps — handles multilingual names reliably
   const destForGeo = destination.includes("→") ? destination.split("→")[0].trim() : destination;
-  const geoRes = await fetch(
-    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(destForGeo)}&format=json&limit=3&featuretype=city&accept-language=en`,
-    { headers: { "User-Agent": "travel-agent-portfolio/1.0" } }
-  );
-  const geoResults = await geoRes.json() as { lat: string; lon: string; display_name: string }[];
-  if (!geoResults?.length) {
-    return NextResponse.json({ error: "Destination not found" }, { status: 404 });
-  }
-  const latitude = parseFloat(geoResults[0].lat);
-  const longitude = parseFloat(geoResults[0].lon);
-  // Extract city, country from display_name ("Lisbon, Portugal" or "Lisbon, Lisbon, Portugal")
-  const parts = geoResults[0].display_name.split(",").map(s => s.trim());
-  const name = parts[0];
-  const country = parts[parts.length - 1];
+  const { latlng, formatted } = await geocode(destForGeo);
+  const latitude = latlng.lat;
+  const longitude = latlng.lng;
+  const addrParts = formatted.split(",").map(s => s.trim());
+  const name = addrParts[0];
+  const country = addrParts[addrParts.length - 1];
   const location = `${name}, ${country}`;
 
   const today = new Date();
