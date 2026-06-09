@@ -150,6 +150,8 @@ function ResultsContent() {
   const cityDaysArr = isMultiCity ? cityDaysParam.split(",").map(Number) : [];
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const params = isMultiCity
       ? {
           multiCity: "1",
@@ -177,6 +179,7 @@ function ResultsContent() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
+      signal: controller.signal,
     }).then(async (res) => {
       clearInterval(progressInterval);
       const reader = res.body?.getReader();
@@ -248,11 +251,17 @@ function ResultsContent() {
         setAiResult(result);
         setLoading(false);
       }, 500);
-    }).catch(() => {
+    }).catch((err) => {
+      if (err.name === "AbortError") return;
       clearInterval(progressInterval);
       setError("Verbindungsfehler. Bitte versuche es erneut.");
       setLoading(false);
     });
+
+    return () => {
+      controller.abort();
+      clearInterval(progressInterval);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
