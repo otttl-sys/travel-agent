@@ -1,3 +1,4 @@
+import { supabase } from './supabase'
 import type { DaySchedule } from "@/components/day-timeline";
 import type { BriefingSection } from "@/components/briefing-card";
 import type { EventItem } from "@/components/events-list";
@@ -59,59 +60,78 @@ export type SavedTrip = {
   budgetResult?: BudgetResult;
 };
 
-const KEY = "ta_saved_trips";
-
-export function getSavedTrips(): SavedTrip[] {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(localStorage.getItem(KEY) || "[]");
-  } catch {
-    return [];
-  }
-}
-
-export function saveTrip(trip: Omit<SavedTrip, "id" | "savedAt">): void {
-  const trips = getSavedTrips();
-  const newTrip: SavedTrip = {
-    ...trip,
-    id: Date.now().toString(),
-    savedAt: new Date().toISOString(),
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function fromRow(row: Record<string, any>): SavedTrip {
+  return {
+    id: row.id,
+    destination: row.destination,
+    isMultiCity: row.is_multi_city ?? false,
+    cities: row.cities ?? [],
+    startDate: row.start_date ?? '',
+    endDate: row.end_date ?? '',
+    travelers: row.travelers ?? 1,
+    budget: row.budget ?? 0,
+    aiResult: row.ai_result ?? '',
+    cards: row.cards ?? null,
+    savedAt: row.saved_at,
+    priceWatch: row.price_watch ?? undefined,
+    dayPlan: row.day_plan ?? undefined,
+    briefing: row.briefing ?? undefined,
+    events: row.events ?? undefined,
+    visa: row.visa ?? undefined,
+    budgetResult: row.budget_result ?? undefined,
   };
-  localStorage.setItem(KEY, JSON.stringify([newTrip, ...trips]));
 }
 
-export function deleteTrip(id: string): void {
-  const trips = getSavedTrips().filter((t) => t.id !== id);
-  localStorage.setItem(KEY, JSON.stringify(trips));
+export async function getSavedTrips(): Promise<SavedTrip[]> {
+  const { data, error } = await supabase
+    .from('trips')
+    .select('*')
+    .order('saved_at', { ascending: false });
+  if (error || !data) return [];
+  return data.map(fromRow);
 }
 
-export function updatePriceWatch(id: string, priceWatch: PriceWatch): void {
-  const trips = getSavedTrips().map((t) => (t.id === id ? { ...t, priceWatch } : t));
-  localStorage.setItem(KEY, JSON.stringify(trips));
+export async function saveTrip(trip: Omit<SavedTrip, 'id' | 'savedAt'>): Promise<void> {
+  await supabase.from('trips').insert({
+    id: Date.now().toString(),
+    destination: trip.destination,
+    is_multi_city: trip.isMultiCity,
+    cities: trip.cities,
+    start_date: trip.startDate,
+    end_date: trip.endDate,
+    travelers: trip.travelers,
+    budget: trip.budget,
+    ai_result: trip.aiResult,
+    cards: trip.cards,
+    saved_at: new Date().toISOString(),
+  });
 }
 
-export function updateDayPlan(id: string, dayPlan: DayPlan): void {
-  const trips = getSavedTrips().map((t) => (t.id === id ? { ...t, dayPlan } : t));
-  localStorage.setItem(KEY, JSON.stringify(trips));
+export async function deleteTrip(id: string): Promise<void> {
+  await supabase.from('trips').delete().eq('id', id);
 }
 
-export function updateBriefing(id: string, briefing: Briefing): void {
-  const trips = getSavedTrips().map((t) => (t.id === id ? { ...t, briefing } : t));
-  localStorage.setItem(KEY, JSON.stringify(trips));
+export async function updatePriceWatch(id: string, priceWatch: PriceWatch): Promise<void> {
+  await supabase.from('trips').update({ price_watch: priceWatch }).eq('id', id);
 }
 
-export function updateEvents(id: string, events: EventsResult): void {
-  const trips = getSavedTrips().map((t) => (t.id === id ? { ...t, events } : t));
-  localStorage.setItem(KEY, JSON.stringify(trips));
+export async function updateDayPlan(id: string, dayPlan: DayPlan): Promise<void> {
+  await supabase.from('trips').update({ day_plan: dayPlan }).eq('id', id);
 }
 
-export function updateVisa(id: string, visa: VisaResult): void {
-  const trips = getSavedTrips().map((t) => (t.id === id ? { ...t, visa } : t));
-  localStorage.setItem(KEY, JSON.stringify(trips));
+export async function updateBriefing(id: string, briefing: Briefing): Promise<void> {
+  await supabase.from('trips').update({ briefing }).eq('id', id);
 }
 
-export function updateBudget(id: string, budgetResult: BudgetResult): void {
-  const trips = getSavedTrips().map((t) => (t.id === id ? { ...t, budgetResult } : t));
-  localStorage.setItem(KEY, JSON.stringify(trips));
+export async function updateEvents(id: string, events: EventsResult): Promise<void> {
+  await supabase.from('trips').update({ events }).eq('id', id);
 }
 
+export async function updateVisa(id: string, visa: VisaResult): Promise<void> {
+  await supabase.from('trips').update({ visa }).eq('id', id);
+}
+
+export async function updateBudget(id: string, budgetResult: BudgetResult): Promise<void> {
+  await supabase.from('trips').update({ budget_result: budgetResult }).eq('id', id);
+}
