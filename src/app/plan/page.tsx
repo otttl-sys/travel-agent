@@ -101,19 +101,19 @@ function PlanContent() {
   const progress = ((step - 1) / (TOTAL_STEPS - 1)) * 100;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-[#fffbf7] flex flex-col">
       {/* Header */}
-      <nav className="bg-white border-b border-gray-100 px-6 py-4">
+      <nav className="bg-[#fffbf7] border-b border-[#e8e4e0] px-6 py-4">
         <div className="max-w-xl mx-auto flex items-center justify-between">
-          <span className="font-semibold text-gray-900">✈ TravelAgent</span>
-          <span className="text-sm text-gray-400">
+          <span className="font-semibold text-[#1c1917]">✈ TravelAgent</span>
+          <span className="text-sm text-[#a8a29e]">
             Schritt {step} von {TOTAL_STEPS}
           </span>
         </div>
       </nav>
 
       {/* Progress */}
-      <div className="bg-white border-b border-gray-100 px-6 py-3">
+      <div className="bg-[#fffbf7] border-b border-[#e8e4e0] px-6 py-3">
         <div className="max-w-xl mx-auto">
           <Progress value={progress} className="h-1.5" />
         </div>
@@ -122,7 +122,7 @@ function PlanContent() {
       {/* Form */}
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-xl">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+          <div className="bg-white rounded-2xl border border-[#e8e4e0] shadow-sm p-8">
             {step === 1 && (
               <StepDestination
                 isMultiCity={form.isMultiCity}
@@ -182,7 +182,7 @@ function PlanContent() {
                   Weiter →
                 </Button>
               ) : (
-                <Button onClick={handleSubmit} className="flex-1 bg-indigo-600 hover:bg-indigo-700">
+                <Button onClick={handleSubmit} className="flex-1 bg-[#e85d3a] hover:bg-[#d04e2d]">
                   AI starten →
                 </Button>
               )}
@@ -226,7 +226,7 @@ function StepDestination({
 
   return (
     <div>
-      <p className="text-xs font-medium text-indigo-600 uppercase tracking-wider mb-2">Schritt 1</p>
+      <p className="text-xs font-medium text-[#e85d3a] uppercase tracking-wider mb-2">Schritt 1</p>
       <h2 className="text-2xl font-bold text-gray-900 mb-2">Wohin soll die Reise gehen?</h2>
 
       {/* Mode Toggle */}
@@ -235,8 +235,8 @@ function StepDestination({
           onClick={() => { if (isMultiCity) onToggleMode(); }}
           className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
             !isMultiCity
-              ? "bg-indigo-600 text-white border-indigo-600"
-              : "bg-white text-gray-500 border-gray-200 hover:border-indigo-300"
+              ? "bg-[#e85d3a] text-white border-[#e85d3a]"
+              : "bg-white text-gray-500 border-gray-200 hover:border-[#e85d3a]"
           }`}
         >
           Ein Ziel
@@ -245,8 +245,8 @@ function StepDestination({
           onClick={() => { if (!isMultiCity) onToggleMode(); }}
           className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
             isMultiCity
-              ? "bg-indigo-600 text-white border-indigo-600"
-              : "bg-white text-gray-500 border-gray-200 hover:border-indigo-300"
+              ? "bg-[#e85d3a] text-white border-[#e85d3a]"
+              : "bg-white text-gray-500 border-gray-200 hover:border-[#e85d3a]"
           }`}
         >
           Multi-City Tour
@@ -268,7 +268,7 @@ function StepDestination({
               <button
                 key={dest}
                 onClick={() => onChange(dest)}
-                className="px-3 py-1.5 text-sm rounded-full border border-gray-200 text-gray-600 hover:border-indigo-300 hover:bg-indigo-50 transition-colors"
+                className="px-3 py-1.5 text-sm rounded-full border border-gray-200 text-gray-600 hover:border-[#e85d3a] hover:bg-[#fdf0ec] transition-colors"
               >
                 {dest}
               </button>
@@ -312,7 +312,7 @@ function StepDestination({
           {cities.length < 5 && (
             <button
               onClick={addCity}
-              className="mt-3 text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+              className="mt-3 text-sm text-[#e85d3a] hover:text-[#d04e2d] font-medium"
             >
               + Stadt hinzufügen
             </button>
@@ -322,7 +322,7 @@ function StepDestination({
               <button
                 key={i}
                 onClick={() => onCitiesChange(route.map((city) => ({ city, days: 3 })))}
-                className="px-3 py-1.5 text-xs rounded-full border border-gray-200 text-gray-600 hover:border-indigo-300 hover:bg-indigo-50 transition-colors"
+                className="px-3 py-1.5 text-xs rounded-full border border-gray-200 text-gray-600 hover:border-[#e85d3a] hover:bg-[#fdf0ec] transition-colors"
               >
                 {route.join(" → ")}
               </button>
@@ -347,7 +347,7 @@ function StepDates({
 }) {
   return (
     <div>
-      <p className="text-xs font-medium text-indigo-600 uppercase tracking-wider mb-2">Schritt 2</p>
+      <p className="text-xs font-medium text-[#e85d3a] uppercase tracking-wider mb-2">Schritt 2</p>
       <h2 className="text-2xl font-bold text-gray-900 mb-2">Wann möchtest du reisen?</h2>
       <p className="text-gray-500 text-sm mb-6">Ungefähre Daten reichen völlig aus.</p>
       <div className="space-y-4">
@@ -384,7 +384,7 @@ function StepTravelers({
   const options = [1, 2, 3, 4, 5, 6];
   return (
     <div>
-      <p className="text-xs font-medium text-indigo-600 uppercase tracking-wider mb-2">Schritt 3</p>
+      <p className="text-xs font-medium text-[#e85d3a] uppercase tracking-wider mb-2">Schritt 3</p>
       <h2 className="text-2xl font-bold text-gray-900 mb-2">Wie viele Personen reisen?</h2>
       <p className="text-gray-500 text-sm mb-6">Inklusive dir.</p>
       <div className="grid grid-cols-3 gap-3">
@@ -394,8 +394,8 @@ function StepTravelers({
             onClick={() => onChange(n)}
             className={`py-4 rounded-xl border-2 text-lg font-semibold transition-colors ${
               value === n
-                ? "border-indigo-600 bg-indigo-50 text-indigo-600"
-                : "border-gray-200 text-gray-600 hover:border-indigo-300"
+                ? "border-[#e85d3a] bg-[#fdf0ec] text-[#e85d3a]"
+                : "border-gray-200 text-gray-600 hover:border-[#e85d3a]"
             }`}
           >
             {n} {n === 1 ? "Person" : "Personen"}
@@ -415,7 +415,7 @@ function StepInterests({
 }) {
   return (
     <div>
-      <p className="text-xs font-medium text-indigo-600 uppercase tracking-wider mb-2">Schritt 4</p>
+      <p className="text-xs font-medium text-[#e85d3a] uppercase tracking-wider mb-2">Schritt 4</p>
       <h2 className="text-2xl font-bold text-gray-900 mb-2">Was sind deine Interessen?</h2>
       <p className="text-gray-500 text-sm mb-6">Mehrere Auswahlen möglich.</p>
       <div className="grid grid-cols-2 gap-3">
@@ -425,14 +425,14 @@ function StepInterests({
             onClick={() => onToggle(interest.id)}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-colors ${
               selected.includes(interest.id)
-                ? "border-indigo-600 bg-indigo-50"
-                : "border-gray-200 hover:border-indigo-300"
+                ? "border-[#e85d3a] bg-[#fdf0ec]"
+                : "border-gray-200 hover:border-[#e85d3a]"
             }`}
           >
             <span className="text-xl">{interest.icon}</span>
             <span
               className={`text-sm font-medium ${
-                selected.includes(interest.id) ? "text-indigo-700" : "text-gray-700"
+                selected.includes(interest.id) ? "text-[#c4422a]" : "text-gray-700"
               }`}
             >
               {interest.label}
@@ -454,7 +454,7 @@ function StepBudget({
   const presets = [1000, 2000, 3000, 5000, 10000];
   return (
     <div>
-      <p className="text-xs font-medium text-indigo-600 uppercase tracking-wider mb-2">Schritt 5</p>
+      <p className="text-xs font-medium text-[#e85d3a] uppercase tracking-wider mb-2">Schritt 5</p>
       <h2 className="text-2xl font-bold text-gray-900 mb-2">Was ist dein Budget?</h2>
       <p className="text-gray-500 text-sm mb-6">
         Gesamtbudget pro Person inkl. Flüge & Unterkunft.
@@ -478,8 +478,8 @@ function StepBudget({
             onClick={() => onChange(p)}
             className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
               value === p
-                ? "border-indigo-600 bg-indigo-50 text-indigo-600 font-medium"
-                : "border-gray-200 text-gray-600 hover:border-indigo-300"
+                ? "border-[#e85d3a] bg-[#fdf0ec] text-[#e85d3a] font-medium"
+                : "border-gray-200 text-gray-600 hover:border-[#e85d3a]"
             }`}
           >
             €{p.toLocaleString()}
@@ -501,7 +501,7 @@ function StepSummary({ form }: { form: FormData }) {
 
   return (
     <div>
-      <p className="text-xs font-medium text-indigo-600 uppercase tracking-wider mb-2">Schritt 6</p>
+      <p className="text-xs font-medium text-[#e85d3a] uppercase tracking-wider mb-2">Schritt 6</p>
       <h2 className="text-2xl font-bold text-gray-900 mb-2">Alles klar. Los geht&apos;s!</h2>
       <p className="text-gray-500 text-sm mb-6">
         Hier ist eine Zusammenfassung — dann startet der AI-Agent.
@@ -532,8 +532,8 @@ function StepSummary({ form }: { form: FormData }) {
         />
         <SummaryRow icon="💶" label="Budget" value={`€${form.budget.toLocaleString()} pro Person`} />
       </div>
-      <div className="mt-6 p-4 rounded-xl bg-indigo-50 border border-indigo-100">
-        <p className="text-sm text-indigo-700 font-medium">
+      <div className="mt-6 p-4 rounded-xl bg-[#fdf0ec] border border-[#fbe1d9]">
+        <p className="text-sm text-[#c4422a] font-medium">
           {form.isMultiCity
             ? `🤖 Der AI-Agent plant jetzt alle ${validCities.length} Stationen: Flüge, Hotels und Aktivitäten für jede Stadt.`
             : "🤖 Der AI-Agent wird jetzt Flüge, Hotels und Aktivitäten analysieren und dir 3 Reisevorschläge erstellen."}

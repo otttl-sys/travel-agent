@@ -100,7 +100,7 @@ export default function ResultsPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-[#fffbf7] flex items-center justify-center">
           <div className="text-center">
             <div className="text-5xl mb-4 animate-pulse">🤖</div>
             <p className="text-gray-500">Agenten starten…</p>
@@ -129,8 +129,8 @@ function ResultsContent() {
   const destination = searchParams.get("destination") || "";
   const budget = Number(searchParams.get("budget") || 3000);
 
-  function handleSave() {
-    saveTrip({
+  async function handleSave() {
+    await saveTrip({
       destination: isMultiCity ? cityNames.join(", ") : destination,
       isMultiCity,
       cities: cityNames,
@@ -267,7 +267,7 @@ function ResultsContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6 py-12">
+      <div className="min-h-screen bg-[#fffbf7] flex flex-col items-center justify-center px-6 py-12">
         <div className="w-full max-w-lg text-center">
           <div className="text-5xl mb-6 animate-pulse">🤖</div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">AI analysiert deine Reise</h2>
@@ -292,7 +292,7 @@ function ResultsContent() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6">
+      <div className="min-h-screen bg-[#fffbf7] flex flex-col items-center justify-center px-6">
         <div className="w-full max-w-md text-center">
           <div className="text-5xl mb-6">⚠️</div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Etwas ist schiefgelaufen</h2>
@@ -310,9 +310,9 @@ function ResultsContent() {
   const displayTrips = dynamicCards ?? fallbackTrips;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-[#fffbf7] flex flex-col">
       {/* Nav */}
-      <nav className="bg-white border-b border-gray-100 px-6 py-4 no-print">
+      <nav className="bg-[#fffbf7] border-b border-[#e8e4e0] px-6 py-4 no-print">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <button
             onClick={() => router.push("/")}
@@ -321,10 +321,10 @@ function ResultsContent() {
             ✈ TravelAgent
           </button>
           <div className="flex items-center gap-2">
-            <Link href="/saved" className="text-sm text-gray-500 hidden sm:block hover:text-indigo-600 transition-colors mr-2">
+            <Link href="/saved" className="text-sm text-gray-500 hidden sm:block hover:text-[#e85d3a] transition-colors mr-2">
               Saved Trips
             </Link>
-            <Link href="/packing" className="text-sm text-gray-500 hidden sm:block hover:text-indigo-600 transition-colors mr-2">
+            <Link href="/packing" className="text-sm text-gray-500 hidden sm:block hover:text-[#e85d3a] transition-colors mr-2">
               Packing List
             </Link>
             <Button variant="outline" size="sm" onClick={() => router.push("/plan")}>
@@ -380,7 +380,7 @@ function ResultsContent() {
                 {cityNames.map((city, i) => (
                   <div key={i} className="flex items-center gap-2">
                     <div className="text-center">
-                      <div className="w-8 h-8 rounded-full bg-indigo-600 text-white text-sm font-bold flex items-center justify-center mx-auto mb-1">
+                      <div className="w-8 h-8 rounded-full bg-[#e85d3a] text-white text-sm font-bold flex items-center justify-center mx-auto mb-1">
                         {i + 1}
                       </div>
                       <p className="text-sm font-semibold text-gray-900">{city}</p>
@@ -443,7 +443,7 @@ function ResultsContent() {
                 { icon: "🗺️", label: "Aktivitäten", value: toolCounts.get_activities > 0 ? `${toolCounts.get_activities * 5}` : "—" },
                 { icon: "💰", label: "Budget optimiert", value: toolCounts.optimize_budget > 0 ? "✓" : "—" },
               ]).map((item) => (
-                <div key={item.label} className="text-center p-4 rounded-xl bg-gray-50">
+                <div key={item.label} className="text-center p-4 rounded-xl bg-[#f5f0eb]">
                   <span className="text-2xl block mb-2">{item.icon}</span>
                   <p className="text-xs text-gray-400 mb-1">{item.label}</p>
                   <p className="text-sm font-semibold text-gray-800">{item.value}</p>
@@ -454,7 +454,7 @@ function ResultsContent() {
               <div className="mt-5 pt-5 border-t border-gray-100">
                 <button
                   onClick={() => setShowTrace((v) => !v)}
-                  className="text-sm font-medium text-indigo-600 hover:text-indigo-700 flex items-center gap-1.5"
+                  className="text-sm font-medium text-[#e85d3a] hover:text-[#d04e2d] flex items-center gap-1.5"
                 >
                   {showTrace ? "Agent-Protokoll ausblenden" : "Agent-Protokoll anzeigen"}
                   <span className={`transition-transform ${showTrace ? "rotate-180" : ""}`}>▾</span>
@@ -557,7 +557,7 @@ function BudgetTracker({ budget, aiResult, isMultiCity, travelers }: {
       {/* Line items */}
       <div className="space-y-2 mb-6">
         {BUDGET_CATEGORIES.map((cat) => (
-          <div key={cat.key} className="flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-gray-50 transition-colors group">
+          <div key={cat.key} className="flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-[#f5f0eb] transition-colors group">
             <span className="text-lg w-6">{cat.icon}</span>
             <span className="text-sm text-gray-600 flex-1">{cat.label}</span>
             {editing === cat.key ? (
@@ -567,19 +567,19 @@ function BudgetTracker({ budget, aiResult, isMultiCity, travelers }: {
                 defaultValue={items[cat.key]}
                 onBlur={(e) => { update(cat.key, e.target.value); setEditing(null); }}
                 onKeyDown={(e) => { if (e.key === "Enter") { update(cat.key, (e.target as HTMLInputElement).value); setEditing(null); } }}
-                className="w-24 text-right text-sm font-semibold border border-indigo-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                className="w-24 text-right text-sm font-semibold border border-[#f0a898] rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#f0a898]"
               />
             ) : (
               <button
                 onClick={() => setEditing(cat.key)}
-                className="text-sm font-semibold text-gray-800 group-hover:text-indigo-600 transition-colors"
+                className="text-sm font-semibold text-gray-800 group-hover:text-[#e85d3a] transition-colors"
               >
                 €{items[cat.key].toLocaleString()}
               </button>
             )}
             <div className="w-20 bg-gray-100 rounded-full h-1.5 overflow-hidden">
               <div
-                className="h-1.5 rounded-full bg-indigo-400 transition-all duration-300"
+                className="h-1.5 rounded-full bg-[#e85d3a] transition-all duration-300"
                 style={{ width: `${Math.min((items[cat.key] / budget) * 100, 100)}%` }}
               />
             </div>
@@ -588,7 +588,7 @@ function BudgetTracker({ budget, aiResult, isMultiCity, travelers }: {
       </div>
 
       {/* Totals */}
-      <div className={`flex items-center justify-between pt-4 border-t ${over ? "border-red-100 bg-red-50" : "border-gray-100 bg-gray-50"} rounded-xl px-4 py-3`}>
+      <div className={`flex items-center justify-between pt-4 border-t ${over ? "border-red-100 bg-red-50" : "border-[#e8e4e0] bg-[#fffbf7]"} rounded-xl px-4 py-3`}>
         <span className="text-sm font-semibold text-gray-700">Gesamt pro Person</span>
         <span className={`text-lg font-bold ${over ? "text-red-600" : "text-gray-900"}`}>
           €{total.toLocaleString()}
@@ -714,16 +714,16 @@ function activityIcon(activity: string): string {
 function ItineraryTimeline({ itinerary }: { itinerary: { day: string; activities: string[] }[] }) {
   return (
     <ol className="relative mb-6 pl-9">
-      <span className="absolute left-[15px] top-2 bottom-2 w-px bg-gradient-to-b from-indigo-300 via-indigo-200 to-indigo-50" aria-hidden />
+      <span className="absolute left-[15px] top-2 bottom-2 w-px bg-gradient-to-b from-[#f0a898] via-[#fbe1d9] to-[#fdf0ec]" aria-hidden />
       {itinerary.map((block, i) => (
         <li key={block.day} className="relative pb-6 last:pb-0">
-          <span className="absolute -left-9 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white ring-4 ring-white">
+          <span className="absolute -left-9 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-[#e85d3a] text-xs font-bold text-white ring-4 ring-white">
             {i + 1}
           </span>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-indigo-600">{block.day}</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#e85d3a]">{block.day}</p>
           <div className="space-y-1.5">
             {block.activities.map((activity) => (
-              <div key={activity} className="flex items-start gap-2.5 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-600">
+              <div key={activity} className="flex items-start gap-2.5 rounded-lg bg-[#f5f0eb] px-3 py-2 text-sm text-gray-600">
                 <span className="text-base leading-none">{activityIcon(activity)}</span>
                 <span className="leading-snug">{activity}</span>
               </div>
@@ -742,14 +742,14 @@ function TripCard({ trip, featured }: { trip: Trip; featured: boolean }) {
     <>
     <Card
       className={`overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow ${
-        featured ? "ring-2 ring-indigo-600" : ""
+        featured ? "ring-2 ring-[#e85d3a]" : ""
       }`}
     >
       {/* Image gradient header */}
       <div className={`bg-gradient-to-br ${trip.gradient} h-40 flex items-end p-5`}>
         {featured && (
           <div className="absolute top-4 right-4">
-            <Badge className="bg-indigo-600 text-white text-xs">Empfohlen</Badge>
+            <Badge className="bg-[#e85d3a] text-white text-xs">Empfohlen</Badge>
           </div>
         )}
         <div>
@@ -774,7 +774,7 @@ function TripCard({ trip, featured }: { trip: Trip; featured: boolean }) {
         <div className="space-y-1.5 mb-5">
           {trip.highlights.map((h) => (
             <div key={h} className="flex items-center gap-2 text-sm text-gray-600">
-              <span className="text-indigo-400 text-xs">✓</span>
+              <span className="text-[#e85d3a] text-xs">✓</span>
               <span>{h}</span>
             </div>
           ))}
@@ -787,7 +787,7 @@ function TripCard({ trip, featured }: { trip: Trip; featured: boolean }) {
             <p className="text-xl font-bold text-gray-900">€{trip.price.toLocaleString()}</p>
             <p className="text-xs text-gray-400">pro Person</p>
           </div>
-          <Button size="sm" className={featured ? "bg-indigo-600 hover:bg-indigo-700" : ""} onClick={() => setOpen(true)}>
+          <Button size="sm" className={featured ? "bg-[#e85d3a] hover:bg-[#d04e2d]" : ""} onClick={() => setOpen(true)}>
             Details →
           </Button>
         </div>
@@ -813,7 +813,7 @@ function TripCard({ trip, featured }: { trip: Trip; featured: boolean }) {
         <h4 className="font-semibold text-gray-900 mb-3">Budget-Aufteilung <span className="text-gray-400 font-normal text-sm">pro Person</span></h4>
         <div className="grid grid-cols-2 gap-2 mb-6">
           {Object.entries(trip.budget).map(([key, val]) => (
-            <div key={key} className="flex justify-between text-sm bg-gray-50 rounded-lg px-3 py-2">
+            <div key={key} className="flex justify-between text-sm bg-[#f5f0eb] rounded-lg px-3 py-2">
               <span className="text-gray-500 capitalize">{key === "flights" ? "Flug" : key === "hotel" ? "Hotel" : key === "activities" ? "Aktivitäten" : "Essen"}</span>
               <span className="font-medium">€{val}</span>
             </div>
@@ -825,7 +825,7 @@ function TripCard({ trip, featured }: { trip: Trip; featured: boolean }) {
             href={trip.bookingUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
+            className="flex-1 inline-flex items-center justify-center rounded-md bg-[#e85d3a] px-4 py-2 text-sm font-medium text-white hover:bg-[#d04e2d] transition-colors"
           >
             Flüge suchen ↗
           </a>
