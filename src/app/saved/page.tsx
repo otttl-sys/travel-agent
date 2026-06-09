@@ -14,10 +14,11 @@ import { BriefingCard, type BriefingSection } from "@/components/briefing-card";
 import { EventsList, type EventItem } from "@/components/events-list";
 import { VisaCard, type VisaRequirement, type EVisaAction } from "@/components/visa-card";
 import { BudgetBreakdown, type BudgetLine } from "@/components/budget-breakdown";
+import { WeatherForecast, type WeatherResult } from "@/components/weather-forecast";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type TabId = "plan" | "concierge" | "day-plan" | "briefing" | "events" | "visa" | "budget";
+type TabId = "plan" | "concierge" | "day-plan" | "briefing" | "events" | "visa" | "budget" | "weather";
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: "plan",      label: "Plan",      icon: "🗺️" },
@@ -27,6 +28,7 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: "events",    label: "Events",    icon: "🎉" },
   { id: "visa",      label: "Visa",      icon: "🛂" },
   { id: "budget",    label: "Budget",    icon: "💶" },
+  { id: "weather",   label: "Weather",   icon: "🌤️" },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -80,7 +82,21 @@ export default function SavedPage() {
   const [generatingBudgetId, setGeneratingBudgetId] = useState<string | null>(null);
   const [budgetTraces, setBudgetTraces] = useState<Record<string, TraceEntry[]>>({});
 
+  const [weatherData, setWeatherData] = useState<Record<string, WeatherResult>>({});
+  const [loadingWeatherId, setLoadingWeatherId] = useState<string | null>(null);
+  const [weatherError, setWeatherError] = useState<Record<string, string>>({});
+
   useEffect(() => { setTrips(getSavedTrips()); }, []);
+
+  // Auto-fetch weather when weather tab is opened
+  useEffect(() => {
+    trips.forEach(trip => {
+      if (activeTab[trip.id] === "weather" && !weatherData[trip.id] && loadingWeatherId !== trip.id) {
+        fetchWeather(trip);
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, trips]);
 
   // ── Tab helpers ──────────────────────────────────────────────────────────────
 
@@ -97,6 +113,25 @@ export default function SavedPage() {
       case "events":    return !!trip.events;
       case "visa":      return !!trip.visa;
       case "budget":    return !!trip.budgetResult;
+      case "weather":   return !!weatherData[trip.id];
+    }
+  }
+
+  async function fetchWeather(trip: SavedTrip) {
+    if (!trip.startDate || !trip.endDate) return;
+    setLoadingWeatherId(trip.id);
+    setWeatherError(prev => { const next = { ...prev }; delete next[trip.id]; return next; });
+    const dest = trip.isMultiCity ? trip.cities.join(" → ") : trip.destination;
+    const params = new URLSearchParams({ destination: dest, startDate: trip.startDate, endDate: trip.endDate });
+    try {
+      const res = await fetch(`/api/weather?${params}`);
+      if (!res.ok) throw new Error((await res.json()).error ?? "Weather fetch failed");
+      const data: WeatherResult = await res.json();
+      setWeatherData(prev => ({ ...prev, [trip.id]: data }));
+    } catch (err) {
+      setWeatherError(prev => ({ ...prev, [trip.id]: err instanceof Error ? err.message : "Failed to load weather" }));
+    } finally {
+      setLoadingWeatherId(null);
     }
   }
 
@@ -665,6 +700,27 @@ export default function SavedPage() {
                                 <Button size="sm" onClick={() => generateBudget(trip)}>💶 Estimate Budget</Button>
                               </div>
                             ) : null}
+                          </>
+                        )}
+
+                        {/* Weather */}
+                        {tab === "weather" && (
+                          <>
+                            <div className="flex items-center justify-between mb-4">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Weather Forecast</p>
+                              {weatherData[trip.id] && (
+                                <button onClick={() => { setWeatherData(prev => { const next = { ...prev }; delete next[trip.id]; return next; }); fetchWeather(trip); }} disabled={loadingWeatherId === trip.id} className="text-xs font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50">🔄 Refresh</button>
+                              )}
+                            </div>
+                            {loadingWeatherId === trip.id && (
+                              <div className="flex items-center gap-2 text-sm text-gray-400 py-6 justify-center">
+                                <span className="animate-spin">🌀</span> Loading weather…
+                              </div>
+                            )}
+                            {weatherError[trip.id] && (
+                              <p className="text-sm text-red-500 text-center py-4">{weatherError[trip.id]}</p>
+                            )}
+                            {weatherData[trip.id] && <WeatherForecast result={weatherData[trip.id]} />}
                           </>
                         )}
 
