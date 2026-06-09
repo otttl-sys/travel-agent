@@ -153,7 +153,7 @@ export default function Home() {
         </section>
 
         {/* Agent grid */}
-        <section className="bg-white border-y border-[#e8e4e0] py-20 px-6">
+        <section className="bg-[#fffbf7] border-y border-[#e8e4e0] py-20 px-6">
           <div className="max-w-5xl mx-auto">
             <p className="text-center text-xs font-bold text-[#e85d3a] uppercase tracking-[0.18em] mb-4">Under the hood</p>
             <h2 className="text-center text-3xl font-bold text-[#1c1917] mb-4">
@@ -166,7 +166,7 @@ export default function Home() {
               {AGENTS.map((agent) => (
                 <div
                   key={agent.name}
-                  className="rounded-2xl border border-[#e8e4e0] p-5 hover:border-[#e85d3a] hover:bg-[#fdf0ec]/50 transition-colors"
+                  className="rounded-2xl bg-white border border-[#e8e4e0] p-5 hover:border-[#e85d3a] hover:shadow-sm transition-all"
                 >
                   <span className="text-2xl mb-3 block">{agent.icon}</span>
                   <h3 className="font-semibold text-[#1c1917] text-sm mb-1">{agent.name}</h3>
