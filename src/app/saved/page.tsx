@@ -5,12 +5,13 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getSavedTrips, deleteTrip, updatePriceWatch, updateDayPlan, updateBriefing, updateEvents, type SavedTrip, type PriceWatch, type DayPlan, type Briefing, type EventsResult } from "@/lib/saved-trips";
+import { getSavedTrips, deleteTrip, updatePriceWatch, updateDayPlan, updateBriefing, updateEvents, updateVisa, type SavedTrip, type PriceWatch, type DayPlan, type Briefing, type EventsResult, type VisaResult } from "@/lib/saved-trips";
 import { AgentTrace, type TraceEntry } from "@/components/agent-trace";
 import { ConciergeChat, type ChatMessage } from "@/components/concierge-chat";
 import { DayTimeline, type DaySchedule } from "@/components/day-timeline";
 import { BriefingCard, type BriefingSection } from "@/components/briefing-card";
 import { EventsList, type EventItem } from "@/components/events-list";
+import { VisaCard, type VisaRequirement, type EVisaAction } from "@/components/visa-card";
 
 const TREND_META: Record<PriceWatch["trend"], { emoji: string; label: string }> = {
   down: { emoji: "📉", label: "Wirkt günstiger" },
@@ -54,6 +55,11 @@ export default function SavedPage() {
   const [openEventsId, setOpenEventsId] = useState<string | null>(null);
   const [generatingEventsId, setGeneratingEventsId] = useState<string | null>(null);
   const [eventsTraces, setEventsTraces] = useState<Record<string, TraceEntry[]>>({});
+
+  const [openVisaId, setOpenVisaId] = useState<string | null>(null);
+  const [generatingVisaId, setGeneratingVisaId] = useState<string | null>(null);
+  const [visaTraces, setVisaTraces] = useState<Record<string, TraceEntry[]>>({});
+  const [visaPassport, setVisaPassport] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setTrips(getSavedTrips());
@@ -456,6 +462,92 @@ export default function SavedPage() {
     }
   }
 
+  async function generateVisa(trip: SavedTrip, passport: string) {
+    if (generatingVisaId) return;
+    setGeneratingVisaId(trip.id);
+    setVisaTraces((prev) => ({ ...prev, [trip.id]: [] }));
+
+    const body = {
+      destination: trip.isMultiCity ? trip.cities.join(" → ") : trip.destination,
+      startDate: trip.startDate,
+      endDate: trip.endDate,
+      passport,
+    };
+
+    try {
+      const res = await fetch("/api/visa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) return;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n").filter((l) => l.startsWith("data: "));
+
+        for (const line of lines) {
+          const data = line.replace("data: ", "");
+          if (data === "[DONE]") break;
+
+          let parsed: { type: string; id?: string; tool?: string; input?: Record<string, unknown>; iteration?: number; requirements?: VisaRequirement[]; disclaimer?: string; actions?: EVisaAction[]; message?: string };
+          try {
+            parsed = JSON.parse(data);
+          } catch {
+            continue;
+          }
+          if (parsed.type === "tool_call" && parsed.id && parsed.tool) {
+            setVisaTraces((prev) => ({
+              ...prev,
+              [trip.id]: [
+                ...(prev[trip.id] ?? []),
+                { id: parsed.id!, iteration: parsed.iteration ?? 1, tool: parsed.tool!, input: parsed.input ?? {}, status: "running" },
+              ],
+            }));
+          }
+          if (parsed.type === "tool_done" && parsed.id) {
+            setVisaTraces((prev) => ({
+              ...prev,
+              [trip.id]: (prev[trip.id] ?? []).map((entry) => (entry.id === parsed.id ? { ...entry, status: "done" } : entry)),
+            }));
+          }
+          if (parsed.type === "visa" && parsed.requirements) {
+            const visa: VisaResult = {
+              generatedAt: new Date().toISOString(),
+              passport,
+              requirements: parsed.requirements,
+              disclaimer: parsed.disclaimer ?? "",
+            };
+            updateVisa(trip.id, visa);
+            setTrips((prev) => prev.map((t) => (t.id === trip.id ? { ...t, visa } : t)));
+          }
+          if (parsed.type === "evisa_actions" && parsed.actions) {
+            setTrips((prev) =>
+              prev.map((t) =>
+                t.id === trip.id && t.visa
+                  ? { ...t, visa: { ...t.visa, eVisaActions: parsed.actions } }
+                  : t
+              )
+            );
+            updateVisa(trip.id, {
+              ...(trips.find((t) => t.id === trip.id)?.visa as VisaResult),
+              eVisaActions: parsed.actions,
+            });
+          }
+        }
+      }
+    } catch {
+      // Generation failure is non-fatal — the panel stays available to retry.
+    } finally {
+      setGeneratingVisaId(null);
+      setVisaTraces((prev) => ({ ...prev, [trip.id]: [] }));
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <nav className="bg-white border-b border-gray-100 px-6 py-4">
@@ -614,6 +706,13 @@ export default function SavedPage() {
                           onClick={() => setOpenEventsId((prev) => (prev === trip.id ? null : trip.id))}
                         >
                           {openEventsId === trip.id ? "🎉 Schließen" : trip.events ? "🎉 Events ansehen" : "🎉 Events entdecken"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setOpenVisaId((prev) => (prev === trip.id ? null : trip.id))}
+                        >
+                          {openVisaId === trip.id ? "🛂 Close" : trip.visa ? "🛂 Visa Requirements" : "🛂 Check Visa"}
                         </Button>
                         <Button
                           variant="outline"
@@ -802,6 +901,77 @@ export default function SavedPage() {
                           <Button size="sm" onClick={() => generateEvents(trip)}>
                             🎉 Events entdecken
                           </Button>
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
+
+                  {openVisaId === trip.id && (
+                    <div className="border-t border-gray-100 p-6 bg-gray-50/50">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                          Visa &amp; Entry Agent
+                        </p>
+                        {trip.visa && (
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-gray-400">
+                              checked {formatCheckedDate(trip.visa.generatedAt)}
+                            </span>
+                            <button
+                              onClick={() => {
+                                const passport = visaPassport[trip.id] || trip.visa?.passport || "German";
+                                generateVisa(trip, passport);
+                              }}
+                              disabled={generatingVisaId !== null}
+                              className="text-xs font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
+                            >
+                              🔄 Re-check
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {generatingVisaId === trip.id && (
+                        <div className="mb-4">
+                          <AgentTrace trace={visaTraces[trip.id] ?? []} />
+                          {(visaTraces[trip.id]?.length ?? 0) === 0 && (
+                            <p className="text-sm text-gray-400">Researching entry requirements…</p>
+                          )}
+                        </div>
+                      )}
+
+                      {trip.visa ? (
+                        <div className="rounded-lg bg-white border border-gray-100 p-5">
+                          <VisaCard
+                            requirements={trip.visa.requirements}
+                            disclaimer={trip.visa.disclaimer}
+                            passport={trip.visa.passport}
+                            eVisaActions={trip.visa.eVisaActions}
+                          />
+                        </div>
+                      ) : generatingVisaId !== trip.id ? (
+                        <div className="py-6 space-y-4 max-w-sm">
+                          <p className="text-sm text-gray-500">
+                            Check visa requirements, health rules, and entry conditions for your passport.
+                          </p>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="Your passport (e.g. German, US, UK)"
+                              value={visaPassport[trip.id] ?? ""}
+                              onChange={(e) =>
+                                setVisaPassport((prev) => ({ ...prev, [trip.id]: e.target.value }))
+                              }
+                              className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                            <Button
+                              size="sm"
+                              onClick={() => generateVisa(trip, visaPassport[trip.id] || "German")}
+                              disabled={generatingVisaId !== null}
+                            >
+                              Check
+                            </Button>
+                          </div>
                         </div>
                       ) : null}
                     </div>
