@@ -67,8 +67,23 @@ const tools: Anthropic.Tool[] = [
       },
       required: ["destination", "budget_per_person"],
     },
+    cache_control: { type: "ephemeral" },
   },
 ];
+
+// Marks the last content block of the last message as a prompt-cache breakpoint,
+// so the (growing) conversation prefix is cached instead of resent at full price
+// on the next request in this chain.
+function markCacheBreakpoint(messages: Anthropic.MessageParam[]) {
+  const last = messages[messages.length - 1];
+  if (!last) return;
+  if (typeof last.content === "string") {
+    last.content = [{ type: "text", text: last.content, cache_control: { type: "ephemeral" } }];
+  } else if (Array.isArray(last.content) && last.content.length > 0) {
+    const lastBlock = last.content[last.content.length - 1] as { cache_control?: unknown };
+    lastBlock.cache_control = { type: "ephemeral" };
+  }
+}
 
 async function executeTool(name: string, input: Record<string, unknown>): Promise<string> {
   const tvly = tavily({ apiKey: process.env.TAVILY_API_KEY! });
@@ -177,6 +192,7 @@ const multiCityTools: Anthropic.Tool[] = [
       },
       required: ["cities", "budget_per_person"],
     },
+    cache_control: { type: "ephemeral" },
   },
 ];
 
@@ -292,11 +308,17 @@ Erstelle dann einen konkreten, strukturierten Reisevorschlag auf Deutsch.
         while (continueLoop && iterations < MAX_ITERATIONS) {
           iterations++;
 
+          // From the 2nd call onward, cache the conversation prefix built up so far
+          // (tool results + prior assistant text) instead of resending it at full price.
+          if (iterations > 1) markCacheBreakpoint(messages);
+
           // Stream every Claude call — text tokens arrive live, tool_use detected after
           const stream = client.messages.stream({
             model: "claude-sonnet-4-6",
             max_tokens: isMultiCity ? 8192 : 4096,
-            ...(isMultiCity && iterations === 1 ? { system: multiCitySystemPrompt } : {}),
+            ...(isMultiCity && iterations === 1
+              ? { system: [{ type: "text" as const, text: multiCitySystemPrompt, cache_control: { type: "ephemeral" as const } }] }
+              : {}),
             tools: activeTools,
             messages,
           });
@@ -419,19 +441,21 @@ Erstelle dann einen konkreten, strukturierten Reisevorschlag auf Deutsch.
                   encoder.encode(`data: ${JSON.stringify({ type: "tool_call", id: "cards", tool: "generate_trip_cards", input: { destination }, iteration: iterations + 1 })}\n\n`)
                 );
 
+                const cardMessages: Anthropic.MessageParam[] = [
+                  ...messages,
+                  { role: "assistant", content: finalMessage.content },
+                  {
+                    role: "user",
+                    content: `Based on the travel plan above, generate 3 different trip card options for ${destination}. Vary the style: one budget-friendly, one balanced, one premium. All prices realistic for the destination. Use German for all text fields. bookingUrl should be a Google Flights search URL.`,
+                  },
+                ];
+
                 const cardResponse = await client.messages.create({
                   model: "claude-sonnet-4-6",
-                  max_tokens: 2048,
+                  max_tokens: 4096,
                   tool_choice: { type: "any" },
                   tools: [cardTool],
-                  messages: [
-                    ...messages,
-                    { role: "assistant", content: finalMessage.content },
-                    {
-                      role: "user",
-                      content: `Based on the travel plan above, generate 3 different trip card options for ${destination}. Vary the style: one budget-friendly, one balanced, one premium. All prices realistic for the destination. Use German for all text fields. bookingUrl should be a Google Flights search URL.`,
-                    },
-                  ],
+                  messages: cardMessages,
                 });
 
                 controller.enqueue(
