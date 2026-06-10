@@ -100,10 +100,10 @@ export default function ResultsPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#fffbf7] flex items-center justify-center">
+        <div className="min-h-screen bg-[#faf9f6] flex items-center justify-center">
           <div className="text-center">
             <div className="text-5xl mb-4 animate-pulse">🤖</div>
-            <p className="text-gray-500">Agenten starten…</p>
+            <p className="text-[#78716c]">Agenten starten…</p>
           </div>
         </div>
       }
@@ -267,22 +267,22 @@ function ResultsContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#fffbf7] flex flex-col items-center justify-center px-6 py-12">
+      <div className="min-h-screen bg-[#faf9f6] flex flex-col items-center justify-center px-6 py-12">
         <div className="w-full max-w-lg text-center">
           <div className="text-5xl mb-6 animate-pulse">🤖</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">AI analysiert deine Reise</h2>
-          <p className="text-gray-500 text-sm mb-8">
+          <h2 className="text-2xl font-bold text-[#1a1a1a] mb-2">AI analysiert deine Reise</h2>
+          <p className="text-[#78716c] text-sm mb-8">
             {destination ? `Wir suchen die besten Optionen für ${destination}.` : "Mehrere Agenten arbeiten für dich."}
           </p>
           <div className="space-y-2 mb-8">
             <Progress value={progress} className="h-2" />
-            <p className="text-xs text-gray-400">{progress}%</p>
+            <p className="text-xs text-[#a8a29e]">{progress}%</p>
           </div>
           <div className="text-left">
             {trace.length > 0 ? (
               <AgentTrace trace={trace} />
             ) : (
-              <p className="text-sm text-gray-400 text-center">Orchestrator Agent startet…</p>
+              <p className="text-sm text-[#a8a29e] text-center">Orchestrator Agent startet…</p>
             )}
           </div>
         </div>
@@ -292,11 +292,11 @@ function ResultsContent() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#fffbf7] flex flex-col items-center justify-center px-6">
+      <div className="min-h-screen bg-[#faf9f6] flex flex-col items-center justify-center px-6">
         <div className="w-full max-w-md text-center">
           <div className="text-5xl mb-6">⚠️</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Etwas ist schiefgelaufen</h2>
-          <p className="text-gray-500 text-sm mb-8">{error}</p>
+          <h2 className="text-2xl font-bold text-[#1a1a1a] mb-2">Etwas ist schiefgelaufen</h2>
+          <p className="text-[#78716c] text-sm mb-8">{error}</p>
           <Button onClick={() => router.push("/plan")}>Nochmal versuchen</Button>
         </div>
       </div>
@@ -310,21 +310,21 @@ function ResultsContent() {
   const displayTrips = dynamicCards ?? fallbackTrips;
 
   return (
-    <div className="min-h-screen bg-[#fffbf7] flex flex-col">
+    <div className="min-h-screen bg-[#faf9f6] flex flex-col">
       {/* Nav */}
-      <nav className="bg-[#fffbf7] border-b border-[#e8e4e0] px-6 py-4 no-print">
+      <nav className="bg-[#faf9f6] border-b border-[#e5e2dc] px-6 py-4 no-print">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <button
             onClick={() => router.push("/")}
-            className="font-semibold text-gray-900"
+            className="font-bold text-[#1a1a1a] text-sm tracking-[0.2em] uppercase"
           >
-            ✈ TravelAgent
+            TravelAgent
           </button>
           <div className="flex items-center gap-2">
-            <Link href="/saved" className="text-sm text-gray-500 hidden sm:block hover:text-[#e85d3a] transition-colors mr-2">
+            <Link href="/saved" className="text-sm text-[#78716c] hidden sm:block hover:text-[#1a1a1a] transition-colors mr-2">
               Saved Trips
             </Link>
-            <Link href="/packing" className="text-sm text-gray-500 hidden sm:block hover:text-[#e85d3a] transition-colors mr-2">
+            <Link href="/packing" className="text-sm text-[#78716c] hidden sm:block hover:text-[#1a1a1a] transition-colors mr-2">
               Packing List
             </Link>
             <Button variant="outline" size="sm" onClick={() => router.push("/plan")}>
@@ -359,12 +359,12 @@ function ResultsContent() {
                 </div>
               )}
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-[#1a1a1a]">
               {isMultiCity
                 ? cityNames.join(" → ")
                 : destination ? `Deine Reisevorschläge für ${destination}` : "Deine Reisevorschläge"}
             </h1>
-            <p className="text-gray-500 mt-2">
+            <p className="text-[#78716c] mt-2">
               {searchParams.get("travelers") || "2"} Personen ·{" "}
               {searchParams.get("startDate") || "Flexibles Datum"} ·{" "}
               Budget €{budget.toLocaleString()} pro Person
@@ -374,8 +374,8 @@ function ResultsContent() {
 
           {/* Multi-City Route Visual */}
           {isMultiCity && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-8">
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Deine Route</h3>
+            <div className="bg-white rounded-2xl border border-[#e5e2dc] p-6 mb-8">
+              <h3 className="text-sm font-semibold text-[#78716c] uppercase tracking-wider mb-4">Deine Route</h3>
               <div className="flex items-center gap-2 flex-wrap">
                 {cityNames.map((city, i) => (
                   <div key={i} className="flex items-center gap-2">
@@ -383,11 +383,11 @@ function ResultsContent() {
                       <div className="w-8 h-8 rounded-full bg-[#e85d3a] text-white text-sm font-bold flex items-center justify-center mx-auto mb-1">
                         {i + 1}
                       </div>
-                      <p className="text-sm font-semibold text-gray-900">{city}</p>
-                      <p className="text-xs text-gray-400">{cityDaysArr[i] ?? 3} Tage</p>
+                      <p className="text-sm font-semibold text-[#1a1a1a]">{city}</p>
+                      <p className="text-xs text-[#a8a29e]">{cityDaysArr[i] ?? 3} Tage</p>
                     </div>
                     {i < cityNames.length - 1 && (
-                      <span className="text-gray-300 text-xl mx-1">→</span>
+                      <span className="text-[#d6d2cb] text-xl mx-1">→</span>
                     )}
                   </div>
                 ))}
@@ -406,12 +406,12 @@ function ResultsContent() {
 
           {/* AI Result */}
           {aiResult && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-8 mb-6">
+            <div className="bg-white rounded-2xl border border-[#e5e2dc] p-8 mb-6">
               <div className="flex items-center gap-2 mb-5">
                 <span className="text-xl">🤖</span>
-                <h3 className="font-semibold text-gray-900">Dein persönlicher Reiseplan von Claude</h3>
+                <h3 className="font-semibold text-[#1a1a1a]">Dein persönlicher Reiseplan von Claude</h3>
               </div>
-              <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed">
+              <div className="prose prose-sm max-w-none text-[#44403c] leading-relaxed">
                 <ReactMarkdown>{aiResult}</ReactMarkdown>
               </div>
             </div>
@@ -429,8 +429,8 @@ function ResultsContent() {
           <BudgetTracker budget={budget} aiResult={aiResult} isMultiCity={isMultiCity} travelers={Number(searchParams.get("travelers") || 2)} />
 
           {/* Agent Summary */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 no-print">
-            <h3 className="font-semibold text-gray-900 mb-4">Was die Agenten analysiert haben</h3>
+          <div className="bg-white rounded-2xl border border-[#e5e2dc] p-6 no-print">
+            <h3 className="font-semibold text-[#1a1a1a] mb-4">Was die Agenten analysiert haben</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {(isMultiCity ? [
                 { icon: "✈️", label: "Flug-Legs", value: toolCounts.search_flight_leg > 0 ? `${toolCounts.search_flight_leg}` : "—" },
@@ -445,13 +445,13 @@ function ResultsContent() {
               ]).map((item) => (
                 <div key={item.label} className="text-center p-4 rounded-xl bg-[#f5f0eb]">
                   <span className="text-2xl block mb-2">{item.icon}</span>
-                  <p className="text-xs text-gray-400 mb-1">{item.label}</p>
-                  <p className="text-sm font-semibold text-gray-800">{item.value}</p>
+                  <p className="text-xs text-[#a8a29e] mb-1">{item.label}</p>
+                  <p className="text-sm font-semibold text-[#1a1a1a]">{item.value}</p>
                 </div>
               ))}
             </div>
             {trace.length > 0 && (
-              <div className="mt-5 pt-5 border-t border-gray-100">
+              <div className="mt-5 pt-5 border-t border-[#e5e2dc]">
                 <button
                   onClick={() => setShowTrace((v) => !v)}
                   className="text-sm font-medium text-[#e85d3a] hover:text-[#d04e2d] flex items-center gap-1.5"
@@ -531,23 +531,23 @@ function BudgetTracker({ budget, aiResult, isMultiCity, travelers }: {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-8 mb-6">
+    <div className="bg-white rounded-2xl border border-[#e5e2dc] p-8 mb-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <span className="text-xl">💶</span>
-          <h3 className="font-semibold text-gray-900">Budget Tracker</h3>
-          <span className="text-xs text-gray-400 ml-1">pro Person · klicken zum Bearbeiten</span>
+          <h3 className="font-semibold text-[#1a1a1a]">Budget Tracker</h3>
+          <span className="text-xs text-[#a8a29e] ml-1">pro Person · klicken zum Bearbeiten</span>
         </div>
         <div className="text-right">
           <p className={`text-lg font-bold ${over ? "text-red-600" : "text-green-600"}`}>
             {over ? `−€${Math.abs(remaining).toLocaleString()} über Budget` : `€${remaining.toLocaleString()} übrig`}
           </p>
-          <p className="text-xs text-gray-400">Budget: €{budget.toLocaleString()} / Person</p>
+          <p className="text-xs text-[#a8a29e]">Budget: €{budget.toLocaleString()} / Person</p>
         </div>
       </div>
 
       {/* Progress bar */}
-      <div className="w-full bg-gray-100 rounded-full h-2.5 mb-6 overflow-hidden">
+      <div className="w-full bg-[#e5e2dc] rounded-full h-2.5 mb-6 overflow-hidden">
         <div
           className={`h-2.5 rounded-full transition-all duration-300 ${over ? "bg-red-500" : pct > 85 ? "bg-amber-400" : "bg-green-500"}`}
           style={{ width: `${pct}%` }}
@@ -559,7 +559,7 @@ function BudgetTracker({ budget, aiResult, isMultiCity, travelers }: {
         {BUDGET_CATEGORIES.map((cat) => (
           <div key={cat.key} className="flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-[#f5f0eb] transition-colors group">
             <span className="text-lg w-6">{cat.icon}</span>
-            <span className="text-sm text-gray-600 flex-1">{cat.label}</span>
+            <span className="text-sm text-[#57534e] flex-1">{cat.label}</span>
             {editing === cat.key ? (
               <input
                 autoFocus
@@ -572,12 +572,12 @@ function BudgetTracker({ budget, aiResult, isMultiCity, travelers }: {
             ) : (
               <button
                 onClick={() => setEditing(cat.key)}
-                className="text-sm font-semibold text-gray-800 group-hover:text-[#e85d3a] transition-colors"
+                className="text-sm font-semibold text-[#1a1a1a] group-hover:text-[#e85d3a] transition-colors"
               >
                 €{items[cat.key].toLocaleString()}
               </button>
             )}
-            <div className="w-20 bg-gray-100 rounded-full h-1.5 overflow-hidden">
+            <div className="w-20 bg-[#e5e2dc] rounded-full h-1.5 overflow-hidden">
               <div
                 className="h-1.5 rounded-full bg-[#e85d3a] transition-all duration-300"
                 style={{ width: `${Math.min((items[cat.key] / budget) * 100, 100)}%` }}
@@ -588,14 +588,14 @@ function BudgetTracker({ budget, aiResult, isMultiCity, travelers }: {
       </div>
 
       {/* Totals */}
-      <div className={`flex items-center justify-between pt-4 border-t ${over ? "border-red-100 bg-red-50" : "border-[#e8e4e0] bg-[#fffbf7]"} rounded-xl px-4 py-3`}>
-        <span className="text-sm font-semibold text-gray-700">Gesamt pro Person</span>
-        <span className={`text-lg font-bold ${over ? "text-red-600" : "text-gray-900"}`}>
+      <div className={`flex items-center justify-between pt-4 border-t ${over ? "border-red-100 bg-red-50" : "border-[#e5e2dc] bg-[#faf9f6]"} rounded-xl px-4 py-3`}>
+        <span className="text-sm font-semibold text-[#44403c]">Gesamt pro Person</span>
+        <span className={`text-lg font-bold ${over ? "text-red-600" : "text-[#1a1a1a]"}`}>
           €{total.toLocaleString()}
         </span>
       </div>
       {travelers > 1 && (
-        <p className="text-xs text-gray-400 text-right mt-2">
+        <p className="text-xs text-[#a8a29e] text-right mt-2">
           {travelers} Personen gesamt: €{(total * travelers).toLocaleString()}
         </p>
       )}
@@ -669,10 +669,10 @@ function BookingSection({
   ];
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-8 mb-6 no-print">
+    <div className="bg-white rounded-2xl border border-[#e5e2dc] p-8 mb-6 no-print">
       <div className="flex items-center gap-2 mb-5">
         <span className="text-xl">🔗</span>
-        <h3 className="font-semibold text-gray-900">Direkt buchen</h3>
+        <h3 className="font-semibold text-[#1a1a1a]">Direkt buchen</h3>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {links.map((link) => (
@@ -685,7 +685,7 @@ function BookingSection({
           >
             <span className="text-2xl">{link.icon}</span>
             <span className={`font-semibold text-xs ${link.labelClass}`}>{link.label}</span>
-            <span className="text-xs text-gray-400">{link.sub}</span>
+            <span className="text-xs text-[#a8a29e]">{link.sub}</span>
           </a>
         ))}
       </div>
@@ -723,7 +723,7 @@ function ItineraryTimeline({ itinerary }: { itinerary: { day: string; activities
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#e85d3a]">{block.day}</p>
           <div className="space-y-1.5">
             {block.activities.map((activity) => (
-              <div key={activity} className="flex items-start gap-2.5 rounded-lg bg-[#f5f0eb] px-3 py-2 text-sm text-gray-600">
+              <div key={activity} className="flex items-start gap-2.5 rounded-lg bg-[#f5f0eb] px-3 py-2 text-sm text-[#57534e]">
                 <span className="text-base leading-none">{activityIcon(activity)}</span>
                 <span className="leading-snug">{activity}</span>
               </div>
@@ -759,7 +759,7 @@ function TripCard({ trip, featured }: { trip: Trip; featured: boolean }) {
       </div>
 
       <CardContent className="p-5">
-        <p className="text-sm text-gray-500 mb-4 leading-relaxed">{trip.description}</p>
+        <p className="text-sm text-[#78716c] mb-4 leading-relaxed">{trip.description}</p>
 
         {/* Themes */}
         <div className="flex flex-wrap gap-1.5 mb-4">
@@ -773,7 +773,7 @@ function TripCard({ trip, featured }: { trip: Trip; featured: boolean }) {
         {/* Highlights */}
         <div className="space-y-1.5 mb-5">
           {trip.highlights.map((h) => (
-            <div key={h} className="flex items-center gap-2 text-sm text-gray-600">
+            <div key={h} className="flex items-center gap-2 text-sm text-[#57534e]">
               <span className="text-[#e85d3a] text-xs">✓</span>
               <span>{h}</span>
             </div>
@@ -781,11 +781,11 @@ function TripCard({ trip, featured }: { trip: Trip; featured: boolean }) {
         </div>
 
         {/* Price + CTA */}
-        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+        <div className="flex items-center justify-between pt-4 border-t border-[#e5e2dc]">
           <div>
-            <p className="text-xs text-gray-400">{trip.duration} · ab</p>
-            <p className="text-xl font-bold text-gray-900">€{trip.price.toLocaleString()}</p>
-            <p className="text-xs text-gray-400">pro Person</p>
+            <p className="text-xs text-[#a8a29e]">{trip.duration} · ab</p>
+            <p className="text-xl font-bold text-[#1a1a1a]">€{trip.price.toLocaleString()}</p>
+            <p className="text-xs text-[#a8a29e]">pro Person</p>
           </div>
           <Button size="sm" className={featured ? "bg-[#e85d3a] hover:bg-[#d04e2d]" : ""} onClick={() => setOpen(true)}>
             Details →
@@ -802,19 +802,19 @@ function TripCard({ trip, featured }: { trip: Trip; featured: boolean }) {
           </DialogTitle>
         </DialogHeader>
 
-        <p className="text-sm text-gray-500 mb-4">{trip.description}</p>
+        <p className="text-sm text-[#78716c] mb-4">{trip.description}</p>
 
         {/* Itinerary Timeline */}
-        <h4 className="font-semibold text-gray-900 mb-4">Reiseverlauf</h4>
+        <h4 className="font-semibold text-[#1a1a1a] mb-4">Reiseverlauf</h4>
         <ItineraryTimeline itinerary={trip.itinerary} />
         <div className="mb-1" />
 
         {/* Budget breakdown */}
-        <h4 className="font-semibold text-gray-900 mb-3">Budget-Aufteilung <span className="text-gray-400 font-normal text-sm">pro Person</span></h4>
+        <h4 className="font-semibold text-[#1a1a1a] mb-3">Budget-Aufteilung <span className="text-[#a8a29e] font-normal text-sm">pro Person</span></h4>
         <div className="grid grid-cols-2 gap-2 mb-6">
           {Object.entries(trip.budget).map(([key, val]) => (
             <div key={key} className="flex justify-between text-sm bg-[#f5f0eb] rounded-lg px-3 py-2">
-              <span className="text-gray-500 capitalize">{key === "flights" ? "Flug" : key === "hotel" ? "Hotel" : key === "activities" ? "Aktivitäten" : "Essen"}</span>
+              <span className="text-[#78716c] capitalize">{key === "flights" ? "Flug" : key === "hotel" ? "Hotel" : key === "activities" ? "Aktivitäten" : "Essen"}</span>
               <span className="font-medium">€{val}</span>
             </div>
           ))}
@@ -825,7 +825,7 @@ function TripCard({ trip, featured }: { trip: Trip; featured: boolean }) {
             href={trip.bookingUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 inline-flex items-center justify-center rounded-md bg-[#e85d3a] px-4 py-2 text-sm font-medium text-white hover:bg-[#d04e2d] transition-colors"
+            className="flex-1 inline-flex items-center justify-center rounded-md bg-[#1a1a1a] px-4 py-2 text-sm font-medium text-white hover:bg-[#e85d3a] transition-colors"
           >
             Flüge suchen ↗
           </a>
