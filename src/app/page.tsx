@@ -89,7 +89,7 @@ export default function Home() {
             <p className="text-white/85 text-xs font-semibold uppercase tracking-[0.28em] mb-5">
               Powered by 8 AI agents
             </p>
-            <h1 className="text-white text-5xl md:text-7xl font-bold leading-[1.04] tracking-tight max-w-2xl mb-10">
+            <h1 className="text-white text-5xl md:text-7xl font-heading font-extrabold leading-[1.04] tracking-[-0.03em] max-w-2xl mb-10">
               Where to next?
             </h1>
 
@@ -134,7 +134,7 @@ export default function Home() {
             <div className="flex items-end justify-between mb-10">
               <div>
                 <p className="text-xs font-semibold text-[#e85d3a] uppercase tracking-[0.28em] mb-4">Where travelers go</p>
-                <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a1a] tracking-tight">
+                <h2 className="text-3xl md:text-4xl font-heading font-extrabold text-[#1a1a1a] tracking-[-0.03em]">
                   Popular destinations
                 </h2>
               </div>
@@ -156,7 +156,7 @@ export default function Home() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent" />
                 <div className="absolute bottom-0 left-0 p-6">
                   <p className="text-white/80 text-xs uppercase tracking-[0.2em] mb-1">{QUICK_DESTINATIONS[0].tag}</p>
-                  <h3 className="text-white text-2xl font-bold tracking-tight">{QUICK_DESTINATIONS[0].name}</h3>
+                  <h3 className="text-white text-2xl font-heading font-extrabold tracking-[-0.03em]">{QUICK_DESTINATIONS[0].name}</h3>
                 </div>
               </button>
 
@@ -176,7 +176,7 @@ export default function Home() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/0 to-transparent" />
                   <div className="absolute bottom-0 left-0 p-4">
                     <p className="text-white/80 text-[10px] uppercase tracking-[0.2em] mb-1">{dest.tag}</p>
-                    <h3 className="text-white text-lg font-bold tracking-tight">{dest.name}</h3>
+                    <h3 className="text-white text-lg font-heading font-extrabold tracking-[-0.03em]">{dest.name}</h3>
                   </div>
                 </button>
               ))}
@@ -198,7 +198,7 @@ export default function Home() {
             </div>
             <div className="order-1 lg:order-2">
               <p className="text-xs font-semibold text-[#e85d3a] uppercase tracking-[0.28em] mb-4">How it works</p>
-              <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a1a] tracking-tight mb-10">
+              <h2 className="text-3xl md:text-4xl font-heading font-extrabold text-[#1a1a1a] tracking-[-0.03em] mb-10">
                 From idea to plan in 3 steps
               </h2>
               <div className="space-y-8">
@@ -220,7 +220,7 @@ export default function Home() {
         <section className="py-24 px-6">
           <div className="max-w-7xl mx-auto">
             <p className="text-xs font-semibold text-[#e85d3a] uppercase tracking-[0.28em] mb-4">Under the hood</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a1a] tracking-tight mb-4">
+            <h2 className="text-3xl md:text-4xl font-heading font-extrabold text-[#1a1a1a] tracking-[-0.03em] mb-4">
               8 agents. One perfect trip.
             </h2>
             <p className="text-[#57534e] mb-12 max-w-lg text-sm leading-relaxed">
@@ -253,7 +253,7 @@ export default function Home() {
           <div className="absolute inset-0 bg-black/55" />
           <div className="relative">
             <p className="text-white/80 text-xs font-semibold uppercase tracking-[0.28em] mb-5">Ready to go?</p>
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4 leading-[1.1] tracking-tight">
+            <h2 className="text-4xl md:text-5xl font-heading font-extrabold text-white mb-4 leading-[1.1] tracking-[-0.03em]">
               Your next adventure<br />starts here.
             </h2>
             <p className="text-white/80 mb-10 text-base max-w-sm mx-auto leading-relaxed">
