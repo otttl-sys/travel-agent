@@ -105,17 +105,19 @@ export default function ResearchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-[#faf9f6] flex flex-col">
       {/* Nav */}
-      <nav className="border-b border-gray-100 px-6 py-4">
+      <nav className="bg-[#faf9f6] border-b border-[#e5e2dc] px-6 py-5">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <button onClick={() => router.push("/")} className="flex items-center gap-2">
-            <span className="text-2xl">✈</span>
-            <span className="font-semibold text-gray-900 text-lg">TravelAgent</span>
+          <button onClick={() => router.push("/")} className="font-bold text-[#1a1a1a] text-sm tracking-[0.2em] uppercase">
+            TravelAgent
           </button>
-          <Button variant="outline" size="sm" onClick={() => router.push("/plan")}>
+          <button
+            onClick={() => router.push("/plan")}
+            className="bg-[#1a1a1a] text-white px-6 py-2.5 rounded-full text-xs uppercase tracking-[0.18em] font-semibold hover:bg-[#e85d3a] transition-colors"
+          >
             Reise planen
-          </Button>
+          </button>
         </div>
       </nav>
 
@@ -126,12 +128,12 @@ export default function ResearchPage() {
               <Badge variant="secondary" className="mb-4 text-xs">
                 Destination Research
               </Badge>
-              <h1 className="text-4xl font-bold text-gray-900 leading-tight">
+              <h1 className="text-4xl font-extrabold tracking-[-0.03em] text-[#1a1a1a] leading-tight">
                 Alles über dein
                 <br />
-                <span className="text-indigo-600">Reiseziel</span>
+                <span className="text-[#e85d3a]">Reiseziel</span>
               </h1>
-              <p className="mt-4 text-gray-500 leading-relaxed">
+              <p className="mt-4 text-[#78716c] leading-relaxed">
                 Visa, Klima, Sicherheit, lokale Tipps — der Research Agent durchsucht aktuelle Quellen
                 und fasst alles zusammen, bevor du buchst.
               </p>
@@ -139,7 +141,7 @@ export default function ResearchPage() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#44403c] mb-2">
                   Wohin willst du reisen?
                 </label>
                 <Input
@@ -152,7 +154,7 @@ export default function ResearchPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#44403c] mb-2">
                   Dein Reisepass / Nationalität
                 </label>
                 <Input
@@ -160,12 +162,12 @@ export default function ResearchPage() {
                   value={passportCountry}
                   onChange={(e) => setPassportCountry(e.target.value)}
                 />
-                <p className="text-xs text-gray-400 mt-1">Für genaue Visa-Informationen</p>
+                <p className="text-xs text-[#a8a29e] mt-1">Für genaue Visa-Informationen</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Worauf soll der Fokus liegen? <span className="text-gray-400 font-normal">(optional)</span>
+                <label className="block text-sm font-medium text-[#44403c] mb-3">
+                  Worauf soll der Fokus liegen? <span className="text-[#a8a29e] font-normal">(optional)</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {INTEREST_OPTIONS.map((opt) => (
@@ -175,8 +177,8 @@ export default function ResearchPage() {
                       onClick={() => toggleInterest(opt.value)}
                       className={`px-4 py-2 rounded-full text-sm border transition-colors ${
                         interests.includes(opt.value)
-                          ? "bg-indigo-600 text-white border-indigo-600"
-                          : "bg-white text-gray-600 border-gray-200 hover:border-indigo-300"
+                          ? "bg-[#1a1a1a] text-white border-[#1a1a1a]"
+                          : "bg-white text-[#57534e] border-[#e5e2dc] hover:border-[#1a1a1a]"
                       }`}
                     >
                       {opt.label}
@@ -200,8 +202,8 @@ export default function ResearchPage() {
         {loading && (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="text-5xl mb-6 animate-pulse">🔍</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Research läuft...</h2>
-            <p className="text-gray-500 text-sm mb-10">{activeToolLabel}</p>
+            <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-[#1a1a1a] mb-2">Research läuft...</h2>
+            <p className="text-[#78716c] text-sm mb-10">{activeToolLabel}</p>
 
             <div className="w-full max-w-sm space-y-3">
               {RESEARCH_STEPS.map((step) => {
@@ -211,7 +213,7 @@ export default function ResearchPage() {
                   <div
                     key={step.tool}
                     className={`flex items-center gap-3 text-sm transition-all duration-300 ${
-                      done ? "text-green-600" : active ? "text-indigo-600 font-medium" : "text-gray-300"
+                      done ? "text-green-600" : active ? "text-[#e85d3a] font-medium" : "text-[#d6d2cb]"
                     }`}
                   >
                     <span className="w-4 text-center">{done ? "✓" : active ? "→" : "○"}</span>
@@ -226,8 +228,8 @@ export default function ResearchPage() {
         {error && (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="text-5xl mb-6">⚠️</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Fehler beim Research</h2>
-            <p className="text-gray-500 text-sm mb-8">{error}</p>
+            <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-[#1a1a1a] mb-2">Fehler beim Research</h2>
+            <p className="text-[#78716c] text-sm mb-8">{error}</p>
             <Button onClick={() => { setError(null); setLoading(false); }}>Nochmal versuchen</Button>
           </div>
         )}
@@ -237,19 +239,19 @@ export default function ResearchPage() {
             <div className="flex items-center justify-between mb-8">
               <div>
                 <Badge variant="secondary" className="mb-2 text-xs">Research abgeschlossen</Badge>
-                <h2 className="text-2xl font-bold text-gray-900">{destination}</h2>
+                <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-[#1a1a1a]">{destination}</h2>
               </div>
               <Button variant="outline" size="sm" onClick={() => { setResult(null); setDestination(""); }}>
                 Neues Research
               </Button>
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-100 p-8 mb-6">
+            <div className="bg-white rounded-2xl border border-[#e5e2dc] p-8 mb-6">
               <div className="flex items-center gap-2 mb-6">
                 <span className="text-xl">🔍</span>
-                <span className="font-semibold text-gray-900">Dein Reise-Research von Claude</span>
+                <span className="font-semibold text-[#1a1a1a]">Dein Reise-Research von Claude</span>
               </div>
-              <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed">
+              <div className="prose prose-sm max-w-none text-[#44403c] leading-relaxed">
                 <ReactMarkdown>{result}</ReactMarkdown>
               </div>
             </div>

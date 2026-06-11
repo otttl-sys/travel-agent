@@ -87,22 +87,24 @@ export default function PackingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-[#faf9f6] flex flex-col">
       {/* Nav */}
-      <nav className="bg-white border-b border-gray-100 px-6 py-4">
+      <nav className="bg-[#faf9f6] border-b border-[#e5e2dc] px-6 py-5">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <Link href="/" className="font-semibold text-gray-900">
-            ✈ TravelAgent
+          <Link href="/" className="font-bold text-[#1a1a1a] text-sm tracking-[0.2em] uppercase">
+            TravelAgent
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             <Link
               href="/saved"
-              className="text-sm text-gray-500 hidden sm:block hover:text-indigo-600 transition-colors"
+              className="text-xs uppercase tracking-[0.18em] text-[#57534e] hidden sm:block hover:text-[#1a1a1a] transition-colors"
             >
               Saved Trips
             </Link>
             <Link href="/plan">
-              <Button size="sm">Plan a trip</Button>
+              <button className="bg-[#1a1a1a] text-white px-6 py-2.5 rounded-full text-xs uppercase tracking-[0.18em] font-semibold hover:bg-[#e85d3a] transition-colors">
+                Plan a trip
+              </button>
             </Link>
           </div>
         </div>
@@ -112,22 +114,22 @@ export default function PackingPage() {
         <div className="max-w-2xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <span className="text-xs font-medium text-indigo-600 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-[#e85d3a] uppercase tracking-[0.28em]">
               AI Packing Agent
             </span>
-            <h1 className="text-3xl font-bold text-gray-900 mt-1 mb-2">
+            <h1 className="text-3xl font-extrabold tracking-[-0.03em] text-[#1a1a1a] mt-1 mb-2">
               Packing List Generator
             </h1>
-            <p className="text-gray-500">
+            <p className="text-[#78716c]">
               Describe your trip and AI builds a tailored checklist — specific to your destination, not generic advice.
             </p>
           </div>
 
           {/* Form */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-8 mb-6">
+          <div className="bg-white rounded-2xl border border-[#e5e2dc] p-8 mb-6">
             <div className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[#44403c] mb-1">
                   Destination
                 </label>
                 <Input
@@ -144,7 +146,7 @@ export default function PackingPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-[#44403c] mb-1">
                     Departure
                   </label>
                   <Input
@@ -154,7 +156,7 @@ export default function PackingPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-[#44403c] mb-1">
                     Return
                   </label>
                   <Input
@@ -165,11 +167,11 @@ export default function PackingPage() {
                 </div>
               </div>
               {days !== null && days > 0 && (
-                <p className="text-sm text-gray-400">→ {days} days</p>
+                <p className="text-sm text-[#a8a29e]">→ {days} days</p>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label className="block text-sm font-medium text-[#44403c] mb-3">
                   Trip Type
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -181,8 +183,8 @@ export default function PackingPage() {
                       }
                       className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 text-xs font-medium transition-colors ${
                         tripType === t.id
-                          ? "border-indigo-600 bg-indigo-50 text-indigo-700"
-                          : "border-gray-200 text-gray-600 hover:border-indigo-300"
+                          ? "border-[#e85d3a] bg-[#fdf0ec] text-[#e85d3a]"
+                          : "border-[#e5e2dc] text-[#57534e] hover:border-[#e85d3a]"
                       }`}
                     >
                       <span className="text-xl">{t.icon}</span>
@@ -195,7 +197,7 @@ export default function PackingPage() {
               <Button
                 onClick={generate}
                 disabled={!destination.trim() || loading}
-                className="w-full py-5 text-base bg-indigo-600 hover:bg-indigo-700"
+                className="w-full py-5 text-base bg-[#1a1a1a] hover:bg-[#e85d3a]"
               >
                 {loading ? "Generating…" : "Generate Packing List →"}
               </Button>
@@ -204,9 +206,9 @@ export default function PackingPage() {
 
           {/* Loading state */}
           {loading && !result && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
+            <div className="bg-white rounded-2xl border border-[#e5e2dc] p-8 text-center">
               <div className="text-4xl mb-3 animate-pulse">🎒</div>
-              <p className="text-gray-500">Building your packing list…</p>
+              <p className="text-[#78716c]">Building your packing list…</p>
             </div>
           )}
 
@@ -219,11 +221,11 @@ export default function PackingPage() {
 
           {/* Result */}
           {result && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-8">
+            <div className="bg-white rounded-2xl border border-[#e5e2dc] p-8">
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">
                   <span className="text-xl">🎒</span>
-                  <h3 className="font-semibold text-gray-900">
+                  <h3 className="font-semibold text-[#1a1a1a]">
                     {destination}
                     {days && days > 0 ? ` · ${days} days` : ""}
                     {tripType
@@ -240,7 +242,7 @@ export default function PackingPage() {
                   Print / PDF
                 </Button>
               </div>
-              <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed">
+              <div className="prose prose-sm max-w-none text-[#44403c] leading-relaxed">
                 <ReactMarkdown>{result}</ReactMarkdown>
               </div>
             </div>

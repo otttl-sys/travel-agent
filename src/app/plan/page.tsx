@@ -227,7 +227,7 @@ function StepDestination({
   return (
     <div>
       <p className="text-xs font-semibold text-[#e85d3a] uppercase tracking-[0.28em] mb-2">Schritt 1</p>
-      <h2 className="text-2xl font-bold text-[#1a1a1a] mb-2">Wohin soll die Reise gehen?</h2>
+      <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-[#1a1a1a] mb-2">Wohin soll die Reise gehen?</h2>
 
       {/* Mode Toggle */}
       <div className="flex gap-2 mb-6">
@@ -348,7 +348,7 @@ function StepDates({
   return (
     <div>
       <p className="text-xs font-semibold text-[#e85d3a] uppercase tracking-[0.28em] mb-2">Schritt 2</p>
-      <h2 className="text-2xl font-bold text-[#1a1a1a] mb-2">Wann möchtest du reisen?</h2>
+      <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-[#1a1a1a] mb-2">Wann möchtest du reisen?</h2>
       <p className="text-[#78716c] text-sm mb-6">Ungefähre Daten reichen völlig aus.</p>
       <div className="space-y-4">
         <div>
@@ -385,7 +385,7 @@ function StepTravelers({
   return (
     <div>
       <p className="text-xs font-semibold text-[#e85d3a] uppercase tracking-[0.28em] mb-2">Schritt 3</p>
-      <h2 className="text-2xl font-bold text-[#1a1a1a] mb-2">Wie viele Personen reisen?</h2>
+      <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-[#1a1a1a] mb-2">Wie viele Personen reisen?</h2>
       <p className="text-[#78716c] text-sm mb-6">Inklusive dir.</p>
       <div className="grid grid-cols-3 gap-3">
         {options.map((n) => (
@@ -416,7 +416,7 @@ function StepInterests({
   return (
     <div>
       <p className="text-xs font-semibold text-[#e85d3a] uppercase tracking-[0.28em] mb-2">Schritt 4</p>
-      <h2 className="text-2xl font-bold text-[#1a1a1a] mb-2">Was sind deine Interessen?</h2>
+      <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-[#1a1a1a] mb-2">Was sind deine Interessen?</h2>
       <p className="text-[#78716c] text-sm mb-6">Mehrere Auswahlen möglich.</p>
       <div className="grid grid-cols-2 gap-3">
         {INTERESTS.map((interest) => (
@@ -455,7 +455,7 @@ function StepBudget({
   return (
     <div>
       <p className="text-xs font-semibold text-[#e85d3a] uppercase tracking-[0.28em] mb-2">Schritt 5</p>
-      <h2 className="text-2xl font-bold text-[#1a1a1a] mb-2">Was ist dein Budget?</h2>
+      <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-[#1a1a1a] mb-2">Was ist dein Budget?</h2>
       <p className="text-[#78716c] text-sm mb-6">
         Gesamtbudget pro Person inkl. Flüge & Unterkunft.
       </p>
@@ -502,7 +502,7 @@ function StepSummary({ form }: { form: FormData }) {
   return (
     <div>
       <p className="text-xs font-semibold text-[#e85d3a] uppercase tracking-[0.28em] mb-2">Schritt 6</p>
-      <h2 className="text-2xl font-bold text-[#1a1a1a] mb-2">Alles klar. Los geht&apos;s!</h2>
+      <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-[#1a1a1a] mb-2">Alles klar. Los geht&apos;s!</h2>
       <p className="text-[#78716c] text-sm mb-6">
         Hier ist eine Zusammenfassung — dann startet der AI-Agent.
       </p>

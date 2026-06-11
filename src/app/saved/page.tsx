@@ -441,7 +441,7 @@ export default function SavedPage() {
       <main className="flex-1 px-6 py-12">
         <div className="max-w-3xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-[#1a1a1a]">My Saved Trips</h1>
+            <h1 className="text-3xl font-extrabold tracking-[-0.03em] text-[#1a1a1a]">My Saved Trips</h1>
             <p className="text-[#78716c] mt-1">{trips.length} {trips.length === 1 ? "trip" : "trips"} saved</p>
           </div>
 

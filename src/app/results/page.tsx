@@ -270,7 +270,7 @@ function ResultsContent() {
       <div className="min-h-screen bg-[#faf9f6] flex flex-col items-center justify-center px-6 py-12">
         <div className="w-full max-w-lg text-center">
           <div className="text-5xl mb-6 animate-pulse">🤖</div>
-          <h2 className="text-2xl font-bold text-[#1a1a1a] mb-2">AI analysiert deine Reise</h2>
+          <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-[#1a1a1a] mb-2">AI analysiert deine Reise</h2>
           <p className="text-[#78716c] text-sm mb-8">
             {destination ? `Wir suchen die besten Optionen für ${destination}.` : "Mehrere Agenten arbeiten für dich."}
           </p>
@@ -295,7 +295,7 @@ function ResultsContent() {
       <div className="min-h-screen bg-[#faf9f6] flex flex-col items-center justify-center px-6">
         <div className="w-full max-w-md text-center">
           <div className="text-5xl mb-6">⚠️</div>
-          <h2 className="text-2xl font-bold text-[#1a1a1a] mb-2">Etwas ist schiefgelaufen</h2>
+          <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-[#1a1a1a] mb-2">Etwas ist schiefgelaufen</h2>
           <p className="text-[#78716c] text-sm mb-8">{error}</p>
           <Button onClick={() => router.push("/plan")}>Nochmal versuchen</Button>
         </div>
@@ -359,7 +359,7 @@ function ResultsContent() {
                 </div>
               )}
             </div>
-            <h1 className="text-3xl font-bold text-[#1a1a1a]">
+            <h1 className="text-3xl font-extrabold tracking-[-0.03em] text-[#1a1a1a]">
               {isMultiCity
                 ? cityNames.join(" → ")
                 : destination ? `Deine Reisevorschläge für ${destination}` : "Deine Reisevorschläge"}
