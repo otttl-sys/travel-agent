@@ -64,7 +64,14 @@ export async function searchNearby(latlng: LatLng, type: string, limit = 8): Pro
   });
 }
 
-export function staticMapUrl(address: string, width = 800, height = 380, zoom = 13): string {
+export type MapMarker = { lat: number; lng: number; label?: string };
+
+export function staticMapUrl(address: string, width = 800, height = 380, zoom = 13, markers?: MapMarker[]): string {
   const enc = encodeURIComponent(address);
-  return `https://maps.googleapis.com/maps/api/staticmap?center=${enc}&zoom=${zoom}&size=${width}x${height}&scale=2&markers=color:0x4f46e5%7C${enc}&style=feature:poi%7Cvisibility:simplified&key=${key()}`;
+  let markerParams = `markers=color:0x4f46e5%7C${enc}`;
+  for (const m of markers ?? []) {
+    const label = m.label && /^[A-Za-z0-9]$/.test(m.label) ? `label:${m.label}%7C` : "";
+    markerParams += `&markers=color:0xe85d3a%7C${label}${m.lat},${m.lng}`;
+  }
+  return `https://maps.googleapis.com/maps/api/staticmap?center=${enc}&zoom=${zoom}&size=${width}x${height}&scale=2&${markerParams}&style=feature:poi%7Cvisibility:simplified&key=${key()}`;
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { staticMapUrl } from "@/lib/google-maps";
+import { staticMapUrl, type MapMarker } from "@/lib/google-maps";
 
 export const maxDuration = 10;
 
@@ -8,7 +8,17 @@ export async function GET(req: NextRequest) {
   const destination = req.nextUrl.searchParams.get("destination") ?? "";
   if (!destination) return NextResponse.json({ error: "Missing destination" }, { status: 400 });
 
-  const url = staticMapUrl(destination, 800, 380, 13);
+  const markersParam = req.nextUrl.searchParams.get("markers");
+  let markers: MapMarker[] | undefined;
+  if (markersParam) {
+    try {
+      markers = JSON.parse(markersParam) as MapMarker[];
+    } catch {
+      return NextResponse.json({ error: "Invalid markers" }, { status: 400 });
+    }
+  }
+
+  const url = staticMapUrl(destination, 800, 380, 13, markers);
   const res = await fetch(url);
   if (!res.ok) return NextResponse.json({ error: "Map fetch failed" }, { status: 502 });
 

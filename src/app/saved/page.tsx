@@ -16,6 +16,7 @@ import { VisaCard, type VisaRequirement, type EVisaAction } from "@/components/v
 import { BudgetBreakdown, type BudgetLine } from "@/components/budget-breakdown";
 import { WeatherForecast, type WeatherResult } from "@/components/weather-forecast";
 import type { NearbyPlace } from "@/lib/google-maps";
+import { TripMap } from "@/components/trip-map";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -539,15 +540,7 @@ export default function SavedPage() {
                         {tab === "plan" && (
                           <>
                             {/* Static map */}
-                            <div className="mb-5 rounded-xl overflow-hidden border border-[#e5e2dc]">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={`/api/map-image?destination=${encodeURIComponent(dest)}`}
-                                alt={`Map of ${dest}`}
-                                className="w-full object-cover"
-                                style={{ height: 220 }}
-                              />
-                            </div>
+                            <TripMap destination={dest} className="mb-5" />
                             {trip.aiResult ? (
                               <div className="prose prose-sm max-w-none text-[#44403c] leading-relaxed">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{trip.aiResult}</ReactMarkdown>
