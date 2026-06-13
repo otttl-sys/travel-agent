@@ -6,7 +6,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getSavedTrips, deleteTrip, updatePriceWatch, updateDayPlan, updateBriefing, updateEvents, updateVisa, updateBudget, type SavedTrip, type PriceWatch, type DayPlan, type Briefing, type EventsResult, type VisaResult, type BudgetResult } from "@/lib/saved-trips";
+import { getSavedTrips, deleteTrip, updatePriceWatch, updateDayPlan, updateBriefing, updateEvents, updateVisa, updateBudget, updateConversations, type SavedTrip, type PriceWatch, type DayPlan, type Briefing, type EventsResult, type VisaResult, type BudgetResult, type ConversationThread } from "@/lib/saved-trips";
 import { AgentTrace, type TraceEntry } from "@/components/agent-trace";
 import { ConciergeChat, type ChatMessage } from "@/components/concierge-chat";
 import { DayTimeline, type DaySchedule } from "@/components/day-timeline";
@@ -68,6 +68,7 @@ export default function SavedPage() {
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<Record<string, ChatMessage[]>>({});
   const [conciergeTraces, setConciergeTraces] = useState<Record<string, TraceEntry[]>>({});
+  const [activeConversationId, setActiveConversationId] = useState<Record<string, string | null>>({});
 
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [itineraryTraces, setItineraryTraces] = useState<Record<string, TraceEntry[]>>({});
@@ -198,6 +199,37 @@ export default function SavedPage() {
     }
   }
 
+  // Persist the current message list as a conversation thread (new or existing)
+  function persistConversation(trip: SavedTrip, messages: ChatMessage[]) {
+    const existing = trip.conversations ?? [];
+    const activeId = activeConversationId[trip.id];
+    const firstUserMsg = messages.find(m => m.role === "user")?.content ?? "New chat";
+    const title = firstUserMsg.length > 48 ? firstUserMsg.slice(0, 48) + "…" : firstUserMsg;
+    const now = new Date().toISOString();
+
+    let next: ConversationThread[];
+    if (activeId && existing.some(c => c.id === activeId)) {
+      next = existing.map(c => c.id === activeId ? { ...c, messages, updatedAt: now } : c);
+    } else {
+      const id = `${trip.id}-${Date.now()}`;
+      next = [{ id, title, messages, updatedAt: now }, ...existing];
+      setActiveConversationId(prev => ({ ...prev, [trip.id]: id }));
+    }
+
+    setTrips(prev => prev.map(t => t.id === trip.id ? { ...t, conversations: next } : t));
+    void updateConversations(trip.id, next);
+  }
+
+  function startNewChat(tripId: string) {
+    setConversations(prev => ({ ...prev, [tripId]: [] }));
+    setActiveConversationId(prev => ({ ...prev, [tripId]: null }));
+  }
+
+  function openConversation(tripId: string, thread: ConversationThread) {
+    setConversations(prev => ({ ...prev, [tripId]: thread.messages }));
+    setActiveConversationId(prev => ({ ...prev, [tripId]: thread.id }));
+  }
+
   async function sendMessage(trip: SavedTrip, text: string) {
     if (sendingId) return;
     const history = [...(conversations[trip.id] ?? []), { role: "user" as const, content: text }];
@@ -208,6 +240,7 @@ export default function SavedPage() {
     const card = trip.cards?.[0];
     const body = { trip: { destination: trip.isMultiCity ? trip.cities.join(" → ") : trip.destination, startDate: trip.startDate, endDate: trip.endDate, travelers: trip.travelers, themes: card?.themes ?? [], itinerary: card?.itinerary ?? [] }, messages: history };
 
+    let finalMessages = history;
     try {
       const res = await fetch("/api/concierge", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const reader = res.body?.getReader();
@@ -233,12 +266,17 @@ export default function SavedPage() {
         }
       }
       const reply = result.trim();
-      if (reply) setConversations(prev => ({ ...prev, [trip.id]: [...(prev[trip.id] ?? history), { role: "assistant", content: reply }] }));
+      if (reply) {
+        finalMessages = [...history, { role: "assistant", content: reply }];
+        setConversations(prev => ({ ...prev, [trip.id]: finalMessages }));
+      }
     } catch {
-      setConversations(prev => ({ ...prev, [trip.id]: [...(prev[trip.id] ?? history), { role: "assistant", content: "Connection error. Please try again." }] }));
+      finalMessages = [...history, { role: "assistant", content: "Connection error. Please try again." }];
+      setConversations(prev => ({ ...prev, [trip.id]: finalMessages }));
     } finally {
       setSendingId(null);
       setConciergeTraces(prev => ({ ...prev, [trip.id]: [] }));
+      persistConversation(trip, finalMessages);
     }
   }
 
@@ -542,12 +580,47 @@ export default function SavedPage() {
 
                         {/* Ideas */}
                         {tab === "ideas" && (
-                          <ConciergeChat
-                            messages={conversations[trip.id] ?? []}
-                            trace={conciergeTraces[trip.id] ?? []}
-                            sending={sendingId === trip.id}
-                            onSend={(text) => sendMessage(trip, text)}
-                          />
+                          <div className="space-y-4">
+                            {(trip.conversations?.length ?? 0) > 0 && (
+                              <div>
+                                <div className="flex items-center justify-between mb-2">
+                                  <p className="text-xs font-semibold uppercase tracking-wide text-[#a8a29e]">
+                                    Chats · {trip.conversations!.length}
+                                  </p>
+                                  <button
+                                    onClick={() => startNewChat(trip.id)}
+                                    className="text-xs font-medium text-[#e85d3a] hover:text-[#d04e2d]"
+                                  >
+                                    + New chat
+                                  </button>
+                                </div>
+                                <div className="space-y-1.5">
+                                  {[...trip.conversations!]
+                                    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+                                    .map((thread) => (
+                                      <button
+                                        key={thread.id}
+                                        onClick={() => openConversation(trip.id, thread)}
+                                        className={`w-full text-left rounded-lg border px-3 py-2 text-sm transition-colors ${
+                                          activeConversationId[trip.id] === thread.id
+                                            ? "border-[#e85d3a] bg-[#fff5f1] text-[#1a1a1a]"
+                                            : "border-[#e5e2dc] bg-white text-[#44403c] hover:bg-[#f5f0eb]"
+                                        }`}
+                                      >
+                                        <span className="truncate block">{thread.title}</span>
+                                        <span className="text-xs text-[#a8a29e]">{formatDate(thread.updatedAt)}</span>
+                                      </button>
+                                    ))}
+                                </div>
+                              </div>
+                            )}
+                            <ConciergeChat
+                              messages={conversations[trip.id] ?? []}
+                              trace={conciergeTraces[trip.id] ?? []}
+                              sending={sendingId === trip.id}
+                              onSend={(text) => sendMessage(trip, text)}
+                            />
+                          </div>
                         )}
 
                         {/* Plan */}

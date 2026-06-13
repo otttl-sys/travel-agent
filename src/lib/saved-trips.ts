@@ -4,6 +4,7 @@ import type { BriefingSection } from "@/components/briefing-card";
 import type { EventItem } from "@/components/events-list";
 import type { VisaRequirement, EVisaAction } from "@/components/visa-card";
 import type { BudgetEstimate } from "@/components/budget-breakdown";
+import type { ChatMessage } from "@/components/concierge-chat";
 
 export type PriceWatch = {
   lastChecked: string;
@@ -39,6 +40,13 @@ export type VisaResult = {
   disclaimer: string;
 };
 
+export type ConversationThread = {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  updatedAt: string;
+};
+
 export type SavedTrip = {
   id: string;
   destination: string;
@@ -58,6 +66,7 @@ export type SavedTrip = {
   events?: EventsResult;
   visa?: VisaResult;
   budgetResult?: BudgetResult;
+  conversations?: ConversationThread[];
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -80,6 +89,7 @@ function fromRow(row: Record<string, any>): SavedTrip {
     events: row.events ?? undefined,
     visa: row.visa ?? undefined,
     budgetResult: row.budget_result ?? undefined,
+    conversations: row.conversations ?? undefined,
   };
 }
 
@@ -172,4 +182,8 @@ export async function updateVisa(id: string, visa: VisaResult): Promise<void> {
 
 export async function updateBudget(id: string, budgetResult: BudgetResult): Promise<void> {
   await supabase.from('trips').update({ budget_result: budgetResult }).eq('id', id);
+}
+
+export async function updateConversations(id: string, conversations: ConversationThread[]): Promise<void> {
+  await supabase.from('trips').update({ conversations }).eq('id', id);
 }
