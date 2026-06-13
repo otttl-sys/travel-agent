@@ -33,6 +33,7 @@ export default function Home() {
             <Link href="/disruption" className="text-xs uppercase tracking-[0.18em] text-[#57534e] hover:text-[#1a1a1a] transition-colors">Disruption</Link>
             <Link href="/packing" className="text-xs uppercase tracking-[0.18em] text-[#57534e] hover:text-[#1a1a1a] transition-colors">Packing</Link>
             <Link href="/saved" className="text-xs uppercase tracking-[0.18em] text-[#57534e] hover:text-[#1a1a1a] transition-colors">Saved Trips</Link>
+            <Link href="/agentic-commerce" className="text-xs uppercase tracking-[0.18em] text-[#57534e] hover:text-[#1a1a1a] transition-colors">Agentic AI</Link>
             <Link href="/plan">
               <button className="bg-[#1a1a1a] text-white px-6 py-2.5 rounded-full text-xs uppercase tracking-[0.18em] font-semibold hover:bg-[#e85d3a] transition-colors">
                 Plan a trip
@@ -68,6 +69,7 @@ export default function Home() {
             <Link href="/disruption" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-[#1a1a1a]">Disruption</Link>
             <Link href="/packing" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-[#1a1a1a]">Packing List</Link>
             <Link href="/saved" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-[#1a1a1a]">Saved Trips</Link>
+            <Link href="/agentic-commerce" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-[#1a1a1a]">Agentic AI</Link>
           </div>
         )}
       </nav>
@@ -284,6 +286,7 @@ export default function Home() {
             <span className="text-xs uppercase tracking-[0.2em] text-[#a8a29e] mb-1">Tools</span>
             <Link href="/research" className="text-sm text-[#57534e] hover:text-[#1a1a1a]">Research</Link>
             <Link href="/disruption" className="text-sm text-[#57534e] hover:text-[#1a1a1a]">Disruption</Link>
+            <Link href="/agentic-commerce" className="text-sm text-[#57534e] hover:text-[#1a1a1a]">Agentic AI</Link>
           </div>
           <div className="flex flex-col gap-3">
             <span className="text-xs uppercase tracking-[0.2em] text-[#a8a29e] mb-1">About</span>
