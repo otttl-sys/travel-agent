@@ -76,8 +76,8 @@ export async function POST(req: NextRequest) {
     ]);
     const all = [...attractions, ...restaurants];
     if (all.length) {
-      venuesContext = "\n\nVerfügbare Orte aus Google Maps (verwende diese für konkrete Empfehlungen — echte Namen, echte Adressen):\n"
-        + all.map(p => `${p.icon} ${p.name}${p.rating ? ` ★${p.rating}` : ""} — ${p.address}`).join("\n");
+      venuesContext = "\n\nVerfügbare Orte aus Google Maps (verwende diese für konkrete Empfehlungen — echte Namen, echte Adressen, echte Koordinaten):\n"
+        + all.map(p => `${p.icon} ${p.name}${p.rating ? ` ★${p.rating}` : ""} — ${p.address} (lat: ${p.lat}, lng: ${p.lng})`).join("\n");
     }
   } catch { /* non-fatal — continue without places */ }
 
@@ -158,6 +158,8 @@ Recherchiere zuerst kurz die Logistik (Öffnungszeiten, Besuchsdauer, Wege), dan
                                 time: { type: "string", description: "e.g. 'ca. 09:00'" },
                                 activity: { type: "string" },
                                 note: { type: "string" },
+                                lat: { type: "number", description: "Latitude of the activity's venue, ONLY if it matches one of the 'Verfügbare Orte' from Google Maps — copy the exact coordinate, otherwise omit" },
+                                lng: { type: "number", description: "Longitude of the activity's venue, ONLY if it matches one of the 'Verfügbare Orte' from Google Maps — copy the exact coordinate, otherwise omit" },
                               },
                               required: ["time", "activity"],
                             },

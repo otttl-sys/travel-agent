@@ -766,6 +766,11 @@ export default function SavedPage() {
                                   lng: place.lng,
                                   label: String.fromCharCode(65 + (i % 26)),
                                 }))
+                              : tab === "day-plan"
+                              ? trip.dayPlan?.days
+                                  .flatMap(d => d.blocks)
+                                  .filter((b): b is typeof b & { lat: number; lng: number } => b.lat !== undefined && b.lng !== undefined)
+                                  .map((b, i) => ({ lat: b.lat, lng: b.lng, label: String.fromCharCode(65 + (i % 26)) }))
                               : undefined
                           }
                         />

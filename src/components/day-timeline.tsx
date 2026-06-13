@@ -1,6 +1,6 @@
 export type DaySchedule = {
   day: string;
-  blocks: { time: string; activity: string; note?: string }[];
+  blocks: { time: string; activity: string; note?: string; lat?: number; lng?: number }[];
 };
 
 export function DayTimeline({ days }: { days: DaySchedule[] }) {
