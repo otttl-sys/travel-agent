@@ -4,11 +4,51 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { AgentTrace, type TraceEntry } from "@/components/agent-trace";
+import type { NearbyPlace } from "@/lib/google-maps";
+import type { EventItem } from "@/components/events-list";
+
+export type ChatCard =
+  | { type: "places"; items: NearbyPlace[] }
+  | { type: "events"; items: EventItem[] };
 
 export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
+  cards?: ChatCard[];
 };
+
+function PlacesCard({ items }: { items: NearbyPlace[] }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+      {items.map((place, i) => (
+        <div key={i} className="flex items-start gap-2 rounded-lg bg-white border border-[#e5e2dc] px-3 py-2.5">
+          <span className="text-base leading-tight mt-0.5 shrink-0">{place.icon}</span>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-[#1a1a1a] truncate">{place.name}</p>
+            <p className="text-xs text-[#a8a29e] truncate">{place.address}</p>
+            {place.rating && <p className="text-xs text-amber-500">★ {place.rating}</p>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function EventsCard({ items }: { items: EventItem[] }) {
+  return (
+    <div className="space-y-2 mt-2">
+      {items.map((e, i) => (
+        <div key={i} className="flex items-start gap-2 rounded-lg bg-white border border-[#e5e2dc] px-3 py-2.5">
+          <span className="text-base leading-tight mt-0.5 shrink-0">{e.icon}</span>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-[#1a1a1a] truncate">{e.name}</p>
+            <p className="text-xs text-[#a8a29e]">{e.dates}{e.venue ? ` · ${e.venue}` : ""}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const STARTER_QUESTIONS = [
   "Was sollte ich für diese Reise einpacken?",
@@ -62,7 +102,7 @@ export function ConciergeChat({
       {messages.length > 0 && (
         <div className="space-y-3">
           {messages.map((m, i) => (
-            <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+            <div key={i} className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}>
               <div
                 className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
                   m.role === "user"
@@ -72,6 +112,12 @@ export function ConciergeChat({
               >
                 {m.content}
               </div>
+              {m.cards?.map((card, ci) => (
+                <div key={ci} className="max-w-[85%] w-full">
+                  {card.type === "places" && <PlacesCard items={card.items} />}
+                  {card.type === "events" && <EventsCard items={card.items} />}
+                </div>
+              ))}
             </div>
           ))}
         </div>

@@ -1,6 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { tavily } from "@tavily/core";
 import { NextRequest, NextResponse } from "next/server";
+import type { NearbyPlace } from "@/lib/google-maps";
+import type { EventItem } from "@/components/events-list";
 
 export const maxDuration = 300;
 
@@ -16,6 +18,22 @@ const tools: Anthropic.Tool[] = [
         query: { type: "string", description: "A focused search query" },
       },
       required: ["query"],
+    },
+  },
+  {
+    name: "show_nearby_places",
+    description: "Show the traveler a visual list of nearby attractions, restaurants, museums and other points of interest around their destination. Call this when the user asks what there is to see or do, where to eat, or for sightseeing/restaurant recommendations — and nearby places data is available.",
+    input_schema: {
+      type: "object" as const,
+      properties: {},
+    },
+  },
+  {
+    name: "show_events",
+    description: "Show the traveler a visual list of events, concerts, festivals or exhibitions happening during their trip. Call this when the user asks about events, things happening, concerts or festivals — and event data is available.",
+    input_schema: {
+      type: "object" as const,
+      properties: {},
     },
   },
 ];
@@ -34,6 +52,10 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
   switch (name) {
     case "search_live_info":
       return search(String(input.query ?? ""));
+    case "show_nearby_places":
+      return JSON.stringify({ ok: true, note: "Places card shown to the traveler. Don't repeat the full list as text — just add a short remark." });
+    case "show_events":
+      return JSON.stringify({ ok: true, note: "Events card shown to the traveler. Don't repeat the full list as text — just add a short remark." });
     default:
       return JSON.stringify({ error: "Unknown tool" });
   }
@@ -46,6 +68,8 @@ type TripContext = {
   travelers?: number;
   themes?: string[];
   itinerary?: { day: string; activities: string[] }[];
+  nearbyPlaces?: NearbyPlace[];
+  events?: EventItem[];
 };
 
 function buildSystemPrompt(trip: TripContext): string {
@@ -53,6 +77,8 @@ function buildSystemPrompt(trip: TripContext): string {
   const itinerary = trip.itinerary?.length
     ? trip.itinerary.map((d) => `${d.day}: ${d.activities.join(", ")}`).join("\n")
     : "Noch kein detailliertes Tagesprogramm hinterlegt.";
+  const hasPlaces = (trip.nearbyPlaces?.length ?? 0) > 0;
+  const hasEvents = (trip.events?.length ?? 0) > 0;
 
   return `Du bist der persönliche Reise-Concierge des Travelers für seine gespeicherte Reise. Du kennst diese Reise im Detail:
 
@@ -62,10 +88,14 @@ function buildSystemPrompt(trip: TripContext): string {
 - Themen: ${themes}
 - Geplantes Programm:
 ${itinerary}
+- Nearby-Places-Daten verfügbar: ${hasPlaces ? "ja" : "nein"}
+- Events-Daten verfügbar: ${hasEvents ? "ja" : "nein"}
 
 Beantworte Fragen des Travelers zu dieser Reise warmherzig, kompetent und auf Deutsch — wie ein kundiger Freund, nicht wie ein Bericht:
 - Schreibe in fließenden, kurzen Absätzen. KEIN Markdown — keine Überschriften, Tabellen, Aufzählungszeichen oder Sternchen.
 - Nutze search_live_info NUR, wenn die Frage aktuelle/zeitkritische Infos braucht (Wetter, Events, Öffnungszeiten, Preise, Nachrichten). Sonst antworte direkt aus dem Reisekontext und deinem Wissen — ohne Tool-Aufruf.
+- Wenn der Traveler nach Sehenswürdigkeiten, Restaurants oder Aktivitäten fragt UND Nearby-Places-Daten verfügbar sind, rufe show_nearby_places auf — die Karten werden dem Traveler visuell angezeigt, du musst die Liste nicht als Text wiederholen.
+- Wenn der Traveler nach Events, Konzerten oder Festivals während der Reise fragt UND Events-Daten verfügbar sind, rufe show_events auf — analog.
 - Halte Antworten prägnant: in der Regel 2-5 Sätze, nur bei Detailfragen ausführlicher.
 - Beziehe dich, wo passend, konkret auf das geplante Programm der Reise.`;
 }
@@ -119,6 +149,16 @@ export async function POST(req: NextRequest) {
                 controller.enqueue(
                   encoder.encode(`data: ${JSON.stringify({ type: "tool_call", id: toolUse.id, tool: toolUse.name, input: toolUse.input, iteration: iterations })}\n\n`)
                 );
+                if (toolUse.name === "show_nearby_places" && trip?.nearbyPlaces?.length) {
+                  controller.enqueue(
+                    encoder.encode(`data: ${JSON.stringify({ type: "card", card: "places", items: trip.nearbyPlaces })}\n\n`)
+                  );
+                }
+                if (toolUse.name === "show_events" && trip?.events?.length) {
+                  controller.enqueue(
+                    encoder.encode(`data: ${JSON.stringify({ type: "card", card: "events", items: trip.events })}\n\n`)
+                  );
+                }
                 const content = await executeTool(toolUse.name, toolUse.input as Record<string, unknown>);
                 controller.enqueue(
                   encoder.encode(`data: ${JSON.stringify({ type: "tool_done", id: toolUse.id, tool: toolUse.name })}\n\n`)

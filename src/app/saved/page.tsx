@@ -238,9 +238,22 @@ export default function SavedPage() {
     setSendingId(trip.id);
 
     const card = trip.cards?.[0];
-    const body = { trip: { destination: trip.isMultiCity ? trip.cities.join(" → ") : trip.destination, startDate: trip.startDate, endDate: trip.endDate, travelers: trip.travelers, themes: card?.themes ?? [], itinerary: card?.itinerary ?? [] }, messages: history };
+    const body = {
+      trip: {
+        destination: trip.isMultiCity ? trip.cities.join(" → ") : trip.destination,
+        startDate: trip.startDate,
+        endDate: trip.endDate,
+        travelers: trip.travelers,
+        themes: card?.themes ?? [],
+        itinerary: card?.itinerary ?? [],
+        nearbyPlaces: nearbyPlaces[trip.id] ?? [],
+        events: trip.events?.events ?? [],
+      },
+      messages: history,
+    };
 
     let finalMessages = history;
+    let cards: ChatMessage["cards"] = [];
     try {
       const res = await fetch("/api/concierge", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const reader = res.body?.getReader();
@@ -254,7 +267,7 @@ export default function SavedPage() {
         for (const line of decoder.decode(value).split("\n").filter(l => l.startsWith("data: "))) {
           const data = line.replace("data: ", "");
           if (data === "[DONE]") break;
-          let parsed: { type: string; id?: string; tool?: string; input?: Record<string, unknown>; iteration?: number; text?: string; message?: string };
+          let parsed: { type: string; id?: string; tool?: string; input?: Record<string, unknown>; iteration?: number; text?: string; message?: string; card?: "places" | "events"; items?: NearbyPlace[] | EventItem[] };
           try { parsed = JSON.parse(data); } catch { continue; }
           if (parsed.type === "tool_call" && parsed.id && parsed.tool)
             setConciergeTraces(prev => ({ ...prev, [trip.id]: [...(prev[trip.id] ?? []), { id: parsed.id!, iteration: parsed.iteration ?? 1, tool: parsed.tool!, input: parsed.input ?? {}, status: "running" }] }));
@@ -263,11 +276,16 @@ export default function SavedPage() {
           if (parsed.type === "token") result += parsed.text ?? "";
           if (parsed.type === "result") result = parsed.text ?? result;
           if (parsed.type === "error") result = parsed.message ?? "Reply failed.";
+          if (parsed.type === "card" && parsed.card && parsed.items) {
+            cards = [...(cards ?? []), parsed.card === "places"
+              ? { type: "places", items: parsed.items as NearbyPlace[] }
+              : { type: "events", items: parsed.items as EventItem[] }];
+          }
         }
       }
       const reply = result.trim();
       if (reply) {
-        finalMessages = [...history, { role: "assistant", content: reply }];
+        finalMessages = [...history, { role: "assistant", content: reply, ...(cards?.length ? { cards } : {}) }];
         setConversations(prev => ({ ...prev, [trip.id]: finalMessages }));
       }
     } catch {
