@@ -4,6 +4,9 @@ export type EventItem = {
   dates: string;
   category: string;
   description: string;
+  venue?: string;
+  lat?: number;
+  lng?: number;
 };
 
 export function EventsList({ events }: { events: EventItem[] }) {

@@ -771,6 +771,10 @@ export default function SavedPage() {
                                   .flatMap(d => d.blocks)
                                   .filter((b): b is typeof b & { lat: number; lng: number } => b.lat !== undefined && b.lng !== undefined)
                                   .map((b, i) => ({ lat: b.lat, lng: b.lng, label: String.fromCharCode(65 + (i % 26)) }))
+                              : tab === "events"
+                              ? trip.events?.events
+                                  .filter((e): e is typeof e & { lat: number; lng: number } => e.lat !== undefined && e.lng !== undefined)
+                                  .map((e, i) => ({ lat: e.lat, lng: e.lng, label: String.fromCharCode(65 + (i % 26)) }))
                               : undefined
                           }
                         />

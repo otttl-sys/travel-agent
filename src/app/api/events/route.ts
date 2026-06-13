@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { tavily } from "@tavily/core";
 import { NextRequest, NextResponse } from "next/server";
+import { geocode } from "@/lib/google-maps";
 
 export const maxDuration = 300;
 
@@ -138,6 +139,7 @@ Recherchiere zuerst gezielt nach datumsgebundenen Veranstaltungen in genau diese
                           dates: { type: "string" },
                           category: { type: "string" },
                           description: { type: "string", description: "2-3 sentences of flowing prose, no markdown" },
+                          venue: { type: "string", description: "Concrete venue/location name (e.g. 'Plaza Mayor', 'Olympiastadion') if your research found one — omit for purely seasonal entries without a specific location" },
                         },
                         required: ["icon", "name", "dates", "category", "description"],
                       },
@@ -194,8 +196,17 @@ Recherchiere zuerst gezielt nach datumsgebundenen Veranstaltungen in genau diese
               );
 
               if (Array.isArray(result) && result.length > 0) {
+                const events = result as { venue?: string; lat?: number; lng?: number }[];
+                await Promise.all(events.map(async (e) => {
+                  if (!e.venue) return;
+                  try {
+                    const { latlng } = await geocode(`${e.venue}, ${destination}`);
+                    e.lat = latlng.lat;
+                    e.lng = latlng.lng;
+                  } catch { /* non-fatal — skip marker for this event */ }
+                }));
                 controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify({ type: "events", events: result })}\n\n`)
+                  encoder.encode(`data: ${JSON.stringify({ type: "events", events })}\n\n`)
                 );
               } else {
                 controller.enqueue(
