@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { tavily } from "@tavily/core";
-import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const maxDuration = 300;
 
@@ -224,13 +224,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const db = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SECRET_KEY!
-  );
-
   const today = new Date().toISOString().split("T")[0];
-  const { data: rows, error } = await db
+  const { data: rows, error } = await supabaseAdmin
     .from("trips")
     .select("id, destination, cities, start_date, end_date, travelers, budget, price_watch")
     .gte("start_date", today);
@@ -254,7 +249,7 @@ export async function GET(req: NextRequest) {
     const alerted = trend === "down";
     if (alerted) await sendAlert(trip, summary);
 
-    await db
+    await supabaseAdmin
       .from("trips")
       .update({ price_watch: { lastChecked: new Date().toISOString(), trend, summary } })
       .eq("id", trip.id);
