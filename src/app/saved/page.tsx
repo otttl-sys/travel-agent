@@ -6,7 +6,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getSavedTrips, deleteTrip, updatePriceWatch, updateDayPlan, updateBriefing, updateEvents, updateVisa, updateBudget, updateConversations, type SavedTrip, type PriceWatch, type DayPlan, type Briefing, type EventsResult, type VisaResult, type BudgetResult, type ConversationThread } from "@/lib/saved-trips";
+import { getSavedTrips, deleteTrip, updatePriceWatch, updateDayPlan, updateBriefing, updateEvents, updateVisa, updateBudget, updateConversations, updateNearbyPlaces, type SavedTrip, type PriceWatch, type DayPlan, type Briefing, type EventsResult, type VisaResult, type BudgetResult, type ConversationThread } from "@/lib/saved-trips";
 import { AgentTrace, type TraceEntry } from "@/components/agent-trace";
 import { ConciergeChat, type ChatMessage } from "@/components/concierge-chat";
 import { DayTimeline, type DaySchedule } from "@/components/day-timeline";
@@ -92,7 +92,16 @@ export default function SavedPage() {
 
   const [nearbyPlaces, setNearbyPlaces] = useState<Record<string, NearbyPlace[]>>({});
 
-  useEffect(() => { getSavedTrips().then(setTrips); }, []);
+  useEffect(() => {
+    getSavedTrips().then(loaded => {
+      setTrips(loaded);
+      const places: Record<string, NearbyPlace[]> = {};
+      for (const trip of loaded) {
+        if (trip.nearbyPlaces?.length) places[trip.id] = trip.nearbyPlaces;
+      }
+      setNearbyPlaces(prev => ({ ...prev, ...places }));
+    });
+  }, []);
 
   // Auto-fetch weather when weather tab is opened
   useEffect(() => {
@@ -357,8 +366,11 @@ export default function SavedPage() {
             setBriefingTraces(prev => ({ ...prev, [trip.id]: [...(prev[trip.id] ?? []), { id: parsed.id!, iteration: parsed.iteration ?? 1, tool: parsed.tool!, input: parsed.input ?? {}, status: "running" }] }));
           if (parsed.type === "tool_done" && parsed.id)
             setBriefingTraces(prev => ({ ...prev, [trip.id]: (prev[trip.id] ?? []).map(e => e.id === parsed.id ? { ...e, status: "done" } : e) }));
-          if (parsed.type === "nearby_places" && parsed.places)
+          if (parsed.type === "nearby_places" && parsed.places) {
             setNearbyPlaces(prev => ({ ...prev, [trip.id]: parsed.places! }));
+            setTrips(prev => prev.map(t => t.id === trip.id ? { ...t, nearbyPlaces: parsed.places } : t));
+            updateNearbyPlaces(trip.id, parsed.places);
+          }
           if (parsed.type === "briefing" && parsed.sections) {
             const briefing: Briefing = { generatedAt: new Date().toISOString(), sections: parsed.sections };
             updateBriefing(trip.id, briefing);

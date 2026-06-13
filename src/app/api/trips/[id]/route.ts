@@ -9,6 +9,7 @@ const UPDATABLE_FIELDS = [
   "visa",
   "budget_result",
   "conversations",
+  "nearby_places",
 ] as const;
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

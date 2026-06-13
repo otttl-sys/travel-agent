@@ -4,6 +4,7 @@ import type { EventItem } from "@/components/events-list";
 import type { VisaRequirement, EVisaAction } from "@/components/visa-card";
 import type { BudgetEstimate } from "@/components/budget-breakdown";
 import type { ChatMessage } from "@/components/concierge-chat";
+import type { NearbyPlace } from "@/lib/google-maps";
 
 export type PriceWatch = {
   lastChecked: string;
@@ -66,6 +67,7 @@ export type SavedTrip = {
   visa?: VisaResult;
   budgetResult?: BudgetResult;
   conversations?: ConversationThread[];
+  nearbyPlaces?: NearbyPlace[];
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -89,6 +91,7 @@ function fromRow(row: Record<string, any>): SavedTrip {
     visa: row.visa ?? undefined,
     budgetResult: row.budget_result ?? undefined,
     conversations: row.conversations ?? undefined,
+    nearbyPlaces: row.nearby_places ?? undefined,
   };
 }
 
@@ -185,6 +188,10 @@ export async function updateBudget(id: string, budgetResult: BudgetResult): Prom
 
 export async function updateConversations(id: string, conversations: ConversationThread[]): Promise<void> {
   await patchTrip(id, { conversations });
+}
+
+export async function updateNearbyPlaces(id: string, nearbyPlaces: NearbyPlace[]): Promise<void> {
+  await patchTrip(id, { nearby_places: nearbyPlaces });
 }
 
 async function patchTrip(id: string, fields: Record<string, unknown>): Promise<void> {
