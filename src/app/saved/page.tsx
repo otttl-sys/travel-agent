@@ -20,9 +20,10 @@ import { TripMap } from "@/components/trip-map";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type TabId = "plan" | "concierge" | "day-plan" | "briefing" | "events" | "visa" | "budget" | "weather";
+type TabId = "ideas" | "plan" | "concierge" | "day-plan" | "briefing" | "events" | "visa" | "budget" | "weather";
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
+  { id: "ideas",     label: "Ideas",     icon: "💡" },
   { id: "plan",      label: "Plan",      icon: "🗺️" },
   { id: "concierge", label: "Concierge", icon: "💬" },
   { id: "day-plan",  label: "Day Plan",  icon: "🗓️" },
@@ -110,6 +111,7 @@ export default function SavedPage() {
 
   function hasContent(trip: SavedTrip, tabId: TabId): boolean {
     switch (tabId) {
+      case "ideas":     return (conversations[trip.id]?.length ?? 0) > 0;
       case "plan":      return !!trip.aiResult;
       case "concierge": return (conversations[trip.id]?.length ?? 0) > 0;
       case "day-plan":  return !!trip.dayPlan;
@@ -537,6 +539,16 @@ export default function SavedPage() {
                       <div className="border-t border-[#e5e2dc] p-6 bg-[#faf9f6]">
                       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
                       <div className="min-w-0">
+
+                        {/* Ideas */}
+                        {tab === "ideas" && (
+                          <ConciergeChat
+                            messages={conversations[trip.id] ?? []}
+                            trace={conciergeTraces[trip.id] ?? []}
+                            sending={sendingId === trip.id}
+                            onSend={(text) => sendMessage(trip, text)}
+                          />
+                        )}
 
                         {/* Plan */}
                         {tab === "plan" && (
