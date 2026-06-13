@@ -6,6 +6,8 @@ export type NearbyPlace = {
   rating?: number;
   category: string;
   icon: string;
+  lat: number;
+  lng: number;
 };
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -50,7 +52,7 @@ export async function searchNearby(latlng: LatLng, type: string, limit = 8): Pro
   const res = await fetch(
     `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latlng.lat},${latlng.lng}&radius=5000&type=${type}&rankby=prominence&key=${key()}`
   );
-  const data = await res.json() as { results?: { name: string; vicinity: string; rating?: number; types?: string[] }[] };
+  const data = await res.json() as { results?: { name: string; vicinity: string; rating?: number; types?: string[]; geometry: { location: LatLng } }[] };
   if (!data.results) return [];
   return data.results.slice(0, limit).map(r => {
     const cat = r.types?.[0] ?? "place";
@@ -60,6 +62,8 @@ export async function searchNearby(latlng: LatLng, type: string, limit = 8): Pro
       rating: r.rating,
       category: cat.replace(/_/g, " "),
       icon: CATEGORY_ICONS[cat] ?? "📍",
+      lat: r.geometry.location.lat,
+      lng: r.geometry.location.lng,
     };
   });
 }

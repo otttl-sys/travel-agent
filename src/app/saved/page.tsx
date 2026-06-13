@@ -623,6 +623,9 @@ export default function SavedPage() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                   {nearbyPlaces[trip.id].map((place, i) => (
                                     <div key={i} className="flex items-start gap-2 rounded-lg bg-white border border-[#e5e2dc] px-3 py-2.5">
+                                      <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#e85d3a] text-white text-[10px] font-bold shrink-0 mt-0.5">
+                                        {String.fromCharCode(65 + (i % 26))}
+                                      </span>
                                       <span className="text-base leading-tight mt-0.5 shrink-0">{place.icon}</span>
                                       <div className="min-w-0">
                                         <p className="text-sm font-medium text-[#1a1a1a] truncate">{place.name}</p>
@@ -754,7 +757,18 @@ export default function SavedPage() {
 
                       </div>
                       <div className="lg:sticky lg:top-6 h-fit">
-                        <TripMap destination={dest} />
+                        <TripMap
+                          destination={dest}
+                          markers={
+                            tab === "briefing"
+                              ? nearbyPlaces[trip.id]?.map((place, i) => ({
+                                  lat: place.lat,
+                                  lng: place.lng,
+                                  label: String.fromCharCode(65 + (i % 26)),
+                                }))
+                              : undefined
+                          }
+                        />
                       </div>
                       </div>
                       </div>
