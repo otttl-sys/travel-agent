@@ -535,12 +535,12 @@ export default function SavedPage() {
                     {/* ── Tab content ── */}
                     {tab && (
                       <div className="border-t border-[#e5e2dc] p-6 bg-[#faf9f6]">
+                      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+                      <div className="min-w-0">
 
                         {/* Plan */}
                         {tab === "plan" && (
                           <>
-                            {/* Static map */}
-                            <TripMap destination={dest} className="mb-5" />
                             {trip.aiResult ? (
                               <div className="prose prose-sm max-w-none text-[#44403c] leading-relaxed">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{trip.aiResult}</ReactMarkdown>
@@ -752,6 +752,11 @@ export default function SavedPage() {
                           </>
                         )}
 
+                      </div>
+                      <div className="lg:sticky lg:top-6 h-fit">
+                        <TripMap destination={dest} />
+                      </div>
+                      </div>
                       </div>
                     )}
                   </div>
