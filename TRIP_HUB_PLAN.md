@@ -37,8 +37,8 @@ for a single short session.
   - Persist concierge conversation(s) per trip in Supabase (`saved-trips.ts` already has `conversations` pattern — check if persisted or session-only)
   - Render a list of past chat threads at top of Ideas tab (Mindtrip pattern: "Chats · 1" → click to reopen)
 
-- [ ] **B3. (optional, later) Surface briefing/events as cards in Ideas chat**
-  - Lower priority — only if A+B1+B2 land well and there's appetite to continue
+- [x] **B3. Surface briefing/events as cards in Ideas chat**
+  - Concierge calls show_nearby_places / show_events tools, rendered as cards in chat, persisted with conversation history
 
 ## Notes
 - No tab renames/removals — `plan`, `day-plan`, `visa`, `budget`, `weather` keep their current structured views
