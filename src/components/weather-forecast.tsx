@@ -41,8 +41,8 @@ export function WeatherForecast({ result }: { result: WeatherResult }) {
         <div className="flex items-center gap-4">
           <span className="text-4xl leading-none">{dominantIcon}</span>
           <div>
-            <p className="font-semibold text-gray-900 text-sm">{location}</p>
-            <p className="text-sm text-gray-600 mt-0.5">
+            <p className="font-semibold text-foreground text-sm">{location}</p>
+            <p className="text-sm text-muted-foreground mt-0.5">
               {dominantLabel} · {avgMin}–{avgMax}°C avg
               {rainyDays > 0 && <span className="text-blue-500"> · {rainyDays} rainy {rainyDays === 1 ? "day" : "days"}</span>}
             </p>
@@ -63,16 +63,16 @@ export function WeatherForecast({ result }: { result: WeatherResult }) {
           {days.map((day) => (
             <div
               key={day.date}
-              className="flex flex-col items-center gap-1 rounded-xl bg-white border border-gray-100 px-3 py-3 min-w-[76px] hover:border-gray-200 transition-colors"
+              className="flex flex-col items-center gap-1 rounded-xl bg-surface border border-border px-3 py-3 min-w-[76px] hover:border-brand transition-colors"
             >
-              <p className="text-[11px] text-gray-400 whitespace-nowrap leading-tight text-center">{shortDate(day.date)}</p>
+              <p className="text-[11px] text-muted-foreground whitespace-nowrap leading-tight text-center">{shortDate(day.date)}</p>
               <span className="text-2xl leading-none mt-0.5">{day.icon}</span>
-              <p className="text-sm font-semibold text-gray-800 leading-tight">{day.maxTemp}°</p>
-              <p className="text-xs text-gray-400 leading-tight">{day.minTemp}°</p>
+              <p className="text-sm font-semibold text-foreground leading-tight">{day.maxTemp}°</p>
+              <p className="text-xs text-muted-foreground leading-tight">{day.minTemp}°</p>
               {day.precipProb >= 20 ? (
                 <p className="text-[11px] text-blue-500 leading-tight">💧 {day.precipProb}%</p>
               ) : (
-                <p className="text-[11px] text-gray-200 leading-tight">—</p>
+                <p className="text-[11px] text-muted-foreground/50 leading-tight">—</p>
               )}
             </div>
           ))}
@@ -80,7 +80,7 @@ export function WeatherForecast({ result }: { result: WeatherResult }) {
       </div>
 
       {mode === "historical" && (
-        <p className="text-xs text-gray-400 text-center">
+        <p className="text-xs text-muted-foreground text-center">
           Based on the same period last year — live forecast not yet available.
         </p>
       )}

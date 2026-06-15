@@ -85,7 +85,7 @@ export function AgentTrace({ trace }: { trace: TraceEntry[] }) {
         const entries = trace.filter((t) => t.iteration === round);
         return (
           <div key={round}>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
               Runde {round}
               {entries.length > 1 ? " — parallel ausgeführt" : ""}
             </p>
@@ -94,19 +94,19 @@ export function AgentTrace({ trace }: { trace: TraceEntry[] }) {
                 const meta = AGENT_META[entry.tool] ?? { agent: entry.tool, icon: "🤖" };
                 const params = formatToolParams(entry.tool, entry.input);
                 return (
-                  <div key={entry.id} className="flex items-start gap-2.5 rounded-lg bg-gray-50 px-3 py-2 text-sm">
+                  <div key={entry.id} className="flex items-start gap-2.5 rounded-lg bg-surface-sunken px-3 py-2 text-sm">
                     <span className="text-base leading-none shrink-0 mt-0.5">{meta.icon}</span>
                     <div className="min-w-0 flex-1">
-                      <span className="font-medium text-gray-700">{meta.agent}</span>
-                      <span className="text-gray-400"> · </span>
-                      <span className="text-gray-500 break-words">
+                      <span className="font-medium text-foreground">{meta.agent}</span>
+                      <span className="text-muted-foreground"> · </span>
+                      <span className="text-muted-foreground break-words">
                         {entry.tool}
                         {params ? `(${params})` : ""}
                       </span>
                     </div>
                     <span className="ml-auto shrink-0 pl-2 mt-1">
                       {entry.status === "running" ? (
-                        <span className="inline-block h-2 w-2 rounded-full bg-indigo-400 animate-pulse" aria-label="läuft" />
+                        <span className="inline-block h-2 w-2 rounded-full bg-brand animate-pulse" aria-label="läuft" />
                       ) : (
                         <span className="text-green-600 text-xs font-bold" aria-label="fertig">✓</span>
                       )}

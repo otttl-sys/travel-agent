@@ -26,6 +26,8 @@ export async function POST(req: NextRequest) {
     ai_result: body.ai_result,
     cards: body.cards,
     saved_at: body.saved_at,
+    baseline_flights: body.baseline_flights ?? null,
+    baseline_hotel: body.baseline_hotel ?? null,
   });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

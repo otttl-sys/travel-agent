@@ -7,6 +7,7 @@ import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { SiteNav } from "@/components/site-nav";
 
 const DISRUPTION_TYPES = [
   { value: "delay", label: "Verspätung", icon: "⏱️" },
@@ -106,39 +107,32 @@ export default function DisruptionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#faf9f6] flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Nav */}
-      <nav className="bg-[#faf9f6] border-b border-[#e5e2dc] px-6 py-5">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <button onClick={() => router.push("/")} className="font-bold text-[#1a1a1a] text-sm tracking-[0.2em] uppercase">
-            TravelAgent
-          </button>
-          <div className="flex items-center gap-3">
-            <Link href="/research" className="text-xs uppercase tracking-[0.18em] text-[#57534e] hover:text-[#1a1a1a] transition-colors">Research</Link>
-            <button
-              onClick={() => router.push("/plan")}
-              className="bg-[#1a1a1a] text-white px-6 py-2.5 rounded-full text-xs uppercase tracking-[0.18em] font-semibold hover:bg-[#e85d3a] transition-colors"
-            >
-              Reise planen
-            </button>
-          </div>
-        </div>
-      </nav>
+      <SiteNav containerClassName="max-w-3xl mx-auto flex items-center justify-between">
+        <Link href="/research" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Research</Link>
+        <button
+          onClick={() => router.push("/plan")}
+          className="bg-foreground text-background px-6 py-2.5 rounded-full text-xs uppercase tracking-[0.18em] font-semibold hover:bg-brand hover:text-brand-foreground transition-colors"
+        >
+          Reise planen
+        </button>
+      </SiteNav>
 
       <main className="flex-1 max-w-3xl mx-auto w-full px-6 py-12">
 
         {!loading && !result && (
           <>
             <div className="mb-10">
-              <Badge variant="secondary" className="mb-4 text-xs bg-[#fdf0ec] text-[#e85d3a] border-[#f5ddd4]">
+              <Badge variant="secondary" className="mb-4 text-xs bg-brand/10 text-brand border-brand/30">
                 Disruption Management
               </Badge>
-              <h1 className="text-4xl font-extrabold tracking-[-0.03em] text-[#1a1a1a] leading-tight">
+              <h1 className="text-4xl font-extrabold tracking-[-0.03em] text-foreground leading-tight">
                 Flug gestört?
                 <br />
-                <span className="text-[#e85d3a]">Wir lösen das.</span>
+                <span className="text-brand">Wir lösen das.</span>
               </h1>
-              <p className="mt-4 text-[#78716c] leading-relaxed">
+              <p className="mt-4 text-muted-foreground leading-relaxed">
                 Flugnummer eingeben — der Agent prüft den Status, findet Alternativen und klärt deine Fahrgastrechte.
               </p>
             </div>
@@ -146,7 +140,7 @@ export default function DisruptionPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-[#44403c] mb-2">Flugnummer *</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Flugnummer *</label>
                   <Input
                     placeholder="z.B. LH401, BA112"
                     value={flightNumber}
@@ -156,24 +150,24 @@ export default function DisruptionPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-[#44403c] mb-2">Datum</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Datum</label>
                   <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-[#44403c] mb-2">Von (Flughafen)</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Von (Flughafen)</label>
                   <Input placeholder="z.B. FRA, MUC" value={origin} onChange={(e) => setOrigin(e.target.value.toUpperCase())} className="font-mono" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-[#44403c] mb-2">Nach (Flughafen)</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Nach (Flughafen)</label>
                   <Input placeholder="z.B. JFK, LHR" value={destination} onChange={(e) => setDestination(e.target.value.toUpperCase())} className="font-mono" />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#44403c] mb-3">Art der Störung</label>
+                <label className="block text-sm font-medium text-foreground mb-3">Art der Störung</label>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {DISRUPTION_TYPES.map((t) => (
                     <button
@@ -182,8 +176,8 @@ export default function DisruptionPage() {
                       onClick={() => setDisruptionType(t.value)}
                       className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 text-sm font-medium transition-colors ${
                         disruptionType === t.value
-                          ? "border-[#e85d3a] bg-[#fdf0ec] text-[#e85d3a]"
-                          : "border-[#e5e2dc] text-[#57534e] hover:border-[#e85d3a]"
+                          ? "border-brand bg-brand/10 text-brand"
+                          : "border-border text-muted-foreground hover:border-brand"
                       }`}
                     >
                       <span className="text-xl">{t.icon}</span>
@@ -195,7 +189,7 @@ export default function DisruptionPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-[#44403c] mb-2">Reisende</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Reisende</label>
                   <Input type="number" min="1" max="9" value={travelers} onChange={(e) => setTravelers(e.target.value)} />
                 </div>
               </div>
@@ -203,7 +197,7 @@ export default function DisruptionPage() {
               <Button
                 type="submit"
                 size="lg"
-                className="w-full py-6 text-base bg-[#1a1a1a] hover:bg-[#e85d3a]"
+                className="w-full py-6 text-base bg-foreground hover:bg-brand"
                 disabled={!flightNumber.trim()}
               >
                 Agent starten →
@@ -215,15 +209,15 @@ export default function DisruptionPage() {
         {loading && (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="text-5xl mb-6 animate-pulse">🚨</div>
-            <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-[#1a1a1a] mb-2">Disruption Agent arbeitet...</h2>
-            <p className="text-[#78716c] text-sm mb-10">{activeToolLabel}</p>
+            <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-foreground mb-2">Disruption Agent arbeitet...</h2>
+            <p className="text-muted-foreground text-sm mb-10">{activeToolLabel}</p>
             <div className="w-full max-w-sm space-y-3">
               {TOOL_STEPS.map((step) => {
                 const done = completedTools.includes(step.tool);
                 const active = activeToolLabel === step.label;
                 return (
                   <div key={step.tool} className={`flex items-center gap-3 text-sm transition-all duration-300 ${
-                    done ? "text-green-600" : active ? "text-[#e85d3a] font-medium" : "text-[#d6d2cb]"
+                    done ? "text-green-600" : active ? "text-brand font-medium" : "text-muted-foreground/40"
                   }`}>
                     <span className="w-4 text-center">{done ? "✓" : active ? "→" : "○"}</span>
                     <span>{step.label}</span>
@@ -237,8 +231,8 @@ export default function DisruptionPage() {
         {error && (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="text-5xl mb-6">⚠️</div>
-            <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-[#1a1a1a] mb-2">Fehler</h2>
-            <p className="text-[#78716c] text-sm mb-8">{error}</p>
+            <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-foreground mb-2">Fehler</h2>
+            <p className="text-muted-foreground text-sm mb-8">{error}</p>
             <Button onClick={() => { setError(null); setLoading(false); }}>Nochmal versuchen</Button>
           </div>
         )}
@@ -247,28 +241,28 @@ export default function DisruptionPage() {
           <div>
             <div className="flex items-center justify-between mb-8">
               <div>
-                <Badge variant="secondary" className="mb-2 text-xs bg-[#fdf0ec] text-[#e85d3a] border-[#f5ddd4]">
+                <Badge variant="secondary" className="mb-2 text-xs bg-brand/10 text-brand border-brand/30">
                   Disruption Report
                 </Badge>
-                <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-[#1a1a1a]">Flug {flightNumber}</h2>
+                <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-foreground">Flug {flightNumber}</h2>
               </div>
               <Button variant="outline" size="sm" onClick={() => { setResult(null); setFlightNumber(""); }}>
                 Neuer Flug
               </Button>
             </div>
 
-            <div className="bg-white rounded-2xl border border-[#f5ddd4] p-8 mb-6">
+            <div className="bg-surface rounded-2xl border border-brand/30 p-8 mb-6">
               <div className="flex items-center gap-2 mb-6">
                 <span className="text-xl">🚨</span>
-                <span className="font-semibold text-[#1a1a1a]">Disruption Report von Claude</span>
+                <span className="font-semibold text-foreground">Disruption Report von Claude</span>
               </div>
-              <div className="prose prose-sm max-w-none text-[#44403c] leading-relaxed">
+              <div className="prose prose-sm max-w-none text-foreground leading-relaxed">
                 <ReactMarkdown>{result}</ReactMarkdown>
               </div>
             </div>
 
             <div className="flex gap-3">
-              <Button className="flex-1 bg-[#1a1a1a] hover:bg-[#e85d3a]" onClick={() => { setResult(null); setFlightNumber(""); }}>
+              <Button className="flex-1 bg-foreground hover:bg-brand" onClick={() => { setResult(null); setFlightNumber(""); }}>
                 Neuer Flug prüfen
               </Button>
               <Button variant="outline" onClick={() => router.push("/plan")}>

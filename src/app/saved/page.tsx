@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SiteNav } from "@/components/site-nav";
 import { getSavedTrips, deleteTrip, updatePriceWatch, updateDayPlan, updateBriefing, updateEvents, updateVisa, updateBudget, updateConversations, updateNearbyPlaces, type SavedTrip, type PriceWatch, type DayPlan, type Briefing, type EventsResult, type VisaResult, type BudgetResult, type ConversationThread } from "@/lib/saved-trips";
 import { AgentTrace, type TraceEntry } from "@/components/agent-trace";
 import { ConciergeChat, type ChatMessage } from "@/components/concierge-chat";
@@ -165,11 +166,13 @@ export default function SavedPage() {
     setPriceTraces(prev => ({ ...prev, [trip.id]: [] }));
     setVerdicts(prev => ({ ...prev, [trip.id]: "" }));
 
-    const baseline = trip.cards?.[0]?.budget;
+    const cardBudget = trip.cards?.[0]?.budget;
     const body = {
       destination: trip.isMultiCity ? trip.cities.join(" → ") : trip.destination,
       startDate: trip.startDate, endDate: trip.endDate, travelers: trip.travelers,
-      style: "comfort", baselineFlights: baseline?.flights ?? null, baselineHotel: baseline?.hotel ?? null,
+      style: "comfort",
+      baselineFlights: trip.baselineFlights ?? cardBudget?.flights ?? null,
+      baselineHotel: trip.baselineHotel ?? cardBudget?.hotel ?? null,
     };
 
     try {
@@ -496,31 +499,26 @@ export default function SavedPage() {
   // ─── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-[#faf9f6] flex flex-col">
-      <nav className="bg-[#faf9f6] border-b border-[#e5e2dc] px-6 py-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <Link href="/" className="font-bold text-[#1a1a1a] text-sm tracking-[0.2em] uppercase">TravelAgent</Link>
-          <div className="flex items-center gap-4">
-            <Link href="/packing" className="text-sm text-[#78716c] hidden sm:block hover:text-[#1a1a1a] transition-colors">
-              Packing List
-            </Link>
-            <Link href="/plan"><Button size="sm">Plan a trip</Button></Link>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-background flex flex-col">
+      <SiteNav>
+        <Link href="/packing" className="text-sm text-muted-foreground hidden sm:block hover:text-foreground transition-colors">
+          Packing List
+        </Link>
+        <Link href="/plan"><Button size="sm">Plan a trip</Button></Link>
+      </SiteNav>
 
       <main className="flex-1 px-6 py-12">
         <div className="max-w-3xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-extrabold tracking-[-0.03em] text-[#1a1a1a]">My Saved Trips</h1>
-            <p className="text-[#78716c] mt-1">{trips.length} {trips.length === 1 ? "trip" : "trips"} saved</p>
+            <h1 className="text-headline font-extrabold text-foreground">My Saved Trips</h1>
+            <p className="text-muted-foreground mt-1">{trips.length} {trips.length === 1 ? "trip" : "trips"} saved</p>
           </div>
 
           {trips.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-[#e5e2dc] p-12 text-center">
+            <div className="bg-surface rounded-2xl border border-border p-12 text-center">
               <div className="text-5xl mb-4">✈️</div>
-              <h3 className="text-lg font-semibold text-[#1a1a1a] mb-2">No saved trips yet</h3>
-              <p className="text-[#78716c] mb-6 text-sm">Plan a trip and tap &quot;Save Trip&quot; to see it here.</p>
+              <h3 className="text-lg font-semibold text-foreground mb-2">No saved trips yet</h3>
+              <p className="text-muted-foreground mb-6 text-sm">Plan a trip and tap &quot;Save Trip&quot; to see it here.</p>
               <Link href="/plan"><Button>Plan your first trip →</Button></Link>
             </div>
           ) : (
@@ -530,27 +528,27 @@ export default function SavedPage() {
                 const dest = trip.isMultiCity ? trip.cities.join(" → ") : trip.destination;
 
                 return (
-                  <div key={trip.id} className="bg-white rounded-2xl border border-[#e5e2dc] overflow-hidden">
+                  <div key={trip.id} className="bg-surface rounded-2xl border border-border overflow-hidden">
 
                     {/* ── Card header ── */}
                     <div className="p-6">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-lg font-semibold text-[#1a1a1a] truncate">{dest}</h3>
+                            <h3 className="text-title font-semibold text-foreground truncate">{dest}</h3>
                             {trip.isMultiCity && <Badge variant="secondary" className="text-xs shrink-0">Multi-City</Badge>}
                           </div>
-                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[#78716c] mt-1">
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
                             {trip.startDate && <span>📅 {formatDate(trip.startDate)}{trip.endDate ? ` → ${formatDate(trip.endDate)}` : ""}</span>}
                             <span>👥 {trip.travelers} {trip.travelers === 1 ? "person" : "people"}</span>
                             <span>💶 €{trip.budget.toLocaleString()} / person</span>
-                            <span className="text-[#a8a29e]">Saved {new Date(trip.savedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
+                            <span className="text-muted-foreground">Saved {new Date(trip.savedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
                           </div>
                           {trip.priceWatch && (
-                            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#f5f0eb] px-3 py-1 text-xs text-[#57534e]">
+                            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-brand-subtle px-3 py-1 text-xs text-brand">
                               <span>{TREND_META[trip.priceWatch.trend].emoji}</span>
                               <span className="font-medium">{TREND_META[trip.priceWatch.trend].label}</span>
-                              <span className="text-[#a8a29e]">· {formatDate(trip.priceWatch.lastChecked)}</span>
+                              <span className="text-muted-foreground">· {formatDate(trip.priceWatch.lastChecked)}</span>
                             </div>
                           )}
                         </div>
@@ -558,17 +556,17 @@ export default function SavedPage() {
                           <Button variant="outline" size="sm" disabled={checkingId !== null} onClick={() => checkPrice(trip)}>
                             {checkingId === trip.id ? "Checking…" : "🔍 Check Price"}
                           </Button>
-                          <button onClick={() => handleDelete(trip.id)} className="text-[#d6d2cb] hover:text-red-400 transition-colors text-xl leading-none p-1" aria-label="Delete trip">×</button>
+                          <button onClick={() => handleDelete(trip.id)} className="text-muted-foreground/60 hover:text-red-400 transition-colors text-xl leading-none p-1" aria-label="Delete trip">×</button>
                         </div>
                       </div>
                     </div>
 
                     {/* ── Price watcher trace (runs inline, not in a tab) ── */}
                     {(checkingId === trip.id || (priceTraces[trip.id]?.length ?? 0) > 0) && (
-                      <div className="border-t border-[#e5e2dc] px-6 py-4 bg-[#f5f0eb]/50">
+                      <div className="border-t border-border px-6 py-4 bg-brand-subtle/50">
                         <AgentTrace trace={priceTraces[trip.id] ?? []} />
                         {verdicts[trip.id] && (
-                          <div className="mt-3 rounded-lg bg-white border border-[#e5e2dc] px-4 py-3 text-sm text-[#44403c] leading-relaxed">
+                          <div className="mt-3 rounded-xl bg-surface ring-1 ring-foreground/10 px-4 py-3 text-sm text-foreground leading-relaxed">
                             {verdicts[trip.id]}
                           </div>
                         )}
@@ -576,7 +574,7 @@ export default function SavedPage() {
                     )}
 
                     {/* ── Tab strip ── */}
-                    <div className="border-t border-[#e5e2dc]">
+                    <div className="border-t border-border">
                       <div className="flex overflow-x-auto">
                         {TABS.map(t => {
                           const ready = hasContent(trip, t.id);
@@ -587,14 +585,14 @@ export default function SavedPage() {
                               onClick={() => openTab(trip.id, t.id)}
                               className={`relative flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors shrink-0 ${
                                 active
-                                  ? "border-[#1a1a1a] text-[#1a1a1a] bg-[#1a1a1a]/5"
-                                  : "border-transparent text-[#78716c] hover:text-[#44403c] hover:bg-[#f5f0eb]"
+                                  ? "border-brand text-brand bg-brand-subtle"
+                                  : "border-transparent text-muted-foreground hover:text-foreground hover:bg-brand-subtle"
                               }`}
                             >
                               <span>{t.icon}</span>
                               <span>{t.label}</span>
                               {ready && !active && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#e85d3a] absolute top-2.5 right-1.5" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-brand absolute top-2.5 right-1.5" />
                               )}
                             </button>
                           );
@@ -604,7 +602,7 @@ export default function SavedPage() {
 
                     {/* ── Tab content ── */}
                     {tab && (
-                      <div className="border-t border-[#e5e2dc] p-6 bg-[#faf9f6]">
+                      <div className="border-t border-border p-6 bg-surface-sunken">
                       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
                       <div className="min-w-0">
 
@@ -614,12 +612,12 @@ export default function SavedPage() {
                             {(trip.conversations?.length ?? 0) > 0 && (
                               <div>
                                 <div className="flex items-center justify-between mb-2">
-                                  <p className="text-xs font-semibold uppercase tracking-wide text-[#a8a29e]">
+                                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                                     Chats · {trip.conversations!.length}
                                   </p>
                                   <button
                                     onClick={() => startNewChat(trip.id)}
-                                    className="text-xs font-medium text-[#e85d3a] hover:text-[#d04e2d]"
+                                    className="text-xs font-medium text-brand hover:text-brand/80"
                                   >
                                     + New chat
                                   </button>
@@ -633,12 +631,12 @@ export default function SavedPage() {
                                         onClick={() => openConversation(trip.id, thread)}
                                         className={`w-full text-left rounded-lg border px-3 py-2 text-sm transition-colors ${
                                           activeConversationId[trip.id] === thread.id
-                                            ? "border-[#e85d3a] bg-[#fff5f1] text-[#1a1a1a]"
-                                            : "border-[#e5e2dc] bg-white text-[#44403c] hover:bg-[#f5f0eb]"
+                                            ? "border-brand bg-brand-subtle text-foreground"
+                                            : "border-border bg-surface text-foreground hover:bg-brand-subtle"
                                         }`}
                                       >
                                         <span className="truncate block">{thread.title}</span>
-                                        <span className="text-xs text-[#a8a29e]">{formatDate(thread.updatedAt)}</span>
+                                        <span className="text-xs text-muted-foreground">{formatDate(thread.updatedAt)}</span>
                                       </button>
                                     ))}
                                 </div>
@@ -657,11 +655,11 @@ export default function SavedPage() {
                         {tab === "plan" && (
                           <>
                             {trip.aiResult ? (
-                              <div className="prose prose-sm max-w-none text-[#44403c] leading-relaxed">
+                              <div className="prose prose-sm max-w-none text-foreground leading-relaxed">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{trip.aiResult}</ReactMarkdown>
                               </div>
                             ) : (
-                              <p className="text-sm text-[#a8a29e] text-center py-6">No plan content saved.</p>
+                              <p className="text-sm text-muted-foreground text-center py-6">No plan content saved.</p>
                             )}
                           </>
                         )}
@@ -680,25 +678,25 @@ export default function SavedPage() {
                         {tab === "day-plan" && (
                           <>
                             <div className="flex items-center justify-between mb-4">
-                              <p className="text-xs font-semibold uppercase tracking-wide text-[#a8a29e]">Day Planner</p>
+                              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Day Planner</p>
                               {trip.dayPlan && (
                                 <div className="flex items-center gap-3">
-                                  <span className="text-xs text-[#a8a29e]">Generated {formatDate(trip.dayPlan.generatedAt)}</span>
-                                  <button onClick={() => generateItinerary(trip)} disabled={generatingId !== null} className="text-xs font-medium text-[#e85d3a] hover:text-[#d04e2d] disabled:opacity-50">🔄 Regenerate</button>
+                                  <span className="text-xs text-muted-foreground">Generated {formatDate(trip.dayPlan.generatedAt)}</span>
+                                  <button onClick={() => generateItinerary(trip)} disabled={generatingId !== null} className="text-xs font-medium text-brand hover:text-brand/80 disabled:opacity-50">🔄 Regenerate</button>
                                 </div>
                               )}
                             </div>
                             {generatingId === trip.id && (
                               <div className="mb-4">
                                 <AgentTrace trace={itineraryTraces[trip.id] ?? []} />
-                                {(itineraryTraces[trip.id]?.length ?? 0) === 0 && <p className="text-sm text-[#a8a29e]">Building your day plan…</p>}
+                                {(itineraryTraces[trip.id]?.length ?? 0) === 0 && <p className="text-sm text-muted-foreground">Building your day plan…</p>}
                               </div>
                             )}
                             {trip.dayPlan ? (
-                              <div className="rounded-lg bg-white border border-[#e5e2dc] p-5"><DayTimeline days={trip.dayPlan.days} /></div>
+                              <div className="rounded-xl bg-surface ring-1 ring-foreground/10 p-5"><DayTimeline days={trip.dayPlan.days} /></div>
                             ) : generatingId !== trip.id ? (
                               <div className="text-center py-6">
-                                <p className="text-sm text-[#78716c] mb-4">Turn the rough itinerary into a realistic hour-by-hour day plan.</p>
+                                <p className="text-sm text-muted-foreground mb-4">Turn the rough itinerary into a realistic hour-by-hour day plan.</p>
                                 <Button size="sm" onClick={() => generateItinerary(trip)}>🗓️ Create Day Plan</Button>
                               </div>
                             ) : null}
@@ -709,42 +707,42 @@ export default function SavedPage() {
                         {tab === "briefing" && (
                           <>
                             <div className="flex items-center justify-between mb-4">
-                              <p className="text-xs font-semibold uppercase tracking-wide text-[#a8a29e]">Briefing Agent</p>
+                              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Briefing Agent</p>
                               {trip.briefing && (
                                 <div className="flex items-center gap-3">
-                                  <span className="text-xs text-[#a8a29e]">Generated {formatDate(trip.briefing.generatedAt)}</span>
-                                  <button onClick={() => generateBriefing(trip)} disabled={generatingBriefingId !== null} className="text-xs font-medium text-[#e85d3a] hover:text-[#d04e2d] disabled:opacity-50">🔄 Regenerate</button>
+                                  <span className="text-xs text-muted-foreground">Generated {formatDate(trip.briefing.generatedAt)}</span>
+                                  <button onClick={() => generateBriefing(trip)} disabled={generatingBriefingId !== null} className="text-xs font-medium text-brand hover:text-brand/80 disabled:opacity-50">🔄 Regenerate</button>
                                 </div>
                               )}
                             </div>
                             {generatingBriefingId === trip.id && (
                               <div className="mb-4">
                                 <AgentTrace trace={briefingTraces[trip.id] ?? []} />
-                                {(briefingTraces[trip.id]?.length ?? 0) === 0 && <p className="text-sm text-[#a8a29e]">Writing your briefing…</p>}
+                                {(briefingTraces[trip.id]?.length ?? 0) === 0 && <p className="text-sm text-muted-foreground">Writing your briefing…</p>}
                               </div>
                             )}
                             {trip.briefing ? (
-                              <div className="rounded-lg bg-white border border-[#e5e2dc] p-5"><BriefingCard sections={trip.briefing.sections} /></div>
+                              <div className="rounded-xl bg-surface ring-1 ring-foreground/10 p-5"><BriefingCard sections={trip.briefing.sections} /></div>
                             ) : generatingBriefingId !== trip.id ? (
                               <div className="text-center py-6">
-                                <p className="text-sm text-[#78716c] mb-4">Get a pre-departure briefing covering prices, weather, practical tips, and highlights.</p>
+                                <p className="text-sm text-muted-foreground mb-4">Get a pre-departure briefing covering prices, weather, practical tips, and highlights.</p>
                                 <Button size="sm" onClick={() => generateBriefing(trip)}>📋 Create Briefing</Button>
                               </div>
                             ) : null}
                             {/* Nearby Places — emitted at start of briefing SSE stream */}
                             {nearbyPlaces[trip.id]?.length ? (
                               <div className="mt-5">
-                                <p className="text-xs font-semibold uppercase tracking-wide text-[#a8a29e] mb-3">📍 Nearby on Google Maps</p>
+                                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">📍 Nearby on Google Maps</p>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                   {nearbyPlaces[trip.id].map((place, i) => (
-                                    <div key={i} className="flex items-start gap-2 rounded-lg bg-white border border-[#e5e2dc] px-3 py-2.5">
-                                      <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#e85d3a] text-white text-[10px] font-bold shrink-0 mt-0.5">
+                                    <div key={i} className="flex items-start gap-2 rounded-xl bg-surface ring-1 ring-foreground/10 px-3 py-2.5">
+                                      <span className="flex items-center justify-center w-5 h-5 rounded-full bg-brand text-white text-[10px] font-bold shrink-0 mt-0.5">
                                         {String.fromCharCode(65 + (i % 26))}
                                       </span>
                                       <span className="text-base leading-tight mt-0.5 shrink-0">{place.icon}</span>
                                       <div className="min-w-0">
-                                        <p className="text-sm font-medium text-[#1a1a1a] truncate">{place.name}</p>
-                                        <p className="text-xs text-[#a8a29e] truncate">{place.address}</p>
+                                        <p className="text-sm font-medium text-foreground truncate">{place.name}</p>
+                                        <p className="text-xs text-muted-foreground truncate">{place.address}</p>
                                         {place.rating && <p className="text-xs text-amber-500">★ {place.rating}</p>}
                                       </div>
                                     </div>
@@ -759,25 +757,25 @@ export default function SavedPage() {
                         {tab === "events" && (
                           <>
                             <div className="flex items-center justify-between mb-4">
-                              <p className="text-xs font-semibold uppercase tracking-wide text-[#a8a29e]">Events Agent</p>
+                              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Events Agent</p>
                               {trip.events && (
                                 <div className="flex items-center gap-3">
-                                  <span className="text-xs text-[#a8a29e]">Found {formatDate(trip.events.generatedAt)}</span>
-                                  <button onClick={() => generateEvents(trip)} disabled={generatingEventsId !== null} className="text-xs font-medium text-[#e85d3a] hover:text-[#d04e2d] disabled:opacity-50">🔄 Refresh</button>
+                                  <span className="text-xs text-muted-foreground">Found {formatDate(trip.events.generatedAt)}</span>
+                                  <button onClick={() => generateEvents(trip)} disabled={generatingEventsId !== null} className="text-xs font-medium text-brand hover:text-brand/80 disabled:opacity-50">🔄 Refresh</button>
                                 </div>
                               )}
                             </div>
                             {generatingEventsId === trip.id && (
                               <div className="mb-4">
                                 <AgentTrace trace={eventsTraces[trip.id] ?? []} />
-                                {(eventsTraces[trip.id]?.length ?? 0) === 0 && <p className="text-sm text-[#a8a29e]">Researching local events…</p>}
+                                {(eventsTraces[trip.id]?.length ?? 0) === 0 && <p className="text-sm text-muted-foreground">Researching local events…</p>}
                               </div>
                             )}
                             {trip.events ? (
                               <EventsList events={trip.events.events} />
                             ) : generatingEventsId !== trip.id ? (
                               <div className="text-center py-6">
-                                <p className="text-sm text-[#78716c] mb-4">Discover festivals, markets, concerts, and seasonal highlights during your trip.</p>
+                                <p className="text-sm text-muted-foreground mb-4">Discover festivals, markets, concerts, and seasonal highlights during your trip.</p>
                                 <Button size="sm" onClick={() => generateEvents(trip)}>🎉 Find Events</Button>
                               </div>
                             ) : null}
@@ -788,29 +786,29 @@ export default function SavedPage() {
                         {tab === "visa" && (
                           <>
                             <div className="flex items-center justify-between mb-4">
-                              <p className="text-xs font-semibold uppercase tracking-wide text-[#a8a29e]">Visa &amp; Entry Agent</p>
+                              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Visa &amp; Entry Agent</p>
                               {trip.visa && (
                                 <div className="flex items-center gap-3">
-                                  <span className="text-xs text-[#a8a29e]">Checked {formatDate(trip.visa.generatedAt)}</span>
-                                  <button onClick={() => generateVisa(trip, visaPassport[trip.id] || trip.visa?.passport || "German")} disabled={generatingVisaId !== null} className="text-xs font-medium text-[#e85d3a] hover:text-[#d04e2d] disabled:opacity-50">🔄 Re-check</button>
+                                  <span className="text-xs text-muted-foreground">Checked {formatDate(trip.visa.generatedAt)}</span>
+                                  <button onClick={() => generateVisa(trip, visaPassport[trip.id] || trip.visa?.passport || "German")} disabled={generatingVisaId !== null} className="text-xs font-medium text-brand hover:text-brand/80 disabled:opacity-50">🔄 Re-check</button>
                                 </div>
                               )}
                             </div>
                             {generatingVisaId === trip.id && (
                               <div className="mb-4">
                                 <AgentTrace trace={visaTraces[trip.id] ?? []} />
-                                {(visaTraces[trip.id]?.length ?? 0) === 0 && <p className="text-sm text-[#a8a29e]">Researching entry requirements…</p>}
+                                {(visaTraces[trip.id]?.length ?? 0) === 0 && <p className="text-sm text-muted-foreground">Researching entry requirements…</p>}
                               </div>
                             )}
                             {trip.visa ? (
-                              <div className="rounded-lg bg-white border border-[#e5e2dc] p-5">
+                              <div className="rounded-xl bg-surface ring-1 ring-foreground/10 p-5">
                                 <VisaCard requirements={trip.visa.requirements} disclaimer={trip.visa.disclaimer} passport={trip.visa.passport} eVisaActions={trip.visa.eVisaActions} />
                               </div>
                             ) : generatingVisaId !== trip.id ? (
                               <div className="space-y-4 max-w-sm py-2">
-                                <p className="text-sm text-[#78716c]">Check visa requirements, health rules, and entry conditions for your passport.</p>
+                                <p className="text-sm text-muted-foreground">Check visa requirements, health rules, and entry conditions for your passport.</p>
                                 <div className="flex gap-2">
-                                  <input type="text" placeholder="Your passport (e.g. German, US, UK)" value={visaPassport[trip.id] ?? ""} onChange={(e) => setVisaPassport(prev => ({ ...prev, [trip.id]: e.target.value }))} className="flex-1 rounded-lg border border-[#e5e2dc] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#f0a898]" />
+                                  <input type="text" placeholder="Your passport (e.g. German, US, UK)" value={visaPassport[trip.id] ?? ""} onChange={(e) => setVisaPassport(prev => ({ ...prev, [trip.id]: e.target.value }))} className="flex-1 rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40" />
                                   <Button size="sm" onClick={() => generateVisa(trip, visaPassport[trip.id] || "German")} disabled={generatingVisaId !== null}>Check</Button>
                                 </div>
                               </div>
@@ -822,27 +820,27 @@ export default function SavedPage() {
                         {tab === "budget" && (
                           <>
                             <div className="flex items-center justify-between mb-4">
-                              <p className="text-xs font-semibold uppercase tracking-wide text-[#a8a29e]">Budget Estimator</p>
+                              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Budget Estimator</p>
                               {trip.budgetResult && (
                                 <div className="flex items-center gap-3">
-                                  <span className="text-xs text-[#a8a29e]">Estimated {formatDate(trip.budgetResult.generatedAt)}</span>
-                                  <button onClick={() => generateBudget(trip)} disabled={generatingBudgetId !== null} className="text-xs font-medium text-[#e85d3a] hover:text-[#d04e2d] disabled:opacity-50">🔄 Re-estimate</button>
+                                  <span className="text-xs text-muted-foreground">Estimated {formatDate(trip.budgetResult.generatedAt)}</span>
+                                  <button onClick={() => generateBudget(trip)} disabled={generatingBudgetId !== null} className="text-xs font-medium text-brand hover:text-brand/80 disabled:opacity-50">🔄 Re-estimate</button>
                                 </div>
                               )}
                             </div>
                             {generatingBudgetId === trip.id && (
                               <div className="mb-4">
                                 <AgentTrace trace={budgetTraces[trip.id] ?? []} />
-                                {(budgetTraces[trip.id]?.length ?? 0) === 0 && <p className="text-sm text-[#a8a29e]">Researching current prices…</p>}
+                                {(budgetTraces[trip.id]?.length ?? 0) === 0 && <p className="text-sm text-muted-foreground">Researching current prices…</p>}
                               </div>
                             )}
                             {trip.budgetResult ? (
-                              <div className="rounded-lg bg-white border border-[#e5e2dc] p-5">
+                              <div className="rounded-xl bg-surface ring-1 ring-foreground/10 p-5">
                                 <BudgetBreakdown estimate={trip.budgetResult.estimate} userBudget={trip.budget} travelers={trip.travelers} />
                               </div>
                             ) : generatingBudgetId !== trip.id ? (
                               <div className="text-center py-6">
-                                <p className="text-sm text-[#78716c] mb-4">Get a realistic cost breakdown — flights, hotel, food, activities, transport — and see if your budget adds up.</p>
+                                <p className="text-sm text-muted-foreground mb-4">Get a realistic cost breakdown — flights, hotel, food, activities, transport — and see if your budget adds up.</p>
                                 <Button size="sm" onClick={() => generateBudget(trip)}>💶 Estimate Budget</Button>
                               </div>
                             ) : null}
@@ -853,13 +851,13 @@ export default function SavedPage() {
                         {tab === "weather" && (
                           <>
                             <div className="flex items-center justify-between mb-4">
-                              <p className="text-xs font-semibold uppercase tracking-wide text-[#a8a29e]">Weather Forecast</p>
+                              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Weather Forecast</p>
                               {weatherData[trip.id] && (
-                                <button onClick={() => { setWeatherData(prev => { const next = { ...prev }; delete next[trip.id]; return next; }); fetchWeather(trip); }} disabled={loadingWeatherId === trip.id} className="text-xs font-medium text-[#e85d3a] hover:text-[#d04e2d] disabled:opacity-50">🔄 Refresh</button>
+                                <button onClick={() => { setWeatherData(prev => { const next = { ...prev }; delete next[trip.id]; return next; }); fetchWeather(trip); }} disabled={loadingWeatherId === trip.id} className="text-xs font-medium text-brand hover:text-brand/80 disabled:opacity-50">🔄 Refresh</button>
                               )}
                             </div>
                             {loadingWeatherId === trip.id && (
-                              <div className="flex items-center gap-2 text-sm text-[#a8a29e] py-6 justify-center">
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground py-6 justify-center">
                                 <span className="animate-spin">🌀</span> Loading weather…
                               </div>
                             )}

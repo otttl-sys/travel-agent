@@ -12,7 +12,7 @@ export function TripMap({ destination, markers, height = 220, className }: TripM
   if (markers?.length) params.set("markers", JSON.stringify(markers));
 
   return (
-    <div className={`rounded-xl overflow-hidden border border-[#e5e2dc] ${className ?? ""}`}>
+    <div className={`rounded-xl overflow-hidden border border-border ${className ?? ""}`}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={`/api/map-image?${params.toString()}`}

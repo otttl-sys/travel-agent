@@ -68,6 +68,8 @@ export type SavedTrip = {
   budgetResult?: BudgetResult;
   conversations?: ConversationThread[];
   nearbyPlaces?: NearbyPlace[];
+  baselineFlights?: number | null;
+  baselineHotel?: number | null;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -92,6 +94,8 @@ function fromRow(row: Record<string, any>): SavedTrip {
     budgetResult: row.budget_result ?? undefined,
     conversations: row.conversations ?? undefined,
     nearbyPlaces: row.nearby_places ?? undefined,
+    baselineFlights: row.baseline_flights ?? null,
+    baselineHotel: row.baseline_hotel ?? null,
   };
 }
 
@@ -123,6 +127,8 @@ async function migrateFromLocalStorage(existing: SavedTrip[]): Promise<SavedTrip
         ai_result: t.aiResult,
         cards: t.cards,
         saved_at: t.savedAt,
+        baseline_flights: t.cards?.[0]?.budget?.flights ?? null,
+        baseline_hotel: t.cards?.[0]?.budget?.hotel ?? null,
       }),
     });
   }
@@ -139,6 +145,7 @@ export async function getSavedTrips(): Promise<SavedTrip[]> {
 }
 
 export async function saveTrip(trip: Omit<SavedTrip, 'id' | 'savedAt'>): Promise<void> {
+  const baseline = trip.cards?.[0]?.budget;
   await fetch('/api/trips', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -154,6 +161,8 @@ export async function saveTrip(trip: Omit<SavedTrip, 'id' | 'savedAt'>): Promise
       ai_result: trip.aiResult,
       cards: trip.cards,
       saved_at: new Date().toISOString(),
+      baseline_flights: baseline?.flights ?? null,
+      baseline_hotel: baseline?.hotel ?? null,
     }),
   });
 }

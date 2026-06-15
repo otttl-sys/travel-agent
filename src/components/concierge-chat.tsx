@@ -21,11 +21,11 @@ function PlacesCard({ items }: { items: NearbyPlace[] }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
       {items.map((place, i) => (
-        <div key={i} className="flex items-start gap-2 rounded-lg bg-white border border-[#e5e2dc] px-3 py-2.5">
+        <div key={i} className="flex items-start gap-2 rounded-lg bg-surface border border-border px-3 py-2.5">
           <span className="text-base leading-tight mt-0.5 shrink-0">{place.icon}</span>
           <div className="min-w-0">
-            <p className="text-sm font-medium text-[#1a1a1a] truncate">{place.name}</p>
-            <p className="text-xs text-[#a8a29e] truncate">{place.address}</p>
+            <p className="text-sm font-medium text-foreground truncate">{place.name}</p>
+            <p className="text-xs text-muted-foreground truncate">{place.address}</p>
             {place.rating && <p className="text-xs text-amber-500">★ {place.rating}</p>}
           </div>
         </div>
@@ -38,11 +38,11 @@ function EventsCard({ items }: { items: EventItem[] }) {
   return (
     <div className="space-y-2 mt-2">
       {items.map((e, i) => (
-        <div key={i} className="flex items-start gap-2 rounded-lg bg-white border border-[#e5e2dc] px-3 py-2.5">
+        <div key={i} className="flex items-start gap-2 rounded-lg bg-surface border border-border px-3 py-2.5">
           <span className="text-base leading-tight mt-0.5 shrink-0">{e.icon}</span>
           <div className="min-w-0">
-            <p className="text-sm font-medium text-[#1a1a1a] truncate">{e.name}</p>
-            <p className="text-xs text-[#a8a29e]">{e.dates}{e.venue ? ` · ${e.venue}` : ""}</p>
+            <p className="text-sm font-medium text-foreground truncate">{e.name}</p>
+            <p className="text-xs text-muted-foreground">{e.dates}{e.venue ? ` · ${e.venue}` : ""}</p>
           </div>
         </div>
       ))}
@@ -80,7 +80,7 @@ export function ConciergeChat({
     <div className="space-y-4">
       {messages.length === 0 && (
         <div className="space-y-3">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Frag mich alles zu dieser Reise — ich kenne dein geplantes Programm und kann bei Bedarf
             aktuelle Infos nachschlagen.
           </p>
@@ -90,7 +90,7 @@ export function ConciergeChat({
                 key={q}
                 onClick={() => submit(q)}
                 disabled={sending}
-                className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-600 hover:border-indigo-300 hover:text-indigo-600 transition-colors disabled:opacity-50"
+                className="rounded-full border border-border bg-surface px-3 py-1.5 text-xs text-muted-foreground hover:border-brand hover:text-brand transition-colors disabled:opacity-50"
               >
                 {q}
               </button>
@@ -106,8 +106,8 @@ export function ConciergeChat({
               <div
                 className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
                   m.role === "user"
-                    ? "bg-indigo-600 text-white rounded-br-sm"
-                    : "bg-white border border-gray-100 text-gray-700 rounded-bl-sm"
+                    ? "bg-brand text-brand-foreground rounded-br-sm"
+                    : "bg-surface border border-border text-foreground rounded-bl-sm"
                 }`}
               >
                 {m.content}
@@ -124,7 +124,7 @@ export function ConciergeChat({
       )}
 
       {trace.length > 0 && (
-        <div className="rounded-lg bg-white border border-gray-100 p-3">
+        <div className="rounded-lg bg-surface border border-border p-3">
           <AgentTrace trace={trace} />
         </div>
       )}
@@ -141,13 +141,13 @@ export function ConciergeChat({
           }}
           placeholder="Frag den Concierge…"
           disabled={sending}
-          className="min-h-10 bg-white"
+          className="min-h-10 bg-surface"
         />
         <Button size="sm" disabled={sending || !draft.trim()} onClick={() => submit(draft)}>
           {sending ? "…" : "Senden"}
         </Button>
       </div>
-      <p className="text-xs text-gray-400">Unterhaltung wird beim Neuladen der Seite zurückgesetzt.</p>
+      <p className="text-xs text-muted-foreground">Unterhaltung wird beim Neuladen der Seite zurückgesetzt.</p>
     </div>
   );
 }

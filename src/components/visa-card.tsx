@@ -37,31 +37,31 @@ export function VisaCard({
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-muted-foreground">
         Requirements for{" "}
-        <span className="font-medium text-gray-700">{passport}</span> passport holders
+        <span className="font-medium text-foreground">{passport}</span> passport holders
       </p>
 
       {Object.entries(grouped).map(([category, reqs]) => (
         <div key={category}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
             {category}
           </p>
           <div className="space-y-2">
             {reqs.map((req, i) => {
               const meta = STATUS_META[req.status] ?? STATUS_META.info;
               return (
-                <div key={i} className="rounded-lg border border-gray-100 bg-white p-4">
+                <div key={i} className="rounded-lg border border-border bg-surface p-4">
                   <div className="flex items-start gap-3">
                     <span className="text-lg leading-none shrink-0 mt-0.5">{req.icon}</span>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                        <p className="text-sm font-semibold text-gray-800">{req.title}</p>
+                        <p className="text-sm font-semibold text-foreground">{req.title}</p>
                         <span className={`text-xs font-medium rounded-full px-2 py-0.5 ${meta.className}`}>
                           {meta.label}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600 leading-relaxed">{req.details}</p>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{req.details}</p>
                     </div>
                   </div>
                 </div>
@@ -72,8 +72,8 @@ export function VisaCard({
       ))}
 
       {eVisaActions.length > 0 && (
-        <div className="rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-4 space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-indigo-400 mb-3">
+        <div className="rounded-lg border border-brand-subtle bg-brand-subtle px-4 py-4 space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-brand mb-3">
             Apply Online
           </p>
           {eVisaActions.map((action, i) => (
@@ -82,7 +82,7 @@ export function VisaCard({
               href={action.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 text-white px-4 py-2 text-sm font-medium hover:bg-indigo-700 transition-colors"
+              className="inline-flex items-center gap-2 rounded-lg bg-brand text-brand-foreground px-4 py-2 text-sm font-medium hover:bg-brand/90 transition-colors"
             >
               {action.label}
               {action.price && (

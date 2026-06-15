@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { SiteNav } from "@/components/site-nav";
 
 const INTEREST_OPTIONS = [
   { label: "Essen & Kulinarik", value: "food" },
@@ -105,21 +106,16 @@ export default function ResearchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#faf9f6] flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Nav */}
-      <nav className="bg-[#faf9f6] border-b border-[#e5e2dc] px-6 py-5">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <button onClick={() => router.push("/")} className="font-bold text-[#1a1a1a] text-sm tracking-[0.2em] uppercase">
-            TravelAgent
-          </button>
-          <button
-            onClick={() => router.push("/plan")}
-            className="bg-[#1a1a1a] text-white px-6 py-2.5 rounded-full text-xs uppercase tracking-[0.18em] font-semibold hover:bg-[#e85d3a] transition-colors"
-          >
-            Reise planen
-          </button>
-        </div>
-      </nav>
+      <SiteNav containerClassName="max-w-3xl mx-auto flex items-center justify-between">
+        <button
+          onClick={() => router.push("/plan")}
+          className="bg-foreground text-background px-6 py-2.5 rounded-full text-xs uppercase tracking-[0.18em] font-semibold hover:bg-brand hover:text-brand-foreground transition-colors"
+        >
+          Reise planen
+        </button>
+      </SiteNav>
 
       <main className="flex-1 max-w-3xl mx-auto w-full px-6 py-12">
         {!loading && !result && (
@@ -128,12 +124,12 @@ export default function ResearchPage() {
               <Badge variant="secondary" className="mb-4 text-xs">
                 Destination Research
               </Badge>
-              <h1 className="text-4xl font-extrabold tracking-[-0.03em] text-[#1a1a1a] leading-tight">
+              <h1 className="text-4xl font-extrabold tracking-[-0.03em] text-foreground leading-tight">
                 Alles über dein
                 <br />
-                <span className="text-[#e85d3a]">Reiseziel</span>
+                <span className="text-brand">Reiseziel</span>
               </h1>
-              <p className="mt-4 text-[#78716c] leading-relaxed">
+              <p className="mt-4 text-muted-foreground leading-relaxed">
                 Visa, Klima, Sicherheit, lokale Tipps — der Research Agent durchsucht aktuelle Quellen
                 und fasst alles zusammen, bevor du buchst.
               </p>
@@ -141,7 +137,7 @@ export default function ResearchPage() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-[#44403c] mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Wohin willst du reisen?
                 </label>
                 <Input
@@ -154,7 +150,7 @@ export default function ResearchPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#44403c] mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Dein Reisepass / Nationalität
                 </label>
                 <Input
@@ -162,12 +158,12 @@ export default function ResearchPage() {
                   value={passportCountry}
                   onChange={(e) => setPassportCountry(e.target.value)}
                 />
-                <p className="text-xs text-[#a8a29e] mt-1">Für genaue Visa-Informationen</p>
+                <p className="text-xs text-muted-foreground mt-1">Für genaue Visa-Informationen</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#44403c] mb-3">
-                  Worauf soll der Fokus liegen? <span className="text-[#a8a29e] font-normal">(optional)</span>
+                <label className="block text-sm font-medium text-foreground mb-3">
+                  Worauf soll der Fokus liegen? <span className="text-muted-foreground font-normal">(optional)</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {INTEREST_OPTIONS.map((opt) => (
@@ -177,8 +173,8 @@ export default function ResearchPage() {
                       onClick={() => toggleInterest(opt.value)}
                       className={`px-4 py-2 rounded-full text-sm border transition-colors ${
                         interests.includes(opt.value)
-                          ? "bg-[#1a1a1a] text-white border-[#1a1a1a]"
-                          : "bg-white text-[#57534e] border-[#e5e2dc] hover:border-[#1a1a1a]"
+                          ? "bg-foreground text-white border-foreground"
+                          : "bg-surface text-muted-foreground border-border hover:border-foreground"
                       }`}
                     >
                       {opt.label}
@@ -202,8 +198,8 @@ export default function ResearchPage() {
         {loading && (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="text-5xl mb-6 animate-pulse">🔍</div>
-            <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-[#1a1a1a] mb-2">Research läuft...</h2>
-            <p className="text-[#78716c] text-sm mb-10">{activeToolLabel}</p>
+            <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-foreground mb-2">Research läuft...</h2>
+            <p className="text-muted-foreground text-sm mb-10">{activeToolLabel}</p>
 
             <div className="w-full max-w-sm space-y-3">
               {RESEARCH_STEPS.map((step) => {
@@ -213,7 +209,7 @@ export default function ResearchPage() {
                   <div
                     key={step.tool}
                     className={`flex items-center gap-3 text-sm transition-all duration-300 ${
-                      done ? "text-green-600" : active ? "text-[#e85d3a] font-medium" : "text-[#d6d2cb]"
+                      done ? "text-green-600" : active ? "text-brand font-medium" : "text-muted-foreground/40"
                     }`}
                   >
                     <span className="w-4 text-center">{done ? "✓" : active ? "→" : "○"}</span>
@@ -228,8 +224,8 @@ export default function ResearchPage() {
         {error && (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="text-5xl mb-6">⚠️</div>
-            <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-[#1a1a1a] mb-2">Fehler beim Research</h2>
-            <p className="text-[#78716c] text-sm mb-8">{error}</p>
+            <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-foreground mb-2">Fehler beim Research</h2>
+            <p className="text-muted-foreground text-sm mb-8">{error}</p>
             <Button onClick={() => { setError(null); setLoading(false); }}>Nochmal versuchen</Button>
           </div>
         )}
@@ -239,19 +235,19 @@ export default function ResearchPage() {
             <div className="flex items-center justify-between mb-8">
               <div>
                 <Badge variant="secondary" className="mb-2 text-xs">Research abgeschlossen</Badge>
-                <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-[#1a1a1a]">{destination}</h2>
+                <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-foreground">{destination}</h2>
               </div>
               <Button variant="outline" size="sm" onClick={() => { setResult(null); setDestination(""); }}>
                 Neues Research
               </Button>
             </div>
 
-            <div className="bg-white rounded-2xl border border-[#e5e2dc] p-8 mb-6">
+            <div className="bg-surface rounded-2xl border border-border p-8 mb-6">
               <div className="flex items-center gap-2 mb-6">
                 <span className="text-xl">🔍</span>
-                <span className="font-semibold text-[#1a1a1a]">Dein Reise-Research von Claude</span>
+                <span className="font-semibold text-foreground">Dein Reise-Research von Claude</span>
               </div>
-              <div className="prose prose-sm max-w-none text-[#44403c] leading-relaxed">
+              <div className="prose prose-sm max-w-none text-foreground leading-relaxed">
                 <ReactMarkdown>{result}</ReactMarkdown>
               </div>
             </div>

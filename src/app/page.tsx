@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function Home() {
   const router = useRouter();
@@ -20,34 +21,36 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-[#faf9f6] flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Nav */}
-      <nav className="border-b border-[#e5e2dc] px-6 py-5 bg-[#faf9f6]/95 backdrop-blur sticky top-0 z-50 relative">
+      <nav className="border-b border-border px-6 py-5 bg-background/95 backdrop-blur sticky top-0 z-50 relative">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-[#1a1a1a] text-base tracking-[0.2em] uppercase">TravelAgent</span>
+            <span className="font-bold text-foreground text-base tracking-[0.2em] uppercase">TravelAgent</span>
           </div>
 
           <div className="hidden md:flex items-center gap-8">
-            <Link href="/research" className="text-xs uppercase tracking-[0.18em] text-[#57534e] hover:text-[#1a1a1a] transition-colors">Research</Link>
-            <Link href="/disruption" className="text-xs uppercase tracking-[0.18em] text-[#57534e] hover:text-[#1a1a1a] transition-colors">Disruption</Link>
-            <Link href="/packing" className="text-xs uppercase tracking-[0.18em] text-[#57534e] hover:text-[#1a1a1a] transition-colors">Packing</Link>
-            <Link href="/saved" className="text-xs uppercase tracking-[0.18em] text-[#57534e] hover:text-[#1a1a1a] transition-colors">Saved Trips</Link>
-            <Link href="/agentic-commerce" className="text-xs uppercase tracking-[0.18em] text-[#57534e] hover:text-[#1a1a1a] transition-colors">Agentic AI</Link>
+            <Link href="/research" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Research</Link>
+            <Link href="/disruption" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Disruption</Link>
+            <Link href="/packing" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Packing</Link>
+            <Link href="/saved" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Saved Trips</Link>
+            <Link href="/agentic-commerce" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Agentic AI</Link>
             <Link href="/plan">
-              <button className="bg-[#1a1a1a] text-white px-6 py-2.5 rounded-full text-xs uppercase tracking-[0.18em] font-semibold hover:bg-[#e85d3a] transition-colors">
+              <button className="bg-foreground text-background px-6 py-2.5 rounded-full text-xs uppercase tracking-[0.18em] font-semibold hover:bg-brand transition-colors">
                 Plan a trip
               </button>
             </Link>
+            <ThemeToggle />
           </div>
 
           <div className="flex md:hidden items-center gap-3">
+            <ThemeToggle />
             <Link href="/plan">
-              <button className="bg-[#1a1a1a] text-white px-4 py-2 rounded-full text-xs uppercase tracking-[0.18em] font-semibold">Plan</button>
+              <button className="bg-foreground text-background px-4 py-2 rounded-full text-xs uppercase tracking-[0.18em] font-semibold">Plan</button>
             </Link>
             <button
               onClick={() => setMobileMenuOpen((o) => !o)}
-              className="p-2 text-[#57534e] hover:text-[#1a1a1a]"
+              className="p-2 text-muted-foreground hover:text-foreground"
               aria-label="Menu"
             >
               {mobileMenuOpen ? (
@@ -64,12 +67,12 @@ export default function Home() {
         </div>
 
         {mobileMenuOpen && (
-          <div className="md:hidden absolute top-full left-0 right-0 bg-[#faf9f6] border-b border-[#e5e2dc] shadow-sm z-50 px-6 py-5 flex flex-col gap-4">
-            <Link href="/research" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-[#1a1a1a]">Research</Link>
-            <Link href="/disruption" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-[#1a1a1a]">Disruption</Link>
-            <Link href="/packing" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-[#1a1a1a]">Packing List</Link>
-            <Link href="/saved" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-[#1a1a1a]">Saved Trips</Link>
-            <Link href="/agentic-commerce" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-[#1a1a1a]">Agentic AI</Link>
+          <div className="md:hidden absolute top-full left-0 right-0 bg-background border-b border-border shadow-sm z-50 px-6 py-5 flex flex-col gap-4">
+            <Link href="/research" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">Research</Link>
+            <Link href="/disruption" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">Disruption</Link>
+            <Link href="/packing" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">Packing List</Link>
+            <Link href="/saved" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">Saved Trips</Link>
+            <Link href="/agentic-commerce" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">Agentic AI</Link>
           </div>
         )}
       </nav>
@@ -96,18 +99,18 @@ export default function Home() {
             </h1>
 
             {/* Search bar */}
-            <div className="flex max-w-xl rounded-full overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.25)] bg-white">
+            <div className="flex max-w-xl rounded-full overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.25)] bg-surface">
               <input
                 type="text"
                 placeholder="Japan, Portugal, Bali..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="flex-1 px-6 py-4 text-[15px] text-[#1a1a1a] placeholder:text-[#a8a29e] outline-none bg-transparent"
+                className="flex-1 px-6 py-4 text-[15px] text-foreground placeholder:text-muted-foreground outline-none bg-transparent"
               />
               <button
                 onClick={() => handleSearch()}
-                className="bg-[#1a1a1a] text-white px-7 py-4 font-semibold hover:bg-[#e85d3a] transition-colors whitespace-nowrap text-xs uppercase tracking-[0.18em]"
+                className="bg-foreground text-background px-7 py-4 font-semibold hover:bg-brand transition-colors whitespace-nowrap text-xs uppercase tracking-[0.18em]"
               >
                 Plan trip →
               </button>
@@ -116,13 +119,13 @@ export default function Home() {
         </section>
 
         {/* Quick destinations */}
-        <div className="border-b border-[#e5e2dc] bg-[#faf9f6] py-5 px-6 overflow-x-auto">
+        <div className="border-b border-border bg-background py-5 px-6 overflow-x-auto">
           <div className="max-w-7xl mx-auto flex items-center gap-3 w-max md:w-auto md:justify-center">
             {QUICK_DESTINATIONS.map(({ name }) => (
               <button
                 key={name}
                 onClick={() => handleSearch(name)}
-                className="px-5 py-2 rounded-full border border-[#e5e2dc] bg-white text-xs uppercase tracking-[0.18em] text-[#57534e] hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-colors whitespace-nowrap"
+                className="px-5 py-2 rounded-full border border-border bg-surface text-xs uppercase tracking-[0.18em] text-muted-foreground hover:border-foreground hover:text-foreground transition-colors whitespace-nowrap"
               >
                 {name}
               </button>
@@ -135,8 +138,8 @@ export default function Home() {
           <div className="max-w-7xl mx-auto">
             <div className="flex items-end justify-between mb-10">
               <div>
-                <p className="text-xs font-semibold text-[#e85d3a] uppercase tracking-[0.28em] mb-4">Where travelers go</p>
-                <h2 className="text-3xl md:text-4xl font-heading font-extrabold text-[#1a1a1a] tracking-[-0.03em]">
+                <p className="text-xs font-semibold text-brand uppercase tracking-[0.28em] mb-4">Where travelers go</p>
+                <h2 className="text-headline font-heading font-extrabold text-foreground tracking-[-0.03em]">
                   Popular destinations
                 </h2>
               </div>
@@ -187,7 +190,7 @@ export default function Home() {
         </section>
 
         {/* How it works - editorial split */}
-        <section className="py-24 px-6 bg-white border-y border-[#e5e2dc]">
+        <section className="py-24 px-6 bg-surface border-y border-border">
           <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
             <div className="relative aspect-[4/3] rounded-2xl overflow-hidden order-2 lg:order-1">
               <Image
@@ -199,17 +202,17 @@ export default function Home() {
               />
             </div>
             <div className="order-1 lg:order-2">
-              <p className="text-xs font-semibold text-[#e85d3a] uppercase tracking-[0.28em] mb-4">How it works</p>
-              <h2 className="text-3xl md:text-4xl font-heading font-extrabold text-[#1a1a1a] tracking-[-0.03em] mb-10">
+              <p className="text-xs font-semibold text-brand uppercase tracking-[0.28em] mb-4">How it works</p>
+              <h2 className="text-headline font-heading font-extrabold text-foreground tracking-[-0.03em] mb-10">
                 From idea to plan in 3 steps
               </h2>
               <div className="space-y-8">
                 {STEPS.map((step, i) => (
-                  <div key={step.title} className="flex gap-5 pb-8 border-b border-[#e5e2dc] last:border-0 last:pb-0">
-                    <span className="text-2xl font-bold text-[#d6d2cb] leading-none tabular-nums">{String(i + 1).padStart(2, "0")}</span>
+                  <div key={step.title} className="flex gap-5 pb-8 border-b border-border last:border-0 last:pb-0">
+                    <span className="text-2xl font-bold text-muted-foreground/40 leading-none tabular-nums">{String(i + 1).padStart(2, "0")}</span>
                     <div>
-                      <h3 className="font-semibold text-[#1a1a1a] mb-1.5">{step.title}</h3>
-                      <p className="text-sm text-[#57534e] leading-relaxed">{step.description}</p>
+                      <h3 className="font-semibold text-foreground mb-1.5">{step.title}</h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
                     </div>
                   </div>
                 ))}
@@ -221,22 +224,22 @@ export default function Home() {
         {/* Agent grid */}
         <section className="py-24 px-6">
           <div className="max-w-7xl mx-auto">
-            <p className="text-xs font-semibold text-[#e85d3a] uppercase tracking-[0.28em] mb-4">Under the hood</p>
-            <h2 className="text-3xl md:text-4xl font-heading font-extrabold text-[#1a1a1a] tracking-[-0.03em] mb-4">
+            <p className="text-xs font-semibold text-brand uppercase tracking-[0.28em] mb-4">Under the hood</p>
+            <h2 className="text-headline font-heading font-extrabold text-foreground tracking-[-0.03em] mb-4">
               8 agents. One perfect trip.
             </h2>
-            <p className="text-[#57534e] mb-12 max-w-lg text-sm leading-relaxed">
+            <p className="text-muted-foreground mb-12 max-w-lg text-sm leading-relaxed">
               Specialized AI agents work in parallel — each an expert in its own domain.
             </p>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 divide-y divide-x-0 lg:divide-y-0 lg:divide-x divide-[#e5e2dc] border-y border-[#e5e2dc]">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 divide-y divide-x-0 lg:divide-y-0 lg:divide-x divide-border border-y border-border">
               {AGENTS.map((agent) => (
                 <div
                   key={agent.name}
-                  className="p-6 hover:bg-white transition-colors"
+                  className="p-6 hover:bg-surface transition-colors"
                 >
                   <span className="text-2xl mb-4 block">{agent.icon}</span>
-                  <h3 className="font-semibold text-[#1a1a1a] text-sm mb-1.5">{agent.name}</h3>
-                  <p className="text-xs text-[#78716c] leading-relaxed">{agent.description}</p>
+                  <h3 className="font-semibold text-foreground text-sm mb-1.5">{agent.name}</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{agent.description}</p>
                 </div>
               ))}
             </div>
@@ -262,7 +265,7 @@ export default function Home() {
               Tell us where — the AI does the rest.
             </p>
             <Link href="/plan">
-              <button className="bg-white text-[#1a1a1a] px-8 py-4 rounded-full font-semibold hover:bg-[#e85d3a] hover:text-white transition-colors text-xs uppercase tracking-[0.2em]">
+              <button className="bg-surface text-foreground px-8 py-4 rounded-full font-semibold hover:bg-brand hover:text-brand-foreground transition-colors text-xs uppercase tracking-[0.2em]">
                 Plan for free →
               </button>
             </Link>
@@ -270,31 +273,31 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="border-t border-[#e5e2dc] bg-[#faf9f6]">
+      <footer className="border-t border-border bg-background">
         <div className="max-w-7xl mx-auto px-6 py-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
           <div>
-            <span className="font-bold text-[#1a1a1a] text-sm tracking-[0.2em] uppercase">TravelAgent</span>
-            <p className="text-xs text-[#a8a29e] mt-3 leading-relaxed">AI-powered travel planning — flights, hotels, itineraries and more, in minutes.</p>
+            <span className="font-bold text-foreground text-sm tracking-[0.2em] uppercase">TravelAgent</span>
+            <p className="text-xs text-muted-foreground mt-3 leading-relaxed">AI-powered travel planning — flights, hotels, itineraries and more, in minutes.</p>
           </div>
           <div className="flex flex-col gap-3">
-            <span className="text-xs uppercase tracking-[0.2em] text-[#a8a29e] mb-1">Plan</span>
-            <Link href="/plan" className="text-sm text-[#57534e] hover:text-[#1a1a1a]">New trip</Link>
-            <Link href="/saved" className="text-sm text-[#57534e] hover:text-[#1a1a1a]">Saved trips</Link>
-            <Link href="/packing" className="text-sm text-[#57534e] hover:text-[#1a1a1a]">Packing list</Link>
+            <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-1">Plan</span>
+            <Link href="/plan" className="text-sm text-muted-foreground hover:text-foreground">New trip</Link>
+            <Link href="/saved" className="text-sm text-muted-foreground hover:text-foreground">Saved trips</Link>
+            <Link href="/packing" className="text-sm text-muted-foreground hover:text-foreground">Packing list</Link>
           </div>
           <div className="flex flex-col gap-3">
-            <span className="text-xs uppercase tracking-[0.2em] text-[#a8a29e] mb-1">Tools</span>
-            <Link href="/research" className="text-sm text-[#57534e] hover:text-[#1a1a1a]">Research</Link>
-            <Link href="/disruption" className="text-sm text-[#57534e] hover:text-[#1a1a1a]">Disruption</Link>
-            <Link href="/agentic-commerce" className="text-sm text-[#57534e] hover:text-[#1a1a1a]">Agentic AI</Link>
+            <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-1">Tools</span>
+            <Link href="/research" className="text-sm text-muted-foreground hover:text-foreground">Research</Link>
+            <Link href="/disruption" className="text-sm text-muted-foreground hover:text-foreground">Disruption</Link>
+            <Link href="/agentic-commerce" className="text-sm text-muted-foreground hover:text-foreground">Agentic AI</Link>
           </div>
           <div className="flex flex-col gap-3">
-            <span className="text-xs uppercase tracking-[0.2em] text-[#a8a29e] mb-1">About</span>
-            <span className="text-sm text-[#57534e]">7 specialized AI agents</span>
-            <span className="text-sm text-[#57534e]">Free · no signup needed</span>
+            <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-1">About</span>
+            <span className="text-sm text-muted-foreground">7 specialized AI agents</span>
+            <span className="text-sm text-muted-foreground">Free · no signup needed</span>
           </div>
         </div>
-        <div className="border-t border-[#e5e2dc] py-6 px-6 text-center text-xs text-[#a8a29e]">
+        <div className="border-t border-border py-6 px-6 text-center text-xs text-muted-foreground">
           TravelAgent — AI Travel Planning
         </div>
       </footer>
