@@ -34,7 +34,7 @@ export default function Home() {
             <Link href="/disruption" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Disruption</Link>
             <Link href="/packing" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Packing</Link>
             <Link href="/saved" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Saved Trips</Link>
-            <Link href="/agentic-commerce" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Agentic AI</Link>
+            <Link href="/about" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">About</Link>
             <Link href="/plan">
               <button className="bg-foreground text-background px-6 py-2.5 rounded-full text-xs uppercase tracking-[0.18em] font-semibold hover:bg-brand transition-colors">
                 Plan a trip
@@ -72,7 +72,7 @@ export default function Home() {
             <Link href="/disruption" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">Disruption</Link>
             <Link href="/packing" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">Packing List</Link>
             <Link href="/saved" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">Saved Trips</Link>
-            <Link href="/agentic-commerce" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">Agentic AI</Link>
+            <Link href="/about" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">About</Link>
           </div>
         )}
       </nav>
@@ -289,7 +289,7 @@ export default function Home() {
             <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-1">Tools</span>
             <Link href="/research" className="text-sm text-muted-foreground hover:text-foreground">Research</Link>
             <Link href="/disruption" className="text-sm text-muted-foreground hover:text-foreground">Disruption</Link>
-            <Link href="/agentic-commerce" className="text-sm text-muted-foreground hover:text-foreground">Agentic AI</Link>
+            <Link href="/about" className="text-sm text-muted-foreground hover:text-foreground">About</Link>
           </div>
           <div className="flex flex-col gap-3">
             <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-1">About</span>
