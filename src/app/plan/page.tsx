@@ -16,7 +16,8 @@ const INTERESTS = [
   { id: "city", label: "Städtetrip", icon: "🏙️" },
   { id: "adventure", label: "Abenteuer", icon: "🧗" },
   { id: "food", label: "Kulinarik", icon: "🍽️" },
-  { id: "luxury", label: "Luxus & Wellness", icon: "✨" },
+  { id: "luxury", label: "Luxus", icon: "✨" },
+  { id: "wellness", label: "Wellness & Spa", icon: "🧖" },
   { id: "family", label: "Familie", icon: "👨‍👩‍👧" },
 ];
 

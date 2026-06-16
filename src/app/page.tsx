@@ -165,7 +165,7 @@ export default function Home() {
                 </div>
               </button>
 
-              {QUICK_DESTINATIONS.slice(1).map((dest) => (
+              {QUICK_DESTINATIONS.slice(1, 9).map((dest) => (
                 <button
                   key={dest.name}
                   onClick={() => handleSearch(dest.name)}
@@ -293,7 +293,7 @@ export default function Home() {
           </div>
           <div className="flex flex-col gap-3">
             <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-1">About</span>
-            <span className="text-sm text-muted-foreground">7 specialized AI agents</span>
+            <span className="text-sm text-muted-foreground">8 specialized AI agents</span>
             <span className="text-sm text-muted-foreground">Free · no signup needed</span>
           </div>
         </div>
@@ -306,12 +306,31 @@ export default function Home() {
 }
 
 const QUICK_DESTINATIONS = [
+  // Grid featured
   { name: "Japan", tag: "Asia", img: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1200&q=80&auto=format&fit=crop" },
+  // Grid row 1–2 fillers
+  { name: "Brazil", tag: "South America", img: "https://images.unsplash.com/photo-1483729558449-99ef09a8c325?w=800&q=80&auto=format&fit=crop" },
+  { name: "Italy", tag: "Europe", img: "https://images.unsplash.com/photo-1518730518541-d0843268c287?w=800&q=80&auto=format&fit=crop" },
+  { name: "Kenya", tag: "Africa", img: "https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=800&q=80&auto=format&fit=crop" },
+  { name: "Australia", tag: "Oceania", img: "https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?w=800&q=80&auto=format&fit=crop" },
+  // Grid row 3
+  { name: "Dubai", tag: "Middle East", img: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80&auto=format&fit=crop" },
+  { name: "Bali", tag: "Indonesia", img: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&q=80&auto=format&fit=crop" },
+  { name: "Canada", tag: "North America", img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80&auto=format&fit=crop" },
+  { name: "Vietnam", tag: "Asia", img: "https://images.unsplash.com/photo-1528702748617-c64d49f918af?w=800&q=80&auto=format&fit=crop" },
+  // Chips bar only
+  { name: "Mexico", tag: "North America", img: "https://images.unsplash.com/photo-1518638150340-f706e86654de?w=800&q=80&auto=format&fit=crop" },
+  { name: "Sweden", tag: "Europe", img: "https://images.unsplash.com/photo-1509356843151-3e7d96241e11?w=800&q=80&auto=format&fit=crop" },
+  { name: "Georgia", tag: "Caucasus", img: "https://images.unsplash.com/photo-1567325019710-c5c2a2c5ef4a?w=800&q=80&auto=format&fit=crop" },
+  { name: "Namibia", tag: "Africa", img: "https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=800&q=80&auto=format&fit=crop" },
+  { name: "Sri Lanka", tag: "Asia", img: "https://images.unsplash.com/photo-1583087253076-4c545a0d5e3d?w=800&q=80&auto=format&fit=crop" },
+  { name: "China", tag: "Asia", img: "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=800&q=80&auto=format&fit=crop" },
+  { name: "Thailand", tag: "Asia", img: "https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=800&q=80&auto=format&fit=crop" },
+  { name: "New Zealand", tag: "Oceania", img: "https://images.unsplash.com/photo-1507699622108-4be3abd695ad?w=800&q=80&auto=format&fit=crop" },
+  { name: "Tahiti", tag: "Pacific", img: "https://images.unsplash.com/photo-1559494007-e9d23f7d34b9?w=800&q=80&auto=format&fit=crop" },
   { name: "Portugal", tag: "Europe", img: "https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=800&q=80&auto=format&fit=crop" },
   { name: "Egypt", tag: "Africa", img: "https://images.unsplash.com/photo-1539768942893-daf53e448371?w=800&q=80&auto=format&fit=crop" },
-  { name: "Bali", tag: "Indonesia", img: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&q=80&auto=format&fit=crop" },
   { name: "Greece", tag: "Europe", img: "https://images.unsplash.com/photo-1469796466635-455ede028aca?w=800&q=80&auto=format&fit=crop" },
-  { name: "Italy", tag: "Europe", img: "https://images.unsplash.com/photo-1518730518541-d0843268c287?w=800&q=80&auto=format&fit=crop" },
 ];
 
 const STEPS = [
@@ -321,7 +340,7 @@ const STEPS = [
   },
   {
     title: "AI agents search",
-    description: "7 specialized agents search simultaneously for the best flights, hotels and activities.",
+    description: "8 specialized agents search simultaneously for the best flights, hotels and activities.",
   },
   {
     title: "Get your plan",

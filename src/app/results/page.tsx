@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -304,11 +305,7 @@ function ResultsContent() {
     );
   }
 
-  const filteredTrips = MOCK_TRIPS.filter((t) =>
-    destination ? t.price <= budget * 1.2 : true
-  );
-  const fallbackTrips = filteredTrips.length > 0 ? filteredTrips : MOCK_TRIPS;
-  const displayTrips = dynamicCards ?? fallbackTrips;
+  const displayTrips = dynamicCards ?? [];
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -386,8 +383,8 @@ function ResultsContent() {
             </div>
           )}
 
-          {/* Trip Cards (single-city only) */}
-          {!isMultiCity && (
+          {/* Trip Cards (single-city only, shown only once AI cards arrive) */}
+          {!isMultiCity && displayTrips.length > 0 && (
             <div className="grid md:grid-cols-3 gap-6 mb-12">
               {displayTrips.map((trip, index) => (
                 <TripCard key={trip.id} trip={trip} featured={index === 0} />
@@ -403,7 +400,7 @@ function ResultsContent() {
                 <h3 className="font-semibold text-foreground">Dein persönlicher Reiseplan von Claude</h3>
               </div>
               <div className="prose prose-sm max-w-none text-foreground leading-relaxed">
-                <ReactMarkdown>{aiResult}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{aiResult}</ReactMarkdown>
               </div>
             </div>
           )}

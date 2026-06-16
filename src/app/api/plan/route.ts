@@ -32,7 +32,7 @@ const tools: Anthropic.Tool[] = [
         check_in: { type: "string", description: "Check-in Datum" },
         check_out: { type: "string", description: "Check-out Datum" },
         travelers: { type: "number", description: "Anzahl Personen" },
-        style: { type: "string", description: "Unterkunftsstil (budget/comfort/luxury)" },
+        style: { type: "string", description: "Unterkunftsstil — kombiniere alle zutreffenden: budget, comfort, luxury, wellness, spa, boutique. z.B. 'luxury wellness spa' wenn beides gewünscht." },
       },
       required: ["destination"],
     },
@@ -312,13 +312,21 @@ Erstelle dann einen konkreten, strukturierten Reisevorschlag auf Deutsch.
           // (tool results + prior assistant text) instead of resending it at full price.
           if (iterations > 1) markCacheBreakpoint(messages);
 
+          const singleCitySystemPrompt = `Du bist ein professioneller Reiseplaner. Erstelle strukturierte, konkrete Reisepläne auf Deutsch.
+
+REGELN:
+- Verwende KEINE Markdown-Tabellen (kein | --- | Format). Nutze stattdessen Überschriften (##), Aufzählungen (-) und Fettschrift (**).
+- Beende NIEMALS mit Fragen, Angeboten zur Weiterarbeit oder chatbot-artigen Abschlüssen ("Soll ich...", "Möchtest du...", "Kann ich noch..."). Der Plan ist vollständig und in sich abgeschlossen.
+- Wenn Wellness UND Luxus als Interessen angegeben sind, suche nach Hotels die BEIDES bieten: Luxus-Unterkünfte mit Wellness/Spa-Angeboten.
+- Sei präzise bei Preisangaben: kennzeichne Schätzungen als "ca." und Bereiche als "von X bis Y €".`;
+
           // Stream every Claude call — text tokens arrive live, tool_use detected after
           const stream = client.messages.stream({
             model: "claude-sonnet-4-6",
             max_tokens: isMultiCity ? 8192 : 4096,
-            ...(isMultiCity && iterations === 1
-              ? { system: [{ type: "text" as const, text: multiCitySystemPrompt, cache_control: { type: "ephemeral" as const } }] }
-              : {}),
+            system: isMultiCity && iterations === 1
+              ? [{ type: "text" as const, text: multiCitySystemPrompt, cache_control: { type: "ephemeral" as const } }]
+              : [{ type: "text" as const, text: singleCitySystemPrompt, cache_control: { type: "ephemeral" as const } }],
             tools: activeTools,
             messages,
           });

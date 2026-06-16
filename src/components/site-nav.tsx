@@ -6,7 +6,7 @@ export function SiteNav({
   children,
   className,
   containerClassName = "max-w-5xl mx-auto flex items-center justify-between",
-  sticky = false,
+  sticky = true,
   noPrint = false,
 }: {
   children?: React.ReactNode;
