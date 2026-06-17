@@ -323,7 +323,7 @@ function ResultsContent() {
       </SiteNav>
 
       <main className="flex-1 px-6 py-12">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-10">
             <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
@@ -383,75 +383,94 @@ function ResultsContent() {
             </div>
           )}
 
-          {/* Trip Cards (single-city only, shown only once AI cards arrive) */}
+          {/* Trip Cards mobile: horizontal scroll (sidebar handles desktop) */}
           {!isMultiCity && displayTrips.length > 0 && (
-            <div className="grid md:grid-cols-3 gap-6 mb-12">
+            <div className="md:hidden flex gap-4 overflow-x-auto pb-2 mb-8 -mx-2 px-2">
               {displayTrips.map((trip, index) => (
-                <TripCard key={trip.id} trip={trip} featured={index === 0} />
-              ))}
-            </div>
-          )}
-
-          {/* AI Result */}
-          {aiResult && (
-            <div className="bg-surface rounded-2xl border border-border p-8 mb-6">
-              <div className="flex items-center gap-2 mb-5">
-                <span className="text-xl">🤖</span>
-                <h3 className="font-semibold text-foreground">Dein persönlicher Reiseplan von Claude</h3>
-              </div>
-              <div className="prose prose-sm max-w-none text-foreground leading-relaxed">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{aiResult}</ReactMarkdown>
-              </div>
-            </div>
-          )}
-
-          {/* Booking Links */}
-          <BookingSection
-            destination={destination}
-            startDate={searchParams.get("startDate") || ""}
-            endDate={searchParams.get("endDate") || ""}
-            travelers={searchParams.get("travelers") || "2"}
-          />
-
-          {/* Budget Tracker */}
-          <BudgetTracker budget={budget} aiResult={aiResult} isMultiCity={isMultiCity} travelers={Number(searchParams.get("travelers") || 2)} />
-
-          {/* Agent Summary */}
-          <div className="bg-surface rounded-2xl border border-border p-6 no-print">
-            <h3 className="font-semibold text-foreground mb-4">Was die Agenten analysiert haben</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {(isMultiCity ? [
-                { icon: "✈️", label: "Flug-Legs", value: toolCounts.search_flight_leg > 0 ? `${toolCounts.search_flight_leg}` : "—" },
-                { icon: "🏨", label: "Städte geplant", value: toolCounts.plan_city_stop > 0 ? `${toolCounts.plan_city_stop}` : "—" },
-                { icon: "🗺️", label: "Stationen", value: cityNames.length > 0 ? `${cityNames.length}` : "—" },
-                { icon: "💰", label: "Budget optimiert", value: toolCounts.optimize_total_budget > 0 ? "✓" : "—" },
-              ] : [
-                { icon: "✈️", label: "Flug-Ergebnisse", value: toolCounts.search_flights > 0 ? `${toolCounts.search_flights * 5}` : "—" },
-                { icon: "🏨", label: "Hotel-Ergebnisse", value: toolCounts.search_hotels > 0 ? `${toolCounts.search_hotels * 5}` : "—" },
-                { icon: "🗺️", label: "Aktivitäten", value: toolCounts.get_activities > 0 ? `${toolCounts.get_activities * 5}` : "—" },
-                { icon: "💰", label: "Budget optimiert", value: toolCounts.optimize_budget > 0 ? "✓" : "—" },
-              ]).map((item) => (
-                <div key={item.label} className="text-center p-4 rounded-xl bg-brand-subtle">
-                  <span className="text-2xl block mb-2">{item.icon}</span>
-                  <p className="text-xs text-muted-foreground mb-1">{item.label}</p>
-                  <p className="text-sm font-semibold text-foreground">{item.value}</p>
+                <div key={trip.id} className="w-64 shrink-0">
+                  <TripCard trip={trip} featured={index === 0} compact />
                 </div>
               ))}
             </div>
-            {trace.length > 0 && (
-              <div className="mt-5 pt-5 border-t border-border">
-                <button
-                  onClick={() => setShowTrace((v) => !v)}
-                  className="text-sm font-medium text-brand hover:text-brand/80 flex items-center gap-1.5"
-                >
-                  {showTrace ? "Agent-Protokoll ausblenden" : "Agent-Protokoll anzeigen"}
-                  <span className={`transition-transform ${showTrace ? "rotate-180" : ""}`}>▾</span>
-                </button>
-                {showTrace && (
-                  <div className="mt-4">
-                    <AgentTrace trace={trace} />
+          )}
+
+          {/* Two-column layout: main content + sidebar */}
+          <div className={!isMultiCity && displayTrips.length > 0 ? "flex gap-8 items-start" : ""}>
+            <div className="flex-1 min-w-0">
+              {/* AI Result */}
+              {aiResult && (
+                <div className="bg-surface rounded-2xl border border-border p-8 mb-6">
+                  <div className="flex items-center gap-2 mb-5">
+                    <span className="text-xl">🤖</span>
+                    <h3 className="font-semibold text-foreground">Dein persönlicher Reiseplan von Claude</h3>
+                  </div>
+                  <div className="prose prose-sm max-w-none text-foreground leading-relaxed">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{aiResult}</ReactMarkdown>
+                  </div>
+                </div>
+              )}
+
+              {/* Booking Links */}
+              <BookingSection
+                destination={destination}
+                startDate={searchParams.get("startDate") || ""}
+                endDate={searchParams.get("endDate") || ""}
+                travelers={searchParams.get("travelers") || "2"}
+              />
+
+              {/* Budget Tracker */}
+              <BudgetTracker budget={budget} aiResult={aiResult} isMultiCity={isMultiCity} travelers={Number(searchParams.get("travelers") || 2)} />
+
+              {/* Agent Summary */}
+              <div className="bg-surface rounded-2xl border border-border p-6 no-print">
+                <h3 className="font-semibold text-foreground mb-4">Was die Agenten analysiert haben</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {(isMultiCity ? [
+                    { icon: "✈️", label: "Flug-Legs", value: toolCounts.search_flight_leg > 0 ? `${toolCounts.search_flight_leg}` : "—" },
+                    { icon: "🏨", label: "Städte geplant", value: toolCounts.plan_city_stop > 0 ? `${toolCounts.plan_city_stop}` : "—" },
+                    { icon: "🗺️", label: "Stationen", value: cityNames.length > 0 ? `${cityNames.length}` : "—" },
+                    { icon: "💰", label: "Budget optimiert", value: toolCounts.optimize_total_budget > 0 ? "✓" : "—" },
+                  ] : [
+                    { icon: "✈️", label: "Flug-Ergebnisse", value: toolCounts.search_flights > 0 ? `${toolCounts.search_flights * 5}` : "—" },
+                    { icon: "🏨", label: "Hotel-Ergebnisse", value: toolCounts.search_hotels > 0 ? `${toolCounts.search_hotels * 5}` : "—" },
+                    { icon: "🗺️", label: "Aktivitäten", value: toolCounts.get_activities > 0 ? `${toolCounts.get_activities * 5}` : "—" },
+                    { icon: "💰", label: "Budget optimiert", value: toolCounts.optimize_budget > 0 ? "✓" : "—" },
+                  ]).map((item) => (
+                    <div key={item.label} className="text-center p-4 rounded-xl bg-brand-subtle">
+                      <span className="text-2xl block mb-2">{item.icon}</span>
+                      <p className="text-xs text-muted-foreground mb-1">{item.label}</p>
+                      <p className="text-sm font-semibold text-foreground">{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+                {trace.length > 0 && (
+                  <div className="mt-5 pt-5 border-t border-border">
+                    <button
+                      onClick={() => setShowTrace((v) => !v)}
+                      className="text-sm font-medium text-brand hover:text-brand/80 flex items-center gap-1.5"
+                    >
+                      {showTrace ? "Agent-Protokoll ausblenden" : "Agent-Protokoll anzeigen"}
+                      <span className={`transition-transform ${showTrace ? "rotate-180" : ""}`}>▾</span>
+                    </button>
+                    {showTrace && (
+                      <div className="mt-4">
+                        <AgentTrace trace={trace} />
+                      </div>
+                    )}
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Sidebar: Trip Cards (desktop only) */}
+            {!isMultiCity && displayTrips.length > 0 && (
+              <div className="w-72 lg:w-80 shrink-0 hidden md:block">
+                <div className="sticky top-8 space-y-4">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Reiseoptionen</p>
+                  {displayTrips.map((trip, index) => (
+                    <TripCard key={trip.id} trip={trip} featured={index === 0} compact />
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -723,8 +742,84 @@ function ItineraryTimeline({ itinerary }: { itinerary: { day: string; activities
   );
 }
 
-function TripCard({ trip, featured }: { trip: Trip; featured: boolean }) {
+function TripCard({ trip, featured, compact }: { trip: Trip; featured: boolean; compact?: boolean }) {
   const [open, setOpen] = useState(false);
+
+  if (compact) {
+    return (
+      <>
+        <Card
+          className={`overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer ${featured ? "ring-2 ring-brand" : ""}`}
+          onClick={() => setOpen(true)}
+        >
+          <div className={`bg-gradient-to-br ${trip.gradient} h-20 flex items-end p-4 relative`}>
+            {featured && (
+              <Badge className="absolute top-2 right-2 bg-brand text-brand-foreground text-xs">★</Badge>
+            )}
+            <div>
+              <p className="text-white/80 text-xs font-medium">{trip.emoji} {trip.tagline}</p>
+              <h3 className="text-white text-base font-bold leading-tight">{trip.destination}</h3>
+            </div>
+          </div>
+          <CardContent className="p-4">
+            <div className="flex flex-wrap gap-1 mb-3">
+              {trip.themes.slice(0, 2).map((theme) => (
+                <Badge key={theme} variant="secondary" className="text-xs">{theme}</Badge>
+              ))}
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">{trip.duration} · ab</p>
+                <p className="text-base font-bold text-foreground">€{trip.price.toLocaleString()}</p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs h-7 px-2"
+                onClick={(e) => { e.stopPropagation(); setOpen(true); }}
+              >
+                Details →
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-xl">
+                {trip.emoji} {trip.destination} — {trip.duration}
+              </DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground mb-4">{trip.description}</p>
+            <h4 className="font-semibold text-foreground mb-4">Reiseverlauf</h4>
+            <ItineraryTimeline itinerary={trip.itinerary} />
+            <div className="mb-1" />
+            <h4 className="font-semibold text-foreground mb-3">Budget-Aufteilung <span className="text-muted-foreground font-normal text-sm">pro Person</span></h4>
+            <div className="grid grid-cols-2 gap-2 mb-6">
+              {Object.entries(trip.budget).map(([key, val]) => (
+                <div key={key} className="flex justify-between text-sm bg-brand-subtle rounded-lg px-3 py-2">
+                  <span className="text-muted-foreground capitalize">{key === "flights" ? "Flug" : key === "hotel" ? "Hotel" : key === "activities" ? "Aktivitäten" : "Essen"}</span>
+                  <span className="font-medium">€{val}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-3">
+              <a
+                href={trip.bookingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 inline-flex items-center justify-center rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:bg-brand hover:text-brand-foreground transition-colors"
+              >
+                Flüge suchen ↗
+              </a>
+              <Button variant="outline" className="flex-1" onClick={() => setOpen(false)}>Schließen</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
 
   return (
     <>
