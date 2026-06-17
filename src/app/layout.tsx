@@ -14,7 +14,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "TravelAgent — Dein AI Reiseplaner",
+  title: "Vagamundo — Dein AI Reiseplaner",
   description: "Beschreibe deine Traumreise. Unser AI-Agent plant alles für dich.",
 };
 

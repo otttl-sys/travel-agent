@@ -26,7 +26,7 @@ export function SiteNav({
     >
       <div className={containerClassName}>
         <Link href="/" className="font-bold text-foreground text-sm tracking-[0.2em] uppercase">
-          TravelAgent
+          Vagamundo
         </Link>
         <div className="flex items-center gap-3">
           {children}

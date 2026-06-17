@@ -3,9 +3,9 @@ import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 
 export const metadata = {
-  title: "Agentic Commerce — How This Project Works | TravelAgent",
+  title: "Agentic Commerce — How This Project Works | Vagamundo",
   description:
-    "How TravelAgent maps onto the gen AI → agentic AI → agentic commerce continuum, and what the MCP server demonstrates about agentic travel infrastructure.",
+    "How Vagamundo maps onto the gen AI → agentic AI → agentic commerce continuum, and what the MCP server demonstrates about agentic travel infrastructure.",
 };
 
 export default function AgenticCommercePage() {
@@ -32,7 +32,7 @@ export default function AgenticCommercePage() {
             </h1>
             <p className="text-muted-foreground text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
               Travel is moving from AI that <em>recommends</em> to AI that <em>executes</em> — researching,
-              booking and paying on a traveler&apos;s behalf. This page explains how TravelAgent fits into
+              booking and paying on a traveler&apos;s behalf. This page explains how Vagamundo fits into
               that shift, what it already demonstrates, and what a production version would need.
             </p>
           </div>
@@ -157,7 +157,7 @@ export default function AgenticCommercePage() {
             </h2>
             <p className="text-muted-foreground mb-12 max-w-2xl text-sm leading-relaxed">
               The whitepaper frames five infrastructure paths for agentic commerce, from building everything
-              in-house to adopting an end-to-end platform. TravelAgent is a deliberately small, transparent
+              in-house to adopting an end-to-end platform. Vagamundo is a deliberately small, transparent
               version of <strong>Option 1 (build in-house)</strong> — useful for demonstrating the patterns,
               not for handling real payments.
             </p>
@@ -187,7 +187,7 @@ export default function AgenticCommercePage() {
 
       <footer className="border-t border-border bg-background">
         <div className="max-w-7xl mx-auto px-6 py-12 text-center text-xs text-muted-foreground">
-          TravelAgent — AI Travel Planning
+          Vagamundo — AI Travel Planning
         </div>
       </footer>
     </div>

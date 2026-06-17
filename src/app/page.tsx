@@ -26,7 +26,7 @@ export default function Home() {
       <nav className="border-b border-border px-6 py-5 bg-background/95 backdrop-blur sticky top-0 z-50 relative">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-foreground text-base tracking-[0.2em] uppercase">TravelAgent</span>
+            <span className="font-bold text-foreground text-base tracking-[0.2em] uppercase">Vagamundo</span>
           </div>
 
           <div className="hidden md:flex items-center gap-8">
@@ -276,7 +276,7 @@ export default function Home() {
       <footer className="border-t border-border bg-background">
         <div className="max-w-7xl mx-auto px-6 py-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
           <div>
-            <span className="font-bold text-foreground text-sm tracking-[0.2em] uppercase">TravelAgent</span>
+            <span className="font-bold text-foreground text-sm tracking-[0.2em] uppercase">Vagamundo</span>
             <p className="text-xs text-muted-foreground mt-3 leading-relaxed">AI-powered travel planning — flights, hotels, itineraries and more, in minutes.</p>
           </div>
           <div className="flex flex-col gap-3">
@@ -298,7 +298,7 @@ export default function Home() {
           </div>
         </div>
         <div className="border-t border-border py-6 px-6 text-center text-xs text-muted-foreground">
-          TravelAgent — AI Travel Planning
+          Vagamundo — AI Travel Planning
         </div>
       </footer>
     </div>
