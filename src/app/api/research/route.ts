@@ -122,7 +122,7 @@ Destination: ${destination}
 Passport / Nationality: ${passportCountry || "not specified"}
 Interests / Focus: ${interests?.length > 0 ? interests.join(", ") : "general"}
 
-Use ALL available research tools to gather current, accurate information. Then write a well-structured research report in German covering:
+Use ALL available research tools to gather current, accurate information. Then write a well-structured research report in English covering:
 1. Visa & Entry Requirements
 2. Climate & Best Time to Visit
 3. Safety & Health

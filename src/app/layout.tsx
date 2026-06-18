@@ -14,8 +14,15 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Vagamundo — Dein AI Reiseplaner",
-  description: "Beschreibe deine Traumreise. Unser AI-Agent plant alles für dich.",
+  metadataBase: new URL("https://vagamundo.io"),
+  title: "Vagamundo — Your AI Travel Planner",
+  description: "Describe your dream trip. Our AI agents plan everything for you.",
+  openGraph: {
+    title: "Vagamundo — Your AI Travel Planner",
+    description: "Describe your dream trip. Our AI agents plan everything for you.",
+    url: "https://vagamundo.io",
+    siteName: "Vagamundo",
+  },
 };
 
 export default function RootLayout({
@@ -24,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="de" className={`${geist.variable} ${inter.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="en" className={`${geist.variable} ${inter.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}

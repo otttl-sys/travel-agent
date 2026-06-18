@@ -72,12 +72,12 @@ IMMEDIATELY call BOTH tools in parallel in your first response:
 1. search_current_flights — current flight prices for the saved route and dates
 2. search_current_hotels — current hotel prices for the destination and dates
 
-Then compare what you find to the traveler's ORIGINAL baseline price (given in the message) and write a short verdict in German — like a push notification, NOT a report:
+Then compare what you find to the traveler's ORIGINAL baseline price (given in the message) and write a short verdict in English — like a push notification, NOT a report:
 - Plain flowing prose only. NO Markdown — no headers, no tables, no bullet points, no bold/italic asterisks.
 - Exactly 2-3 short sentences, max ~50 words total.
-- Sentence 1: the trend — günstiger geworden / teurer geworden / etwa gleich geblieben — with a rough current price if you can estimate one.
+- Sentence 1: the trend — prices have dropped / risen / stayed about the same — with a rough current price if you can estimate one.
 - Sentence 2 (optional): one concrete number or detail backing that up.
-- Final sentence: one practical recommendation (e.g. "Jetzt buchen lohnt sich." / "Noch ein paar Wochen abwarten." / "Preise im Auge behalten.").
+- Final sentence: one practical recommendation (e.g. "Good time to book now." / "Wait a few more weeks." / "Keep an eye on prices.").
 
 If no baseline price was provided, skip the comparison and just give a one-sentence summary of the current price range plus a recommendation — same length limit, same plain-prose style.`;
 
@@ -90,14 +90,14 @@ export async function POST(req: NextRequest) {
       : "Kein Ausgangspreis gespeichert (nur Beispieldaten verfügbar) — gib stattdessen die aktuelle Preisspanne an.";
 
   const userMessage = `
-Bitte prüfe die aktuellen Preise für diese gespeicherte Reise:
-- Strecke: ${origin || "Deutschland"} → ${destination}
-- Zeitraum: ${startDate || "flexibel"} bis ${endDate || "flexibel"}
-- Reisende: ${travelers || 2} Person(en)
-- Hotelstil: ${style || "comfort"}
+Please check current prices for this saved trip:
+- Route: ${origin || "Germany"} → ${destination}
+- Dates: ${startDate || "flexible"} to ${endDate || "flexible"}
+- Travelers: ${travelers || 2}
+- Hotel style: ${style || "comfort"}
 - ${baseline}
 
-Suche aktuelle Flug- und Hotelpreise und vergleiche sie mit dem Ausgangspreis. Gib mir eine kurze Einschätzung auf Deutsch.
+Search for current flight and hotel prices and compare them to the baseline. Give me a short assessment in English.
 `.trim();
 
   const encoder = new TextEncoder();

@@ -31,6 +31,7 @@ export default function Home() {
 
           <div className="hidden md:flex items-center gap-8">
             <Link href="/research" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Research</Link>
+            <Link href="/budget" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Budget</Link>
             <Link href="/disruption" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Disruption</Link>
             <Link href="/packing" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Packing</Link>
             <Link href="/saved" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Saved Trips</Link>
@@ -69,6 +70,7 @@ export default function Home() {
         {mobileMenuOpen && (
           <div className="md:hidden absolute top-full left-0 right-0 bg-background border-b border-border shadow-sm z-50 px-6 py-5 flex flex-col gap-4">
             <Link href="/research" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">Research</Link>
+            <Link href="/budget" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">Budget</Link>
             <Link href="/disruption" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">Disruption</Link>
             <Link href="/packing" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">Packing List</Link>
             <Link href="/saved" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">Saved Trips</Link>
@@ -282,6 +284,7 @@ export default function Home() {
           <div className="flex flex-col gap-3">
             <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-1">Plan</span>
             <Link href="/plan" className="text-sm text-muted-foreground hover:text-foreground">New trip</Link>
+            <Link href="/budget" className="text-sm text-muted-foreground hover:text-foreground">Budget checker</Link>
             <Link href="/saved" className="text-sm text-muted-foreground hover:text-foreground">Saved trips</Link>
             <Link href="/packing" className="text-sm text-muted-foreground hover:text-foreground">Packing list</Link>
           </div>

@@ -38,18 +38,18 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
   }
 }
 
-const SYSTEM_PROMPT = `Du bist ein Briefing-Spezialist, der aus den vorhandenen Erkenntnissen anderer Reise-Agenten (Preis-Trend, Tagesplan) und frischer Recherche EIN zusammenhängendes Vorab-Briefing für eine gespeicherte Reise erstellt — "alles, was man vor der Abreise wissen muss", warm geschrieben wie von einem erfahrenen Reisebegleiter, nicht wie eine trockene Checkliste.
+const SYSTEM_PROMPT = `You are a briefing specialist who creates ONE cohesive pre-trip briefing for a saved trip — drawing on insights from other travel agents (price trend, day plan) and fresh research. Think "everything you need to know before departure", written warmly like an experienced travel companion, not a dry checklist.
 
-Arbeite in zwei Schritten:
-1. Rufe search_travel_essentials 1-2 Mal auf, um Lücken zu schließen, die NICHT bereits durch die mitgelieferten Preis-Trend- oder Tagesplan-Daten abgedeckt sind — z. B. aktuelles Wetter/Saison, praktische Last-Minute-Hinweise (Visum, Währung, Verkehr, Gesundheit). WICHTIG: Falls kein Preis-Trend oder kein Tagesplan mitgeliefert wurde, recherchiere stattdessen selbst eine passende Ersatz-Information (z. B. aktuelle Preisrichtwerte oder eine sinnvolle Tagesstruktur) — schreibe NIEMALS, dass Daten "nicht verfügbar" seien. Das fertige Briefing soll sich immer vollständig und selbstbewusst anfühlen.
-2. Rufe danach GENAU EINMAL generate_briefing auf — mit 3-5 Abschnitten, die alles zu einem runden Ganzen verweben (nicht als separate Datenblöcke nebeneinanderstellen).
+Work in two steps:
+1. Call search_travel_essentials 1-2 times to fill gaps NOT already covered by the provided price-trend or day-plan data — e.g. current weather/season, practical last-minute tips (visa, currency, transport, health). IMPORTANT: If no price trend or day plan was provided, research a suitable replacement yourself (e.g. current price benchmarks or a sensible daily structure) — NEVER state that data is "unavailable". The finished briefing should always feel complete and confident.
+2. Then call generate_briefing EXACTLY ONCE — with 3-5 sections that weave everything into a coherent whole (not separate data blocks placed side by side).
 
-Für jeden Abschnitt:
-- icon: ein passendes Emoji
-- title: ein kurzer, einladender Titel auf Deutsch (z. B. "Preise im Blick", "Dein Tagesrhythmus", "Wetter & Packliste", "Vor Ort wichtig")
-- body: 2-4 Sätze Fließtext auf Deutsch, OHNE Markdown, OHNE Aufzählungszeichen — warm, konkret, persönlich formuliert ("Du wirst...", "Plane ein, dass...")
+For each section:
+- icon: a fitting emoji
+- title: a short, inviting title in English (e.g. "Prices at a Glance", "Your Daily Rhythm", "Weather & Packing", "On the Ground")
+- body: 2-4 sentences of flowing prose in English, NO Markdown, NO bullet points — warm, concrete, personally phrased ("You'll find...", "Budget time for...")
 
-Typische Themen (wähle die passendsten 3-5, je nach verfügbaren Daten): Preisentwicklung & Buchungstiming, Tagesablauf-Überblick, Wetter & was einzupacken ist, praktische Vor-Ort-Hinweise, kulturelle/saisonale Besonderheiten.`;
+Typical topics (pick the 3-5 most relevant based on available data): price trends & booking timing, day schedule overview, weather & what to pack, practical on-the-ground tips, cultural/seasonal highlights.`;
 
 export async function POST(req: NextRequest) {
   const { destination, startDate, endDate, travelers, themes, priceWatch, dayPlanSummary } = await req.json() as {
@@ -64,22 +64,22 @@ export async function POST(req: NextRequest) {
 
   const themeStr = themes?.length ? themes.join(", ") : "—";
   const priceStr = priceWatch
-    ? `Preis-Trend: ${priceWatch.trend} — ${priceWatch.summary}`
-    : "Kein Preis-Trend gespeichert (noch kein Price Watcher gelaufen) — bitte recherchiere selbst eine passende aktuelle Preiseinschätzung für dieses Ziel.";
+    ? `Price trend: ${priceWatch.trend} — ${priceWatch.summary}`
+    : "No price trend saved yet (Price Watcher hasn't run) — please research a current price estimate for this destination yourself.";
   const dayPlanStr = dayPlanSummary?.length
     ? dayPlanSummary.join("; ")
-    : "Kein Tagesplan gespeichert (noch kein Day Planner gelaufen) — bitte recherchiere selbst eine sinnvolle grobe Tagesstruktur für dieses Ziel.";
+    : "No day plan saved yet (Day Planner hasn't run) — please research a sensible rough daily structure for this destination yourself.";
 
   const userMessage = `
-Erstelle ein Vorab-Briefing für diese Reise:
-- Ziel: ${destination ?? "unbekannt"}
-- Reisezeitraum: ${startDate ?? "?"} – ${endDate ?? "?"}
-- Reisende: ${travelers ?? "?"}
-- Themen: ${themeStr}
+Create a pre-trip briefing for this trip:
+- Destination: ${destination ?? "unknown"}
+- Travel dates: ${startDate ?? "?"} – ${endDate ?? "?"}
+- Travelers: ${travelers ?? "?"}
+- Themes: ${themeStr}
 - ${priceStr}
-- Tagesplan-Überblick: ${dayPlanStr}
+- Day plan overview: ${dayPlanStr}
 
-Recherchiere zuerst kurz die fehlenden Bausteine (Wetter, praktische Hinweise, ggf. Ersatz-Recherche für fehlende Daten), dann erstelle das vollständige Briefing mit generate_briefing — 3-5 zusammenhängende Abschnitte.
+First research the missing pieces (weather, practical tips, substitute research for missing data), then create the complete briefing with generate_briefing — 3-5 cohesive sections.
 `.trim();
 
   const encoder = new TextEncoder();
@@ -179,7 +179,7 @@ Recherchiere zuerst kurz die fehlenden Bausteine (Wetter, praktische Hinweise, g
                   { role: "assistant", content: finalMessage.content },
                   {
                     role: "user",
-                    content: "Erstelle jetzt das vollständige Briefing mit generate_briefing — 3-5 zusammenhängende Abschnitte, auf Deutsch.",
+                    content: "Now create the complete briefing with generate_briefing — 3-5 cohesive sections in English.",
                   },
                 ],
               });

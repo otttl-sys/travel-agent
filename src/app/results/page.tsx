@@ -653,7 +653,7 @@ function BookingSection({
       icon: "🏨",
       label: "Hotels",
       sub: "Booking.com",
-      url: `https://www.booking.com/searchresults.html?ss=${dest}&checkin=${startDate}&checkout=${endDate}&group_adults=${travelers}&no_rooms=1&lang=de`,
+      url: `https://www.booking.com/searchresults.html?ss=${dest}&checkin=${startDate}&checkout=${endDate}&group_adults=${travelers}&no_rooms=1&lang=en`,
       cardClass: "bg-amber-50 hover:bg-amber-100 border-amber-100",
       labelClass: "text-amber-700",
     },

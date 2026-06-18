@@ -49,7 +49,7 @@ Arbeite in zwei Schritten:
 Für jeden Programmpunkt:
 - time: ungefähre Uhrzeit (z. B. "ca. 09:00") — als Vorschlag formuliert, nicht als Garantie
 - activity: die Aktivität kurz und konkret
-- note: optional ein kurzer praktischer Hinweis (Dauer, Wegzeit zum nächsten Punkt, Tipp) — knapp, auf Deutsch
+- note: optional short practical hint (duration, walking time to next stop, tip) — brief, in English
 
 Bleibe realistisch: plane Pausen ein, unterschätze keine Wegzeiten, und überlade keinen Tag.`;
 
@@ -187,7 +187,7 @@ Recherchiere zuerst kurz die Logistik (Öffnungszeiten, Besuchsdauer, Wege), dan
                   { role: "assistant", content: finalMessage.content },
                   {
                     role: "user",
-                    content: "Erstelle jetzt den vollständigen Stunden-für-Stunde-Tagesplan mit generate_day_schedule — ein Eintrag pro vorhandenem Tagesblock, auf Deutsch.",
+                    content: "Now create the complete hour-by-hour day schedule with generate_day_schedule — one entry per existing day block, in English.",
                   },
                 ],
               });

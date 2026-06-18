@@ -122,7 +122,7 @@ When a user reports a disrupted flight, IMMEDIATELY call ALL relevant tools in p
 4. find_airport_lounge — if delay > 2h
 5. find_airport_hotel — if overnight delay or long disruption
 
-Call all applicable tools simultaneously. Then write a clear, actionable disruption report in German:
+Call all applicable tools simultaneously. Then write a clear, actionable disruption report in English:
 - Current flight status
 - Best alternative flight options (ranked)
 - Passenger rights & compensation they're entitled to

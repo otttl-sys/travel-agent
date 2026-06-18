@@ -271,26 +271,26 @@ Fire all ${legCount + cityCount + 1} tool calls in your very first response. The
 
   const userMessage = isMultiCity
     ? `
-Plane eine Multi-City Reise:
-- Route: ${cityList.map((c, i) => `${c} (${daysList[i] ?? 3} Tage)`).join(" → ")}
-- Abreise: ${startDate || "flexibel"}
-- Reisende: ${travelers || 2} Person(en)
-- Interessen: ${interests || "allgemein"}
-- Budget pro Person (gesamt): €${budget || 3000}
+Plan a multi-city trip:
+- Route: ${cityList.map((c, i) => `${c} (${daysList[i] ?? 3} days)`).join(" → ")}
+- Departure: ${startDate || "flexible"}
+- Travelers: ${travelers || 2}
+- Interests: ${interests || "general"}
+- Budget per person (total): €${budget || 3000}
 
-WICHTIG: Rufe ALLE Tools gleichzeitig in einem einzigen Batch auf — nicht sequenziell.
-Erstelle danach einen detaillierten Tag-für-Tag Reiseplan auf Deutsch.
+IMPORTANT: Call ALL tools simultaneously in a single batch — not sequentially.
+Then create a detailed day-by-day travel plan in English.
 `.trim()
     : `
-Plane eine Reise mit folgenden Wünschen:
-- Destination: ${destination || "flexibel"}
-- Zeitraum: ${startDate || "flexibel"} bis ${endDate || "flexibel"}
-- Reisende: ${travelers || 2} Person(en)
-- Interessen: ${interests || "allgemein"}
-- Budget pro Person: €${budget || 3000}
+Plan a trip with the following preferences:
+- Destination: ${destination || "flexible"}
+- Dates: ${startDate || "flexible"} to ${endDate || "flexible"}
+- Travelers: ${travelers || 2}
+- Interests: ${interests || "general"}
+- Budget per person: €${budget || 3000}
 
-Nutze die verfügbaren Tools um Flüge, Hotels, Aktivitäten zu analysieren und das Budget zu optimieren.
-Erstelle dann einen konkreten, strukturierten Reisevorschlag auf Deutsch.
+Use the available tools to research flights, hotels, and activities and optimise the budget.
+Then create a concrete, structured travel plan in English.
 `.trim();
 
   const encoder = new TextEncoder();
@@ -312,13 +312,13 @@ Erstelle dann einen konkreten, strukturierten Reisevorschlag auf Deutsch.
           // (tool results + prior assistant text) instead of resending it at full price.
           if (iterations > 1) markCacheBreakpoint(messages);
 
-          const singleCitySystemPrompt = `Du bist ein professioneller Reiseplaner. Erstelle strukturierte, konkrete Reisepläne auf Deutsch.
+          const singleCitySystemPrompt = `You are a professional travel planner. Create structured, concrete travel plans in English.
 
-REGELN:
-- Verwende KEINE Markdown-Tabellen (kein | --- | Format). Nutze stattdessen Überschriften (##), Aufzählungen (-) und Fettschrift (**).
-- Beende NIEMALS mit Fragen, Angeboten zur Weiterarbeit oder chatbot-artigen Abschlüssen ("Soll ich...", "Möchtest du...", "Kann ich noch..."). Der Plan ist vollständig und in sich abgeschlossen.
-- Wenn Wellness UND Luxus als Interessen angegeben sind, suche nach Hotels die BEIDES bieten: Luxus-Unterkünfte mit Wellness/Spa-Angeboten.
-- Sei präzise bei Preisangaben: kennzeichne Schätzungen als "ca." und Bereiche als "von X bis Y €".`;
+RULES:
+- Do NOT use Markdown tables (no | --- | format). Use headings (##), bullet points (-) and bold (**) instead.
+- NEVER end with questions, offers to continue, or chatbot-style closings ("Should I...", "Would you like...", "Can I help with..."). The plan is complete and self-contained.
+- If both Wellness AND Luxury are listed as interests, look for hotels that offer BOTH: luxury accommodation with wellness/spa facilities.
+- Be precise with prices: mark estimates as "approx." and ranges as "€X–€Y".`;
 
           // Stream every Claude call — text tokens arrive live, tool_use detected after
           const stream = client.messages.stream({
@@ -411,8 +411,8 @@ REGELN:
                             description: { type: "string", description: "2 sentences max" },
                             price: { type: "number", description: "Estimated total price per person in EUR" },
                             duration: { type: "string", description: "e.g. '10 Tage'" },
-                            themes: { type: "array", items: { type: "string" }, description: "2-3 theme tags in German" },
-                            highlights: { type: "array", items: { type: "string" }, description: "4 highlights in German" },
+                            themes: { type: "array", items: { type: "string" }, description: "2-3 theme tags in English" },
+                            highlights: { type: "array", items: { type: "string" }, description: "4 highlights in English" },
                             gradient: { type: "string", enum: GRADIENTS },
                             emoji: { type: "string", description: "Single emoji representing the destination" },
                             itinerary: {
@@ -454,7 +454,7 @@ REGELN:
                   { role: "assistant", content: finalMessage.content },
                   {
                     role: "user",
-                    content: `Based on the travel plan above, generate 3 different trip card options for ${destination}. Vary the style: one budget-friendly, one balanced, one premium. All prices realistic for the destination. Use German for all text fields. bookingUrl should be a Google Flights search URL.`,
+                    content: `Based on the travel plan above, generate 3 different trip card options for ${destination}. Vary the style: one budget-friendly, one balanced, one premium. All prices realistic for the destination. Use English for all text fields. bookingUrl should be a Google Flights search URL.`,
                   },
                 ];
 

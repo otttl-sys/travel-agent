@@ -54,7 +54,7 @@ const reportTool: Anthropic.Tool = {
       },
       summary: {
         type: "string",
-        description: "2-3 sentence German summary of findings, plain prose, no markdown.",
+        description: "2-3 sentence English summary of findings, plain prose, no markdown.",
       },
     },
     required: ["trend", "summary"],
@@ -107,17 +107,17 @@ type TripRow = {
 async function checkTrip(trip: TripRow): Promise<{ trend: "down" | "up" | "same"; summary: string }> {
   const origin = "Deutschland";
   const userMessage = `
-Prüfe die aktuellen Reisepreise für diese gespeicherte Reise:
-- Strecke: ${origin} → ${trip.destination}
-- Zeitraum: ${trip.start_date} bis ${trip.end_date}
-- Reisende: ${trip.travelers} Person(en)
+Check current travel prices for this saved trip:
+- Route: ${origin} → ${trip.destination}
+- Dates: ${trip.start_date} to ${trip.end_date}
+- Travelers: ${trip.travelers}
 - Budget: €${trip.budget}
 
-Suche aktuelle Flug- und Hotelpreise, dann ruf report_trend auf.
+Search for current flight and hotel prices, then call report_trend.
 `.trim();
 
   const messages: Anthropic.MessageParam[] = [{ role: "user", content: userMessage }];
-  const SYSTEM = `Du bist ein Preis-Monitor. Suche sofort BEIDE Tools parallel: Flüge und Hotels für die genannte Strecke und Daten. Danach ruf report_trend auf — trend "down" wenn günstiger geworden, "up" wenn teurer, "same" wenn etwa gleich. summary: 2–3 Sätze Deutsch, kein Markdown.`;
+  const SYSTEM = `You are a price monitor. Immediately search BOTH tools in parallel: flights and hotels for the given route and dates. Then call report_trend — trend "down" if prices dropped, "up" if higher, "same" if roughly unchanged. summary: 2-3 sentences in English, no markdown.`;
 
   // Phase 1: search loop
   let iterations = 0;
@@ -177,42 +177,18 @@ Suche aktuelle Flug- und Hotelpreise, dann ruf report_trend auf.
   return { trend: "same", summary: "Keine aktuellen Preisdaten verfügbar." };
 }
 
-// ── Email via Resend ──────────────────────────────────────────────────────────
+// ── Push via ntfy.sh ──────────────────────────────────────────────────────────
 
-async function sendAlert(trip: TripRow, summary: string): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return;
+const NTFY_TOPIC = "otto-zugstatus-k7m2x9p";
 
-  const to = process.env.ALERT_EMAIL ?? "rist.otto@gmail.com";
-  const subject = `Preisalert: ${trip.destination} günstiger geworden`;
-  const appUrl = "https://travel-agent-ristotto-8650s-projects.vercel.app/saved";
+async function sendPush(trip: TripRow, trend: "down" | "up", summary: string): Promise<void> {
+  const emoji = trend === "down" ? "✅" : "⚠️";
+  const title = `Trip Watchdog: ${trip.destination} ${trend === "down" ? "günstiger geworden" : "teurer geworden"}`;
 
-  const html = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #111;">
-  <h2 style="margin-bottom: 4px;">✈️ Preisalert: ${trip.destination}</h2>
-  <p style="color: #666; margin-top: 0;">${trip.start_date} – ${trip.end_date} · ${trip.travelers} Person(en)</p>
-  <hr style="border: none; border-top: 1px solid #eee; margin: 16px 0;">
-  <p style="font-size: 16px; line-height: 1.6;">${summary}</p>
-  <hr style="border: none; border-top: 1px solid #eee; margin: 16px 0;">
-  <a href="${appUrl}" style="display: inline-block; background: #111; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-size: 14px;">
-    Reise anzeigen
-  </a>
-  <p style="color: #999; font-size: 12px; margin-top: 24px;">Travel Agent Watchdog · täglich um 06:00 UTC</p>
-</body>
-</html>`.trim();
-
-  await fetch("https://api.resend.com/emails", {
+  await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from: "Travel Agent Watchdog <watchdog@resend.dev>",
-      to,
-      subject,
-      html,
-    }),
+    headers: { "Title": title, "Content-Type": "text/plain; charset=utf-8" },
+    body: summary,
   });
 }
 
@@ -246,8 +222,8 @@ export async function GET(req: NextRequest) {
       continue;
     }
 
-    const alerted = trend === "down";
-    if (alerted) await sendAlert(trip, summary);
+    const alerted = trend !== "same";
+    if (trend !== "same") await sendPush(trip, trend, summary);
 
     await supabaseAdmin
       .from("trips")

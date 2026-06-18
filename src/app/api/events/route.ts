@@ -53,7 +53,7 @@ Für jeden Eintrag:
 - name: Name der Veranstaltung ODER eine ehrliche Bezeichnung des saisonalen Brauchs (z. B. "Herbstmarkt-Saison in der Altstadt")
 - dates: konkretes recherchiertes Datum, ODER bei saisonalen Einträgen eine Zeitraum-Formulierung wie "üblicherweise im Oktober" / "während deines gesamten Aufenthalts"
 - category: Festival / Ausstellung / Konzert / Markt / Saisonal / Sport / Tradition
-- description: 2-3 Sätze Fließtext auf Deutsch, OHNE Markdown — was es ist, warum es sich lohnt, ggf. praktischer Hinweis
+- description: 2-3 sentences of flowing prose in English, NO Markdown — what it is, why it's worth attending, practical tip if relevant
 
 WICHTIG für saubere Daten: Verwende in name, dates, category und description KEINE Anführungszeichen (weder „ " noch ' " oder "") — auch nicht für Eigennamen, Mottos oder Zitate. Schreibe Titel und Mottos ohne umschließende Anführungszeichen oder paraphrasiere sie (z. B. "unter dem Motto All Rise" statt 'unter dem Motto „All Rise"').`;
 
@@ -155,7 +155,7 @@ Recherchiere zuerst gezielt nach datumsgebundenen Veranstaltungen in genau diese
 
               let result: unknown;
               let lastError: string | null = null;
-              const baseInstruction = "Erstelle jetzt die finale Liste mit generate_events_list — 3-6 Einträge, auf Deutsch, ehrlich recherchiert vs. saisonal gekennzeichnet. 'events' muss ein natives JSON-Array von Objekten sein (kein String). Verwende in den Texten keine Anführungszeichen.";
+              const baseInstruction = "Now create the final list with generate_events_list — 3-6 entries in English, honestly marked as researched vs. seasonal. 'events' must be a native JSON array of objects (not a string). Do not use quotation marks in any text fields.";
 
               for (let attempt = 0; attempt < 3 && !(Array.isArray(result) && result.length > 0); attempt++) {
                 const instruction =
