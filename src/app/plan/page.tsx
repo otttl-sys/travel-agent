@@ -121,7 +121,7 @@ function PlanContent() {
       {/* Form */}
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-xl">
-          <div className="bg-surface rounded-2xl border border-border shadow-sm p-8">
+          <div className="bg-surface rounded-2xl border border-border shadow-sm p-5 sm:p-8">
             {step === 1 && (
               <StepDestination
                 isMultiCity={form.isMultiCity}

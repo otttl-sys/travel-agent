@@ -104,7 +104,7 @@ export default function PackingPage() {
         </Link>
       </SiteNav>
 
-      <main className="flex-1 px-6 py-12">
+      <main className="flex-1 px-4 py-6 sm:px-6 sm:py-12">
         <div className="max-w-2xl mx-auto">
           {/* Header */}
           <div className="mb-8">

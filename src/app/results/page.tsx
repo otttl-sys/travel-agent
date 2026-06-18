@@ -322,10 +322,10 @@ function ResultsContent() {
         </Button>
       </SiteNav>
 
-      <main className="flex-1 px-6 py-12">
+      <main className="flex-1 px-4 py-6 sm:px-6 sm:py-12">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
-          <div className="mb-10">
+          <div className="mb-6 sm:mb-10">
             <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
               <Badge variant="secondary" className="text-xs">
                 {isMultiCity ? `Multi-City Tour · ${cityNames.length} Stationen` : dynamicCards ? "AI hat 3 Reiseoptionen für dich erstellt" : "AI hat 3 Reisen für dich zusammengestellt"}
@@ -347,10 +347,10 @@ function ResultsContent() {
                 </div>
               )}
             </div>
-            <h1 className="text-headline font-extrabold tracking-[-0.03em] text-foreground">
+            <h1 className="text-2xl sm:text-headline font-extrabold tracking-[-0.03em] text-foreground break-words">
               {isMultiCity
                 ? cityNames.join(" → ")
-                : destination ? `Deine Reisevorschläge für ${destination}` : "Deine Reisevorschläge"}
+                : destination ? `Your trip to ${destination}` : "Your trip options"}
             </h1>
             <p className="text-muted-foreground mt-2">
               {searchParams.get("travelers") || "2"} Personen ·{" "}
@@ -399,7 +399,7 @@ function ResultsContent() {
             <div className="flex-1 min-w-0">
               {/* AI Result */}
               {aiResult && (
-                <div className="bg-surface rounded-2xl border border-border p-8 mb-6">
+                <div className="bg-surface rounded-2xl border border-border p-4 sm:p-8 mb-4 sm:mb-6">
                   <div className="flex items-center gap-2 mb-5">
                     <span className="text-xl">🤖</span>
                     <h3 className="font-semibold text-foreground">Dein persönlicher Reiseplan von Claude</h3>
@@ -422,8 +422,8 @@ function ResultsContent() {
               <BudgetTracker budget={budget} aiResult={aiResult} isMultiCity={isMultiCity} travelers={Number(searchParams.get("travelers") || 2)} />
 
               {/* Agent Summary */}
-              <div className="bg-surface rounded-2xl border border-border p-6 no-print">
-                <h3 className="font-semibold text-foreground mb-4">Was die Agenten analysiert haben</h3>
+              <div className="bg-surface rounded-2xl border border-border p-4 sm:p-6 no-print">
+                <h3 className="font-semibold text-foreground mb-4">What the agents analysed</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {(isMultiCity ? [
                     { icon: "✈️", label: "Flug-Legs", value: toolCounts.search_flight_leg > 0 ? `${toolCounts.search_flight_leg}` : "—" },
@@ -538,8 +538,8 @@ function BudgetTracker({ budget, aiResult, isMultiCity, travelers }: {
   }
 
   return (
-    <div className="bg-surface rounded-2xl border border-border p-8 mb-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-surface rounded-2xl border border-border p-4 sm:p-8 mb-4 sm:mb-6">
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div className="flex items-center gap-2">
           <span className="text-xl">💶</span>
           <h3 className="font-semibold text-foreground">Budget Tracker</h3>
@@ -676,7 +676,7 @@ function BookingSection({
   ];
 
   return (
-    <div className="bg-surface rounded-2xl border border-border p-8 mb-6 no-print">
+    <div className="bg-surface rounded-2xl border border-border p-4 sm:p-8 mb-4 sm:mb-6 no-print">
       <div className="flex items-center gap-2 mb-5">
         <span className="text-xl">🔗</span>
         <h3 className="font-semibold text-foreground">Direkt buchen</h3>

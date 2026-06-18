@@ -507,15 +507,15 @@ export default function SavedPage() {
         <Link href="/plan"><Button size="sm">Plan a trip</Button></Link>
       </SiteNav>
 
-      <main className="flex-1 px-6 py-12">
+      <main className="flex-1 px-4 py-6 sm:px-6 sm:py-12">
         <div className="max-w-3xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-headline font-extrabold text-foreground">My Saved Trips</h1>
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-headline font-extrabold text-foreground">My Saved Trips</h1>
             <p className="text-muted-foreground mt-1">{trips.length} {trips.length === 1 ? "trip" : "trips"} saved</p>
           </div>
 
           {trips.length === 0 ? (
-            <div className="bg-surface rounded-2xl border border-border p-12 text-center">
+            <div className="bg-surface rounded-2xl border border-border p-8 sm:p-12 text-center">
               <div className="text-5xl mb-4">✈️</div>
               <h3 className="text-lg font-semibold text-foreground mb-2">No saved trips yet</h3>
               <p className="text-muted-foreground mb-6 text-sm">Plan a trip and tap &quot;Save Trip&quot; to see it here.</p>
@@ -531,7 +531,7 @@ export default function SavedPage() {
                   <div key={trip.id} className="bg-surface rounded-2xl border border-border overflow-hidden">
 
                     {/* ── Card header ── */}
-                    <div className="p-6">
+                    <div className="p-4 sm:p-6">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
@@ -552,9 +552,9 @@ export default function SavedPage() {
                             </div>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                           <Button variant="outline" size="sm" disabled={checkingId !== null} onClick={() => checkPrice(trip)}>
-                            {checkingId === trip.id ? "Checking…" : "🔍 Check Price"}
+                            {checkingId === trip.id ? "Checking…" : "Check Price"}
                           </Button>
                           <button onClick={() => handleDelete(trip.id)} className="text-muted-foreground/60 hover:text-red-400 transition-colors text-xl leading-none p-1" aria-label="Delete trip">×</button>
                         </div>
@@ -602,7 +602,7 @@ export default function SavedPage() {
 
                     {/* ── Tab content ── */}
                     {tab && (
-                      <div className="border-t border-border p-6 bg-surface-sunken">
+                      <div className="border-t border-border p-4 sm:p-6 bg-surface-sunken">
                       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
                       <div className="min-w-0">
 
