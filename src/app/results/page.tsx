@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { saveTrip } from "@/lib/saved-trips";
 import { SiteNav } from "@/components/site-nav";
 import { AgentTrace, type TraceEntry } from "@/components/agent-trace";
+import { SafetyPanel } from "@/components/safety-panel";
 
 type Trip = {
   id: string;
@@ -416,6 +417,17 @@ function ResultsContent() {
                   <div className="prose prose-sm max-w-none text-foreground leading-relaxed">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{aiResult}</ReactMarkdown>
                   </div>
+                </div>
+              )}
+
+              {/* Safety & Weather */}
+              {!isMultiCity && destination && (
+                <div className="mb-4 sm:mb-6">
+                  <SafetyPanel
+                    destination={destination}
+                    startDate={searchParams.get("startDate") || undefined}
+                    endDate={searchParams.get("endDate") || undefined}
+                  />
                 </div>
               )}
 
