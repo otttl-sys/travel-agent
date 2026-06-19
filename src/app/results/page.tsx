@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -127,6 +127,7 @@ function ResultsContent() {
   const [toolCounts, setToolCounts] = useState({ search_flights: 0, search_hotels: 0, get_activities: 0, optimize_budget: 0, search_flight_leg: 0, plan_city_stop: 0, optimize_total_budget: 0 });
   const [dynamicCards, setDynamicCards] = useState<Trip[] | null>(null);
   const [saved, setSaved] = useState(false);
+  const hasFetchedRef = useRef(false);
 
   const destination = searchParams.get("destination") || "";
   const budget = Number(searchParams.get("budget") || 3000);
@@ -152,6 +153,8 @@ function ResultsContent() {
   const cityDaysArr = isMultiCity ? cityDaysParam.split(",").map(Number) : [];
 
   useEffect(() => {
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
     const controller = new AbortController();
 
     const params = isMultiCity
@@ -299,7 +302,7 @@ function ResultsContent() {
           <div className="text-5xl mb-6">⚠️</div>
           <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-foreground mb-2">Etwas ist schiefgelaufen</h2>
           <p className="text-muted-foreground text-sm mb-8">{error}</p>
-          <Button onClick={() => router.push("/plan")}>Nochmal versuchen</Button>
+          <Button onClick={() => window.location.reload()}>Nochmal versuchen</Button>
         </div>
       </div>
     );
@@ -328,7 +331,7 @@ function ResultsContent() {
           <div className="mb-6 sm:mb-10">
             <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
               <Badge variant="secondary" className="text-xs">
-                {isMultiCity ? `Multi-City Tour · ${cityNames.length} Stationen` : dynamicCards ? "AI hat 3 Reiseoptionen für dich erstellt" : "AI hat 3 Reisen für dich zusammengestellt"}
+                {isMultiCity ? `Multi-City Tour · ${cityNames.length} Stationen` : dynamicCards ? "AI hat 5 Reiseoptionen für dich erstellt" : "AI hat 5 Reisen für dich zusammengestellt"}
               </Badge>
               {aiResult && (
                 <div className="flex items-center gap-2 no-print">
@@ -395,7 +398,7 @@ function ResultsContent() {
           )}
 
           {/* Two-column layout: main content + sidebar */}
-          <div className={!isMultiCity && displayTrips.length > 0 ? "flex gap-8 items-start" : ""}>
+          <div className={!isMultiCity && displayTrips.length > 0 ? "flex flex-col lg:flex-row gap-8 items-start" : ""}>
             <div className="flex-1 min-w-0">
               {/* AI Result */}
               {aiResult && (

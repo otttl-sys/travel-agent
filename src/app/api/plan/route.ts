@@ -244,7 +244,7 @@ async function executeMultiCityTool(name: string, input: Record<string, unknown>
 }
 
 export async function POST(req: NextRequest) {
-  const { destination, startDate, endDate, travelers, interests, budget, cities, cityDays, multiCity } = await req.json();
+  const { destination, startDate, endDate, travelers, interests, budget, cities, cityDays, multiCity, origin, budgetMode } = await req.json();
 
   const isMultiCity = multiCity === "1" || multiCity === true;
   const cityList: string[] = isMultiCity && cities ? (Array.isArray(cities) ? cities : String(cities).split(",")) : [];
@@ -283,13 +283,14 @@ Then create a detailed day-by-day travel plan in English.
 `.trim()
     : `
 Plan a trip with the following preferences:
+- Origin (departure city): ${origin || "Germany"}
 - Destination: ${destination || "flexible"}
 - Dates: ${startDate || "flexible"} to ${endDate || "flexible"}
 - Travelers: ${travelers || 2}
 - Interests: ${interests || "general"}
-- Budget per person: €${budget || 3000}
+- Budget per person: €${budget || 3000}${budgetMode === "activities-only" ? " (activities & local transport only — flights and hotel are NOT included in this budget)" : " (total including flights and hotel)"}
 
-Use the available tools to research flights, hotels, and activities and optimise the budget.
+Use the available tools to research flights from ${origin || "Germany"}, hotels, and activities and optimise the budget.
 Then create a concrete, structured travel plan in English.
 `.trim();
 
@@ -394,14 +395,14 @@ RULES:
                 ];
                 const cardTool: Anthropic.Tool = {
                   name: "generate_trip_cards",
-                  description: "Generate 3 structured trip card options based on the travel plan already created.",
+                  description: "Generate 5 structured trip card options based on the travel plan already created.",
                   input_schema: {
                     type: "object" as const,
                     properties: {
                       cards: {
                         type: "array",
-                        minItems: 3,
-                        maxItems: 3,
+                        minItems: 5,
+                        maxItems: 5,
                         items: {
                           type: "object",
                           properties: {
@@ -454,7 +455,7 @@ RULES:
                   { role: "assistant", content: finalMessage.content },
                   {
                     role: "user",
-                    content: `Based on the travel plan above, generate 3 different trip card options for ${destination}. Vary the style: one budget-friendly, one balanced, one premium. All prices realistic for the destination. Use English for all text fields. bookingUrl should be a Google Flights search URL.`,
+                    content: `Based on the travel plan above, generate 5 different trip card options for ${destination}. Vary the styles across: ultra-budget backpacker, budget-friendly, balanced mid-range, premium comfort, and luxury. All prices must be realistic for the destination. Use English for all text fields. bookingUrl should be a Google Flights search URL for flights from ${origin || "Germany"} to the destination.`,
                   },
                 ];
 
