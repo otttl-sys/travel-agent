@@ -11,14 +11,14 @@ export default function Home() {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [adventureMode, setAdventureMode] = useState(false);
 
   function handleSearch(dest?: string) {
     const q = dest ?? query;
-    if (q.trim()) {
-      router.push(`/plan?destination=${encodeURIComponent(q.trim())}`);
-    } else {
-      router.push("/plan");
-    }
+    const params = new URLSearchParams();
+    if (q.trim()) params.set("destination", q.trim());
+    if (adventureMode) params.set("adventure", "1");
+    router.push(`/plan?${params.toString()}`);
   }
 
   return (
@@ -103,10 +103,10 @@ export default function Home() {
 
             {/* Search bar */}
             <div className="max-w-xl">
-              <div className="flex rounded-full overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.25)] bg-surface mb-3">
+              <div className="flex rounded-full overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.25)] bg-surface">
                 <input
                   type="text"
-                  placeholder="Japan, Portugal, Bali..."
+                  placeholder={adventureMode ? "Anywhere wild — or leave blank for a surprise" : "Japan, Portugal, Bali..."}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -114,34 +114,61 @@ export default function Home() {
                 />
                 <button
                   onClick={() => handleSearch()}
-                  className="bg-foreground text-background px-7 py-4 font-semibold hover:bg-brand hover:text-brand-foreground transition-colors whitespace-nowrap text-xs uppercase tracking-[0.18em]"
+                  className={`px-7 py-4 font-semibold transition-colors whitespace-nowrap text-xs uppercase tracking-[0.18em] ${
+                    adventureMode
+                      ? "bg-amber-500 text-white hover:bg-amber-600"
+                      : "bg-foreground text-background hover:bg-brand hover:text-brand-foreground"
+                  }`}
                 >
-                  Plan trip →
+                  {adventureMode ? "⚡ Go →" : "Plan trip →"}
                 </button>
               </div>
-              <DestinationScanner
-                onConfirm={(destination, interests) => {
-                  router.push(
-                    `/plan?destination=${encodeURIComponent(destination)}&interests=${interests.join(",")}`
-                  );
-                }}
-              />
             </div>
           </div>
         </section>
 
-        {/* Quick destinations */}
-        <div className="border-b border-border bg-background py-5 px-6 overflow-x-auto">
-          <div className="max-w-7xl mx-auto flex items-center gap-3 w-max md:w-auto md:justify-center">
-            {QUICK_DESTINATIONS.map(({ name }) => (
-              <button
-                key={name}
-                onClick={() => handleSearch(name)}
-                className="px-5 py-2 rounded-full border border-border bg-surface text-xs uppercase tracking-[0.18em] text-muted-foreground hover:border-foreground hover:text-foreground transition-colors whitespace-nowrap"
-              >
-                {name}
-              </button>
-            ))}
+        {/* Tools + Quick destinations bar */}
+        <div className="border-b border-border bg-background">
+          {/* Scanner + Adventure toggle row */}
+          <div className="max-w-7xl mx-auto px-6 pt-4 pb-3 flex items-start justify-between gap-4">
+            <DestinationScanner
+              onConfirm={(destination, interests) => {
+                const params = new URLSearchParams();
+                params.set("destination", destination);
+                if (interests.length) params.set("interests", interests.join(","));
+                if (adventureMode) params.set("adventure", "1");
+                router.push(`/plan?${params.toString()}`);
+              }}
+            />
+            <button
+              onClick={() => setAdventureMode((m) => !m)}
+              className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-[0.15em] border transition-all ${
+                adventureMode
+                  ? "bg-amber-500 text-white border-amber-400 shadow-[0_0_14px_rgba(245,158,11,0.35)]"
+                  : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+              }`}
+            >
+              <span>⚡</span>
+              <span>Adventure</span>
+            </button>
+          </div>
+          {/* Chips */}
+          <div className="px-6 pb-4 overflow-x-auto">
+            <div className="max-w-7xl mx-auto flex items-center gap-3 w-max md:w-auto md:justify-center">
+              {(adventureMode ? ADVENTURE_CHIPS : QUICK_DESTINATIONS).map(({ name }) => (
+                <button
+                  key={name}
+                  onClick={() => handleSearch(name)}
+                  className={`px-5 py-2 rounded-full border text-xs uppercase tracking-[0.18em] transition-colors whitespace-nowrap ${
+                    adventureMode
+                      ? "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-400"
+                      : "border-border bg-surface text-muted-foreground hover:border-foreground hover:text-foreground"
+                  }`}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -317,6 +344,21 @@ export default function Home() {
     </div>
   );
 }
+
+const ADVENTURE_CHIPS = [
+  { name: "Patagonia" },
+  { name: "Kyrgyzstan" },
+  { name: "Faroe Islands" },
+  { name: "Namibia" },
+  { name: "Oman" },
+  { name: "Mongolia" },
+  { name: "Georgia" },
+  { name: "Rwanda" },
+  { name: "Svalbard" },
+  { name: "Madagascar" },
+  { name: "Bhutan" },
+  { name: "Tajikistan" },
+];
 
 const QUICK_DESTINATIONS = [
   // Grid featured

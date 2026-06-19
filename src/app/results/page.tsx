@@ -331,7 +331,13 @@ function ResultsContent() {
           <div className="mb-6 sm:mb-10">
             <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
               <Badge variant="secondary" className="text-xs">
-                {isMultiCity ? `Multi-City Tour · ${cityNames.length} Stationen` : dynamicCards ? "AI hat 5 Reiseoptionen für dich erstellt" : "AI hat 5 Reisen für dich zusammengestellt"}
+                {isMultiCity
+                ? `Multi-City Tour · ${cityNames.length} Stationen`
+                : searchParams.get("adventure") === "1"
+                  ? "⚡ Adventure Mode · 5 off-beat options"
+                  : dynamicCards
+                    ? "AI hat 5 Reiseoptionen für dich erstellt"
+                    : "AI hat 5 Reisen für dich zusammengestellt"}
               </Badge>
               {aiResult && (
                 <div className="flex items-center gap-2 no-print">

@@ -244,7 +244,8 @@ async function executeMultiCityTool(name: string, input: Record<string, unknown>
 }
 
 export async function POST(req: NextRequest) {
-  const { destination, startDate, endDate, travelers, interests, budget, cities, cityDays, multiCity, origin, budgetMode } = await req.json();
+  const { destination, startDate, endDate, travelers, interests, budget, cities, cityDays, multiCity, origin, budgetMode, adventure } = await req.json();
+  const adventureMode = adventure === "1" || adventure === true;
 
   const isMultiCity = multiCity === "1" || multiCity === true;
   const cityList: string[] = isMultiCity && cities ? (Array.isArray(cities) ? cities : String(cities).split(",")) : [];
@@ -313,13 +314,22 @@ Then create a concrete, structured travel plan in English.
           // (tool results + prior assistant text) instead of resending it at full price.
           if (iterations > 1) markCacheBreakpoint(messages);
 
+          const adventureAddition = adventureMode ? `
+
+ADVENTURE MODE — override standard behavior:
+- Prioritize off-the-beaten-path experiences. Avoid overrun tourist attractions; suggest what locals and explorers do instead.
+- Recommend local guesthouses, mountain huts, homestays, or camping over international hotel chains.
+- Highlight physical/active experiences: multi-day treks, wild camping, local transport, street food, border crossings.
+- Mention authentic local culture, hidden gems, and the unexpected. Be enthusiastic about discovery.
+- Tone: exploratory, bold, honest about difficulty.` : "";
+
           const singleCitySystemPrompt = `You are a professional travel planner. Create structured, concrete travel plans in English.
 
 RULES:
 - Do NOT use Markdown tables (no | --- | format). Use headings (##), bullet points (-) and bold (**) instead.
 - NEVER end with questions, offers to continue, or chatbot-style closings ("Should I...", "Would you like...", "Can I help with..."). The plan is complete and self-contained.
 - If both Wellness AND Luxury are listed as interests, look for hotels that offer BOTH: luxury accommodation with wellness/spa facilities.
-- Be precise with prices: mark estimates as "approx." and ranges as "€X–€Y".`;
+- Be precise with prices: mark estimates as "approx." and ranges as "€X–€Y".${adventureAddition}`;
 
           // Stream every Claude call — text tokens arrive live, tool_use detected after
           const stream = client.messages.stream({
@@ -455,7 +465,9 @@ RULES:
                   { role: "assistant", content: finalMessage.content },
                   {
                     role: "user",
-                    content: `Based on the travel plan above, generate 5 different trip card options for ${destination}. Vary the styles across: ultra-budget backpacker, budget-friendly, balanced mid-range, premium comfort, and luxury. All prices must be realistic for the destination. Use English for all text fields. bookingUrl should be a Google Flights search URL for flights from ${origin || "Germany"} to the destination.`,
+                    content: adventureMode
+                      ? `Based on the travel plan above, generate 5 ADVENTURE trip card options for ${destination}. Each must be genuinely adventurous. Tiers: ultra-budget backpacker (hostels/camping), budget active explorer, balanced active trip, premium expedition (guided tours/gear), luxury adventure lodge. All prices realistic. Use English. bookingUrl = Google Flights from ${origin || "Germany"} to destination.`
+                      : `Based on the travel plan above, generate 5 different trip card options for ${destination}. Vary styles: ultra-budget backpacker, budget-friendly, balanced mid-range, premium comfort, luxury. All prices realistic. Use English. bookingUrl = Google Flights from ${origin || "Germany"} to destination.`,
                   },
                 ];
 

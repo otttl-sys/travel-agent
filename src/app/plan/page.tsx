@@ -84,6 +84,7 @@ type FormData = {
   interests: string[];
   budget: number;
   budgetMode: "with-flights" | "activities-only";
+  adventureMode: boolean;
 };
 
 function lsLoad<T>(key: string, fallback: T): T {
@@ -114,9 +115,10 @@ function PlanContent() {
   const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormData>(() => {
-    const urlInterests = searchParams.get("interests")
-      ?.split(",")
-      .filter(Boolean) ?? [];
+    const isAdventure = searchParams.get("adventure") === "1";
+    const urlInterests = searchParams.get("interests")?.split(",").filter(Boolean) ?? [];
+    const adventureDefaults = isAdventure ? ["adventure", "nature"] : [];
+    const mergedInterests = [...new Set([...urlInterests, ...adventureDefaults])];
     return {
       isMultiCity: false,
       destination: searchParams.get("destination") || "",
@@ -129,9 +131,10 @@ function PlanContent() {
       startDate: lsLoad("vagamundo_startDate", ""),
       endDate: lsLoad("vagamundo_endDate", ""),
       travelers: lsLoad("vagamundo_travelers", 2),
-      interests: urlInterests.length > 0 ? urlInterests : lsLoad("vagamundo_interests", []),
+      interests: mergedInterests.length > 0 ? mergedInterests : lsLoad("vagamundo_interests", []),
       budget: 3000,
       budgetMode: "with-flights",
+      adventureMode: isAdventure,
     };
   });
 
@@ -171,6 +174,7 @@ function PlanContent() {
       budget: String(form.budget),
       origin: form.origin,
       budgetMode: form.budgetMode,
+      ...(form.adventureMode ? { adventure: "1" } : {}),
     };
     if (form.isMultiCity) {
       const validCities = form.cities.filter((c) => c.city.trim());
@@ -202,6 +206,17 @@ function PlanContent() {
           <Progress value={progress} className="h-1.5" />
         </div>
       </div>
+
+      {form.adventureMode && (
+        <div className="bg-amber-50 dark:bg-amber-950/20 border-b border-amber-200 dark:border-amber-800/40 px-6 py-2.5">
+          <div className="max-w-xl mx-auto flex items-center gap-2">
+            <span>⚡</span>
+            <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+              Adventure Mode — off the beaten path, raw experiences
+            </span>
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-xl">
@@ -789,7 +804,15 @@ function StepSummary({ form }: { form: FormData }) {
           value={`€${form.budget.toLocaleString()} pro Person${form.budgetMode === "activities-only" ? " (ohne Flug & Hotel)" : ""}`}
         />
       </div>
-      <div className="mt-6 p-4 rounded-xl bg-muted border border-border">
+      {form.adventureMode && (
+        <div className="mt-4 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 flex items-center gap-2">
+          <span>⚡</span>
+          <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+            Adventure Mode — off-beat destinations, raw experiences, no tourist traps.
+          </p>
+        </div>
+      )}
+      <div className="mt-4 p-4 rounded-xl bg-muted border border-border">
         <p className="text-sm text-foreground font-medium">
           {form.isMultiCity
             ? `🤖 Der AI-Agent plant jetzt alle ${validCities.length} Stationen: Flüge, Hotels und Aktivitäten für jede Stadt.`
