@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { DestinationScanner } from "@/components/destination-scanner";
 
 export default function Home() {
   const router = useRouter();
@@ -101,21 +102,30 @@ export default function Home() {
             </h1>
 
             {/* Search bar */}
-            <div className="flex max-w-xl rounded-full overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.25)] bg-surface">
-              <input
-                type="text"
-                placeholder="Japan, Portugal, Bali..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="flex-1 px-6 py-4 text-[15px] text-foreground placeholder:text-muted-foreground outline-none bg-transparent"
+            <div className="max-w-xl">
+              <div className="flex rounded-full overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.25)] bg-surface mb-3">
+                <input
+                  type="text"
+                  placeholder="Japan, Portugal, Bali..."
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  className="flex-1 px-6 py-4 text-[15px] text-foreground placeholder:text-muted-foreground outline-none bg-transparent"
+                />
+                <button
+                  onClick={() => handleSearch()}
+                  className="bg-foreground text-background px-7 py-4 font-semibold hover:bg-brand hover:text-brand-foreground transition-colors whitespace-nowrap text-xs uppercase tracking-[0.18em]"
+                >
+                  Plan trip →
+                </button>
+              </div>
+              <DestinationScanner
+                onConfirm={(destination, interests) => {
+                  router.push(
+                    `/plan?destination=${encodeURIComponent(destination)}&interests=${interests.join(",")}`
+                  );
+                }}
               />
-              <button
-                onClick={() => handleSearch()}
-                className="bg-foreground text-background px-7 py-4 font-semibold hover:bg-brand transition-colors whitespace-nowrap text-xs uppercase tracking-[0.18em]"
-              >
-                Plan trip →
-              </button>
             </div>
           </div>
         </section>

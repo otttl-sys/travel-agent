@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { SiteNav } from "@/components/site-nav";
+import { DestinationScanner } from "@/components/destination-scanner";
 
 const TOTAL_STEPS = 6;
 
@@ -112,22 +113,27 @@ function PlanContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState<FormData>(() => ({
-    isMultiCity: false,
-    destination: searchParams.get("destination") || "",
-    origin: lsLoad("vagamundo_origin", ""),
-    cities: [
-      { city: searchParams.get("destination") || "", days: 3 },
-      { city: "", days: 3 },
-      { city: "", days: 3 },
-    ],
-    startDate: lsLoad("vagamundo_startDate", ""),
-    endDate: lsLoad("vagamundo_endDate", ""),
-    travelers: lsLoad("vagamundo_travelers", 2),
-    interests: lsLoad("vagamundo_interests", []),
-    budget: 3000,
-    budgetMode: "with-flights",
-  }));
+  const [form, setForm] = useState<FormData>(() => {
+    const urlInterests = searchParams.get("interests")
+      ?.split(",")
+      .filter(Boolean) ?? [];
+    return {
+      isMultiCity: false,
+      destination: searchParams.get("destination") || "",
+      origin: lsLoad("vagamundo_origin", ""),
+      cities: [
+        { city: searchParams.get("destination") || "", days: 3 },
+        { city: "", days: 3 },
+        { city: "", days: 3 },
+      ],
+      startDate: lsLoad("vagamundo_startDate", ""),
+      endDate: lsLoad("vagamundo_endDate", ""),
+      travelers: lsLoad("vagamundo_travelers", 2),
+      interests: urlInterests.length > 0 ? urlInterests : lsLoad("vagamundo_interests", []),
+      budget: 3000,
+      budgetMode: "with-flights",
+    };
+  });
 
   useEffect(() => { lsSave("vagamundo_origin", form.origin); }, [form.origin]);
   useEffect(() => { lsSave("vagamundo_startDate", form.startDate); }, [form.startDate]);
@@ -137,6 +143,15 @@ function PlanContent() {
 
   function nextStep() { if (step < TOTAL_STEPS) setStep((s) => s + 1); }
   function prevStep() { if (step > 1) setStep((s) => s - 1); }
+
+  function handleScanDetected(destination: string, interests: string[]) {
+    setForm((f) => ({
+      ...f,
+      destination,
+      // Merge detected interests with any already picked — don't override
+      interests: [...new Set([...f.interests, ...interests])],
+    }));
+  }
 
   function toggleInterest(id: string) {
     setForm((f) => ({
@@ -201,6 +216,7 @@ function PlanContent() {
                 onOriginChange={(v) => setForm((f) => ({ ...f, origin: v }))}
                 cities={form.cities}
                 onCitiesChange={(cities) => setForm((f) => ({ ...f, cities }))}
+                onScanDetected={handleScanDetected}
               />
             )}
             {step === 2 && (
@@ -360,6 +376,7 @@ function StepDestination({
   onOriginChange,
   cities,
   onCitiesChange,
+  onScanDetected,
 }: {
   isMultiCity: boolean;
   onToggleMode: () => void;
@@ -369,6 +386,7 @@ function StepDestination({
   onOriginChange: (v: string) => void;
   cities: CityStop[];
   onCitiesChange: (cities: CityStop[]) => void;
+  onScanDetected?: (destination: string, interests: string[]) => void;
 }) {
   function updateCity(index: number, city: string) {
     onCitiesChange(cities.map((c, i) => (i === index ? { ...c, city } : c)));
@@ -436,6 +454,15 @@ function StepDestination({
             onChange={onChange}
             autoFocus
           />
+          <div className="mt-3">
+            <DestinationScanner
+              compact
+              onConfirm={(dest, interests) => {
+                onChange(dest);
+                onScanDetected?.(dest, interests);
+              }}
+            />
+          </div>
           <div className="flex flex-wrap gap-2 mt-4">
             {["Japan", "Portugal", "Costa Rica", "Griechenland", "Marokko"].map((dest) => (
               <button
