@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { UserNav } from "@/components/user-nav";
 import { DestinationScanner } from "@/components/destination-scanner";
 
 export default function Home() {
@@ -43,6 +44,7 @@ export default function Home() {
                 Plan a trip
               </button>
             </Link>
+            <UserNav />
             <ThemeToggle />
           </div>
 

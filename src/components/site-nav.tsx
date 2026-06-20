@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { UserNav } from "@/components/user-nav";
 import { cn } from "@/lib/utils";
 
 export function SiteNav({
@@ -28,8 +29,9 @@ export function SiteNav({
         <Link href="/" className="font-bold text-foreground text-sm tracking-[0.2em] uppercase">
           Vagamundo
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           {children}
+          <UserNav />
           <ThemeToggle />
         </div>
       </div>

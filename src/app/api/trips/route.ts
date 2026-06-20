@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export async function GET() {
   const { data, error } = await supabaseAdmin
@@ -13,6 +14,16 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
+
+  // Resolve current user if logged in — tags trip for future filtering
+  let userId: string | null = null;
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase.auth.getUser();
+    userId = data.user?.id ?? null;
+  } catch {
+    // Auth unavailable (NEXT_PUBLIC_SUPABASE_ANON_KEY not set) — skip silently
+  }
 
   const { error } = await supabaseAdmin.from("trips").insert({
     id: body.id,
@@ -28,6 +39,7 @@ export async function POST(req: NextRequest) {
     saved_at: body.saved_at,
     baseline_flights: body.baseline_flights ?? null,
     baseline_hotel: body.baseline_hotel ?? null,
+    ...(userId ? { user_id: userId } : {}),
   });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
