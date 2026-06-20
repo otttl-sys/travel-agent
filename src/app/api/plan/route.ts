@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { tavily } from "@tavily/core";
 import { NextRequest, NextResponse } from "next/server";
-import { searchAmadeusFlights, cityToIATA } from "@/lib/amadeus";
+import { searchAmadeusFlights, searchAmadeusHotels, cityToIATA } from "@/lib/amadeus";
 
 export const maxDuration = 300;
 
@@ -122,6 +122,22 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
       }
     }
     case "search_hotels": {
+      // Try Amadeus for real hotel prices first
+      if (process.env.AMADEUS_CLIENT_ID && process.env.AMADEUS_CLIENT_SECRET) {
+        try {
+          const result = await searchAmadeusHotels({
+            destination: String(input.destination),
+            checkIn: input.check_in ? String(input.check_in) : undefined,
+            checkOut: input.check_out ? String(input.check_out) : undefined,
+            adults: Number(input.travelers) || 1,
+            style: input.style ? String(input.style) : undefined,
+          });
+          return JSON.stringify(result);
+        } catch {
+          // Fall through to Tavily
+        }
+      }
+      // Fallback: Tavily search
       const style = input.style ? ` ${input.style}` : "";
       const date = input.check_in ? ` ${input.check_in}` : "";
       const query = `best${style} hotels in ${input.destination}${date} recommendations`;
@@ -129,6 +145,7 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
         const result = await tvly.search(query, { searchDepth: "basic", maxResults: 3 });
         return JSON.stringify({
           destination: input.destination,
+          source: "tavily",
           results: result.results.map((r) => ({ title: r.title, url: r.url, snippet: r.content })),
         });
       } catch {
@@ -414,14 +431,23 @@ RULES:
                 controller.enqueue(
                   encoder.encode(`data: ${JSON.stringify({ type: "tool_done", id: toolUse.id, tool: toolUse.name })}\n\n`)
                 );
-                // If this was a flight search that returned real Amadeus data, forward it so
-                // the frontend can show a live price pill
+                // Forward Amadeus real-data events to the frontend for live price pills
                 if (toolUse.name === "search_flights" || toolUse.name === "search_flight_leg") {
                   try {
                     const parsed = JSON.parse(content);
                     if (parsed.source === "amadeus" && parsed.priceRange) {
                       controller.enqueue(
                         encoder.encode(`data: ${JSON.stringify({ type: "flights", ...parsed })}\n\n`)
+                      );
+                    }
+                  } catch { /* non-JSON result — ignore */ }
+                }
+                if (toolUse.name === "search_hotels") {
+                  try {
+                    const parsed = JSON.parse(content);
+                    if (parsed.source === "amadeus" && parsed.priceRange) {
+                      controller.enqueue(
+                        encoder.encode(`data: ${JSON.stringify({ type: "hotels", ...parsed })}\n\n`)
                       );
                     }
                   } catch { /* non-JSON result — ignore */ }

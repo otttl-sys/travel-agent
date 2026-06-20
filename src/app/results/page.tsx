@@ -128,6 +128,7 @@ function ResultsContent() {
   const [toolCounts, setToolCounts] = useState({ search_flights: 0, search_hotels: 0, get_activities: 0, optimize_budget: 0, search_flight_leg: 0, plan_city_stop: 0, optimize_total_budget: 0 });
   const [dynamicCards, setDynamicCards] = useState<Trip[] | null>(null);
   const [flightsData, setFlightsData] = useState<{ priceRange: string; originCode: string; destCode: string } | null>(null);
+  const [hotelsData, setHotelsData] = useState<{ priceRange: string; destination: string; nights: number } | null>(null);
   const [saved, setSaved] = useState(false);
   const hasFetchedRef = useRef(false);
 
@@ -254,6 +255,10 @@ function ResultsContent() {
             const f = parsed as unknown as { priceRange: string; originCode: string; destCode: string };
             setFlightsData({ priceRange: f.priceRange, originCode: f.originCode, destCode: f.destCode });
           }
+          if (parsed.type === "hotels") {
+            const h = parsed as unknown as { priceRange: string; destination: string; nights: number };
+            setHotelsData({ priceRange: h.priceRange, destination: h.destination, nights: h.nights });
+          }
         }
       }
 
@@ -375,11 +380,22 @@ function ResultsContent() {
               Budget €{budget.toLocaleString()} pro Person
               {isMultiCity && ` · ${cityDaysArr.reduce((s, d) => s + d, 0)} Tage gesamt`}
             </p>
-            {flightsData && (
-              <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800/50 text-xs font-semibold text-sky-700 dark:text-sky-400">
-                <span>✈️</span>
-                <span>{flightsData.originCode} → {flightsData.destCode} · {flightsData.priceRange}</span>
-                <span className="opacity-60 font-normal">live via Amadeus</span>
+            {(flightsData || hotelsData) && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {flightsData && (
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800/50 text-xs font-semibold text-sky-700 dark:text-sky-400">
+                    <span>✈️</span>
+                    <span>{flightsData.originCode} → {flightsData.destCode} · {flightsData.priceRange}</span>
+                    <span className="opacity-60 font-normal">live</span>
+                  </div>
+                )}
+                {hotelsData && (
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                    <span>🏨</span>
+                    <span>{hotelsData.priceRange} · {hotelsData.nights} nights</span>
+                    <span className="opacity-60 font-normal">live</span>
+                  </div>
+                )}
               </div>
             )}
           </div>

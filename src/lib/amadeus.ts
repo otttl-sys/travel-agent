@@ -72,6 +72,28 @@ export function cityToIATA(city: string): string | null {
   return null;
 }
 
+// Amadeus Hotel API uses IATA *city* codes, which differ from airport codes for some cities.
+const HOTEL_CITY: Record<string, string> = {
+  london: "LON", "london heathrow": "LON", "london gatwick": "LON",
+  paris: "PAR", "new york": "NYC", tokyo: "TYO", osaka: "OSA", kyoto: "OSA",
+  rome: "ROM", milan: "MIL", "milan malpensa": "MIL",
+  seoul: "SEL", beijing: "BJS", shanghai: "SHA",
+  "sao paulo": "SAO", "buenos aires": "BUE", "rio de janeiro": "RIO",
+  "ho chi minh city": "SGN", saigon: "SGN",
+  jakarta: "JKT",
+};
+
+function cityToHotelCode(city: string): string | null {
+  const key = city.toLowerCase().trim().split(",")[0].trim();
+  if (HOTEL_CITY[key]) return HOTEL_CITY[key];
+  const firstWord = key.split(/[\s]/)[0];
+  for (const [k, v] of Object.entries(HOTEL_CITY)) {
+    if (key.includes(k) || k.includes(key)) return v;
+  }
+  // Fall back to airport IATA — works for most European/Asian cities (BER, MUC, BKK …)
+  return IATA[key] ?? IATA[firstWord] ?? cityToIATA(city);
+}
+
 // Parse Amadeus ISO 8601 duration e.g. "PT10H30M" → "10h 30m"
 function parseDuration(d: string): string {
   const h = d.match(/(\d+)H/)?.[1];
@@ -99,11 +121,16 @@ async function getToken(): Promise<string> {
   return tokenCache.value;
 }
 
+function addDays(base: string | undefined, n: number): string {
+  const d = base ? new Date(base) : new Date();
+  if (isNaN(d.getTime())) { const f = new Date(); f.setDate(f.getDate() + n); return f.toISOString().split("T")[0]; }
+  d.setDate(d.getDate() + n);
+  return d.toISOString().split("T")[0];
+}
+
 // Fallback date: 30 days from today (used when AI doesn't pass a concrete date)
 function defaultDepartureDate(): string {
-  const d = new Date();
-  d.setDate(d.getDate() + 30);
-  return d.toISOString().split("T")[0];
+  return addDays(undefined, 30);
 }
 
 export interface FlightResult {
@@ -113,6 +140,117 @@ export interface FlightResult {
   priceRange: string;
   cheapestPrice: number;
   offers: Array<{ price: string; airline: string; duration: string; stops: string }>;
+}
+
+export interface HotelResult {
+  source: "amadeus";
+  destination: string;
+  cityCode: string;
+  checkIn: string;
+  checkOut: string;
+  nights: number;
+  priceRange: string;
+  cheapestPerNight: number;
+  hotels: Array<{ name: string; stars: string; pricePerNight: string; roomType: string }>;
+}
+
+export async function searchAmadeusHotels(params: {
+  destination: string;
+  checkIn?: string;
+  checkOut?: string;
+  adults: number;
+  style?: string;
+}): Promise<HotelResult> {
+  const cityCode = cityToHotelCode(params.destination);
+  if (!cityCode) throw new Error(`No city code for: ${params.destination}`);
+
+  const checkIn = params.checkIn || addDays(undefined, 30);
+  const checkOut = params.checkOut || addDays(checkIn, 7);
+  const nights = Math.max(
+    1,
+    Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000)
+  );
+
+  // luxury style → 4-5 stars only; budget → 2-3; default → 3-5
+  const ratings = params.style?.toLowerCase().includes("luxury")
+    ? "4,5"
+    : params.style?.toLowerCase().includes("budget")
+    ? "2,3"
+    : "3,4,5";
+
+  const token = await getToken();
+
+  // Step 1: hotel IDs by city
+  const listQs = new URLSearchParams({
+    cityCode,
+    radius: "5",
+    radiusUnit: "KM",
+    ratings,
+    hotelSource: "ALL",
+  });
+  const listRes = await fetch(`${BASE}/v1/reference-data/locations/hotels/by-city?${listQs}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!listRes.ok) throw new Error(`Hotel list ${listRes.status}`);
+  const listData = await listRes.json();
+  const hotelIds: string[] = (listData.data ?? [])
+    .slice(0, 8)
+    .map((h: { hotelId: string }) => h.hotelId);
+  if (hotelIds.length === 0) throw new Error("No hotels found for city");
+
+  // Step 2: hotel offers (prices)
+  const offersQs = new URLSearchParams({
+    hotelIds: hotelIds.join(","),
+    checkInDate: checkIn,
+    checkOutDate: checkOut,
+    adults: String(Math.max(1, params.adults)),
+    roomQuantity: "1",
+    currency: "EUR",
+    bestRateOnly: "true",
+  });
+  const offersRes = await fetch(`${BASE}/v3/shopping/hotel-offers?${offersQs}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!offersRes.ok) throw new Error(`Hotel offers ${offersRes.status}`);
+  const offersData = await offersRes.json();
+
+  type RawHotel = {
+    hotel: { name: string; rating?: string };
+    offers: Array<{ price: { total: string }; room?: { description?: { text: string } } }>;
+  };
+  const items: RawHotel[] = offersData.data ?? [];
+  if (items.length === 0) throw new Error("No hotel offers available");
+
+  const hotels = items.map((item) => {
+    const offer = item.offers[0];
+    const total = parseFloat(offer.price.total);
+    const perNight = total / nights;
+    return {
+      name: item.hotel.name,
+      stars: item.hotel.rating ?? "–",
+      pricePerNight: `€${perNight.toFixed(0)}`,
+      perNightNum: perNight,
+      roomType: offer.room?.description?.text?.split(/[\n\r]/)[0]?.slice(0, 60) ?? "Standard Room",
+    };
+  });
+
+  const prices = hotels.map((h) => h.perNightNum);
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+
+  return {
+    source: "amadeus",
+    destination: params.destination,
+    cityCode,
+    checkIn,
+    checkOut,
+    nights,
+    priceRange: min === max ? `€${min.toFixed(0)}/night` : `€${min.toFixed(0)}–€${max.toFixed(0)}/night`,
+    cheapestPerNight: min,
+    hotels: hotels.map(({ name, stars, pricePerNight, roomType }) => ({
+      name, stars, pricePerNight, roomType,
+    })),
+  };
 }
 
 export async function searchAmadeusFlights(params: {
