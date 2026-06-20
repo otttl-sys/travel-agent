@@ -336,9 +336,11 @@ function ResultsContent() {
                 ? `Multi-City Tour · ${cityNames.length} Stationen`
                 : searchParams.get("adventure") === "1"
                   ? "⚡ Adventure Mode · 5 off-beat options"
-                  : dynamicCards
-                    ? "AI hat 5 Reiseoptionen für dich erstellt"
-                    : "AI hat 5 Reisen für dich zusammengestellt"}
+                  : searchParams.get("interests")?.split(",").includes("family")
+                    ? "🎡 Family Mode · 5 kid-friendly options"
+                    : dynamicCards
+                      ? "AI hat 5 Reiseoptionen für dich erstellt"
+                      : "AI hat 5 Reisen für dich zusammengestellt"}
               </Badge>
               {aiResult && (
                 <div className="flex items-center gap-2 no-print">

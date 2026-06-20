@@ -217,6 +217,16 @@ function PlanContent() {
           </div>
         </div>
       )}
+      {form.interests.includes("family") && (
+        <div className="bg-teal-50 dark:bg-teal-950/20 border-b border-teal-200 dark:border-teal-800/40 px-6 py-2.5">
+          <div className="max-w-xl mx-auto flex items-center gap-2">
+            <span>🎡</span>
+            <span className="text-xs font-semibold text-teal-700 dark:text-teal-400 uppercase tracking-wider">
+              Family Mode — kid-friendly activities & family pricing
+            </span>
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-xl">
@@ -809,6 +819,14 @@ function StepSummary({ form }: { form: FormData }) {
           <span>⚡</span>
           <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">
             Adventure Mode — off-beat destinations, raw experiences, no tourist traps.
+          </p>
+        </div>
+      )}
+      {form.interests.includes("family") && (
+        <div className="mt-4 p-3 rounded-xl bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800/50 flex items-center gap-2">
+          <span>🎡</span>
+          <p className="text-sm font-semibold text-teal-700 dark:text-teal-400">
+            Family Mode — kid-friendly activities, family rooms & child discount notes.
           </p>
         </div>
       )}

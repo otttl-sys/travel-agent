@@ -246,6 +246,8 @@ async function executeMultiCityTool(name: string, input: Record<string, unknown>
 export async function POST(req: NextRequest) {
   const { destination, startDate, endDate, travelers, interests, budget, cities, cityDays, multiCity, origin, budgetMode, adventure } = await req.json();
   const adventureMode = adventure === "1" || adventure === true;
+  const interestsList: string[] = interests ? String(interests).split(",").map((s: string) => s.trim()) : [];
+  const familyMode = interestsList.includes("family");
 
   const isMultiCity = multiCity === "1" || multiCity === true;
   const cityList: string[] = isMultiCity && cities ? (Array.isArray(cities) ? cities : String(cities).split(",")) : [];
@@ -323,13 +325,24 @@ ADVENTURE MODE — override standard behavior:
 - Mention authentic local culture, hidden gems, and the unexpected. Be enthusiastic about discovery.
 - Tone: exploratory, bold, honest about difficulty.` : "";
 
+          const familyAddition = familyMode ? `
+
+FAMILY MODE — adapt entire plan for families with children:
+- Prioritize kid-friendly activities: theme parks, beaches, gentle nature walks, interactive museums, zoos, water parks.
+- Avoid strenuous multi-day treks, extreme sports, late-night venues, or activities unsuitable for children.
+- Recommend family rooms, apartments, or resorts with pools, kids clubs, playgrounds, and early dinner options.
+- Include family pricing notes: child discounts, free-for-under-12 policies, family passes, family ticket bundles.
+- Suggest walkable, safe neighborhoods convenient for strollers and young children.
+- Balance adult enjoyment with child-appropriate pacing — include rest time and low-key afternoons.
+- Tone: warm, practical, reassuring.` : "";
+
           const singleCitySystemPrompt = `You are a professional travel planner. Create structured, concrete travel plans in English.
 
 RULES:
 - Do NOT use Markdown tables (no | --- | format). Use headings (##), bullet points (-) and bold (**) instead.
 - NEVER end with questions, offers to continue, or chatbot-style closings ("Should I...", "Would you like...", "Can I help with..."). The plan is complete and self-contained.
 - If both Wellness AND Luxury are listed as interests, look for hotels that offer BOTH: luxury accommodation with wellness/spa facilities.
-- Be precise with prices: mark estimates as "approx." and ranges as "€X–€Y".${adventureAddition}`;
+- Be precise with prices: mark estimates as "approx." and ranges as "€X–€Y".${adventureAddition}${familyAddition}`;
 
           // Stream every Claude call — text tokens arrive live, tool_use detected after
           const stream = client.messages.stream({
@@ -467,7 +480,9 @@ RULES:
                     role: "user",
                     content: adventureMode
                       ? `Based on the travel plan above, generate 5 ADVENTURE trip card options for ${destination}. Each must be genuinely adventurous. Tiers: ultra-budget backpacker (hostels/camping), budget active explorer, balanced active trip, premium expedition (guided tours/gear), luxury adventure lodge. All prices realistic. Use English. bookingUrl = Google Flights from ${origin || "Germany"} to destination.`
-                      : `Based on the travel plan above, generate 5 different trip card options for ${destination}. Vary styles: ultra-budget backpacker, budget-friendly, balanced mid-range, premium comfort, luxury. All prices realistic. Use English. bookingUrl = Google Flights from ${origin || "Germany"} to destination.`,
+                      : familyMode
+                        ? `Based on the travel plan above, generate 5 FAMILY-FRIENDLY trip card options for ${destination}. Tiers: budget self-catering apartment (bunk beds, kitchen), affordable family hotel (pool, kids menu), comfortable family resort (kids club, entertainment), premium family villa (private pool, nanny service), luxury all-inclusive family retreat. Include child discounts and family pricing notes. All prices realistic. Use English. bookingUrl = Google Flights from ${origin || "Germany"} to destination.`
+                        : `Based on the travel plan above, generate 5 different trip card options for ${destination}. Vary styles: ultra-budget backpacker, budget-friendly, balanced mid-range, premium comfort, luxury. All prices realistic. Use English. bookingUrl = Google Flights from ${origin || "Germany"} to destination.`,
                   },
                 ];
 
