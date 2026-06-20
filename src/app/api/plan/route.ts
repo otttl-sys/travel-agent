@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { tavily } from "@tavily/core";
 import { NextRequest, NextResponse } from "next/server";
+import { searchAmadeusFlights, cityToIATA } from "@/lib/amadeus";
 
 export const maxDuration = 300;
 
@@ -89,6 +90,22 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
   const tvly = tavily({ apiKey: process.env.TAVILY_API_KEY! });
   switch (name) {
     case "search_flights": {
+      // Try Amadeus for real prices first
+      if (process.env.AMADEUS_CLIENT_ID && process.env.AMADEUS_CLIENT_SECRET) {
+        try {
+          const result = await searchAmadeusFlights({
+            origin: String(input.origin || "Berlin"),
+            destination: String(input.destination),
+            departureDate: input.departure_date ? String(input.departure_date) : undefined,
+            returnDate: input.return_date ? String(input.return_date) : undefined,
+            adults: Number(input.travelers) || 1,
+          });
+          return JSON.stringify({ destination: input.destination, ...result });
+        } catch {
+          // Fall through to Tavily
+        }
+      }
+      // Fallback: Tavily search
       const origin = input.origin ? ` from ${input.origin}` : "";
       const date = input.departure_date ? ` ${input.departure_date}` : "";
       const pax = input.travelers ? ` ${input.travelers} passengers` : "";
@@ -97,6 +114,7 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
         const result = await tvly.search(query, { searchDepth: "basic", maxResults: 3 });
         return JSON.stringify({
           destination: input.destination,
+          source: "tavily",
           results: result.results.map((r) => ({ title: r.title, url: r.url, snippet: r.content })),
         });
       } catch {
@@ -209,6 +227,19 @@ async function executeMultiCityTool(name: string, input: Record<string, unknown>
 
   switch (name) {
     case "search_flight_leg": {
+      if (process.env.AMADEUS_CLIENT_ID && process.env.AMADEUS_CLIENT_SECRET) {
+        try {
+          const result = await searchAmadeusFlights({
+            origin: String(input.origin),
+            destination: String(input.destination),
+            departureDate: input.date ? String(input.date) : undefined,
+            adults: Number(input.travelers) || 1,
+          });
+          return JSON.stringify({ origin: input.origin, destination: input.destination, ...result });
+        } catch {
+          // Fall through to Tavily
+        }
+      }
       const date = input.date ? ` ${input.date}` : "";
       const pax = input.travelers ? ` ${input.travelers} passengers` : "";
       return search(`flights from ${input.origin} to ${input.destination}${date}${pax} price`);
@@ -383,6 +414,18 @@ RULES:
                 controller.enqueue(
                   encoder.encode(`data: ${JSON.stringify({ type: "tool_done", id: toolUse.id, tool: toolUse.name })}\n\n`)
                 );
+                // If this was a flight search that returned real Amadeus data, forward it so
+                // the frontend can show a live price pill
+                if (toolUse.name === "search_flights" || toolUse.name === "search_flight_leg") {
+                  try {
+                    const parsed = JSON.parse(content);
+                    if (parsed.source === "amadeus" && parsed.priceRange) {
+                      controller.enqueue(
+                        encoder.encode(`data: ${JSON.stringify({ type: "flights", ...parsed })}\n\n`)
+                      );
+                    }
+                  } catch { /* non-JSON result — ignore */ }
+                }
                 return {
                   type: "tool_result" as const,
                   tool_use_id: toolUse.id,

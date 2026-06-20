@@ -127,6 +127,7 @@ function ResultsContent() {
   const [error, setError] = useState<string | null>(null);
   const [toolCounts, setToolCounts] = useState({ search_flights: 0, search_hotels: 0, get_activities: 0, optimize_budget: 0, search_flight_leg: 0, plan_city_stop: 0, optimize_total_budget: 0 });
   const [dynamicCards, setDynamicCards] = useState<Trip[] | null>(null);
+  const [flightsData, setFlightsData] = useState<{ priceRange: string; originCode: string; destCode: string } | null>(null);
   const [saved, setSaved] = useState(false);
   const hasFetchedRef = useRef(false);
 
@@ -249,6 +250,10 @@ function ResultsContent() {
           if (parsed.type === "cards") {
             setDynamicCards(parsed.cards as Trip[]);
           }
+          if (parsed.type === "flights") {
+            const f = parsed as unknown as { priceRange: string; originCode: string; destCode: string };
+            setFlightsData({ priceRange: f.priceRange, originCode: f.originCode, destCode: f.destCode });
+          }
         }
       }
 
@@ -370,6 +375,13 @@ function ResultsContent() {
               Budget €{budget.toLocaleString()} pro Person
               {isMultiCity && ` · ${cityDaysArr.reduce((s, d) => s + d, 0)} Tage gesamt`}
             </p>
+            {flightsData && (
+              <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800/50 text-xs font-semibold text-sky-700 dark:text-sky-400">
+                <span>✈️</span>
+                <span>{flightsData.originCode} → {flightsData.destCode} · {flightsData.priceRange}</span>
+                <span className="opacity-60 font-normal">live via Amadeus</span>
+              </div>
+            )}
           </div>
 
           {/* Multi-City Route Visual */}
