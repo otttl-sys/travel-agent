@@ -313,3 +313,107 @@ export async function searchAmadeusFlights(params: {
     })),
   };
 }
+
+// ── Tours & Activities ────────────────────────────────────────────────────────
+
+async function getCityCoordinates(city: string): Promise<{ lat: number; lng: number }> {
+  const token = await getToken();
+  const qs = new URLSearchParams({ keyword: city.split(",")[0].trim(), max: "1" });
+  const res = await fetch(`${BASE}/v1/reference-data/locations/cities?${qs}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`City lookup ${res.status}`);
+  const data = await res.json();
+  const item = data.data?.[0];
+  if (!item?.geoCode) throw new Error(`No coordinates for: ${city}`);
+  return { lat: item.geoCode.latitude, lng: item.geoCode.longitude };
+}
+
+export interface ActivityResult {
+  source: "amadeus";
+  destination: string;
+  count: number;
+  cheapestPrice: number;
+  priceRange: string;
+  activities: Array<{
+    name: string;
+    description: string;
+    price: string;
+    rating: string;
+    category: string;
+  }>;
+}
+
+export async function searchAmadeusActivities(params: {
+  destination: string;
+  interests?: string[];
+  durationDays?: number;
+}): Promise<ActivityResult> {
+  const { lat, lng } = await getCityCoordinates(params.destination);
+  const token = await getToken();
+
+  const qs = new URLSearchParams({
+    latitude: lat.toFixed(4),
+    longitude: lng.toFixed(4),
+    radius: "20", // 20 km covers a whole city
+  });
+
+  const res = await fetch(`${BASE}/v1/shopping/activities?${qs}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`Activities ${res.status}`);
+  const data = await res.json();
+
+  type RawActivity = {
+    name: string;
+    shortDescription?: string;
+    price?: { amount: string; currencyCode: string };
+    rating?: string;
+    subType?: string;
+  };
+
+  const raw: RawActivity[] = data.data ?? [];
+  if (raw.length === 0) throw new Error("No activities found");
+
+  // Keyword-rank by interest terms so relevant results float up
+  const interestKeywords = (params.interests ?? [])
+    .flatMap((i) => i.toLowerCase().split(/[\s,]+/));
+
+  const scored = raw.map((a) => {
+    const text = `${a.name} ${a.shortDescription ?? ""} ${a.subType ?? ""}`.toLowerCase();
+    const score = interestKeywords.filter((kw) => text.includes(kw)).length;
+    return { a, score };
+  });
+  scored.sort((x, y) => y.score - x.score);
+
+  const activities = scored.slice(0, 10).map(({ a }) => {
+    const priceNum = a.price?.amount ? parseFloat(a.price.amount) : 0;
+    return {
+      name: a.name,
+      description: (a.shortDescription ?? "").slice(0, 140),
+      price: priceNum > 0 ? `€${priceNum.toFixed(0)}` : "free / price on request",
+      priceNum,
+      rating: a.rating ?? "–",
+      category: a.subType ?? "Activity",
+    };
+  });
+
+  const prices = activities.map((a) => a.priceNum).filter((p) => p > 0);
+  const cheapest = prices.length > 0 ? Math.min(...prices) : 0;
+  const priciest = prices.length > 0 ? Math.max(...prices) : 0;
+
+  return {
+    source: "amadeus",
+    destination: params.destination,
+    count: activities.length,
+    cheapestPrice: cheapest,
+    priceRange: cheapest === 0
+      ? "free / price on request"
+      : cheapest === priciest
+      ? `from €${cheapest.toFixed(0)}`
+      : `€${cheapest.toFixed(0)}–€${priciest.toFixed(0)}`,
+    activities: activities.map(({ name, description, price, rating, category }) => ({
+      name, description, price, rating, category,
+    })),
+  };
+}

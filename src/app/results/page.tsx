@@ -129,6 +129,7 @@ function ResultsContent() {
   const [dynamicCards, setDynamicCards] = useState<Trip[] | null>(null);
   const [flightsData, setFlightsData] = useState<{ priceRange: string; originCode: string; destCode: string } | null>(null);
   const [hotelsData, setHotelsData] = useState<{ priceRange: string; destination: string; nights: number } | null>(null);
+  const [activitiesData, setActivitiesData] = useState<{ count: number; priceRange: string } | null>(null);
   const [saved, setSaved] = useState(false);
   const hasFetchedRef = useRef(false);
 
@@ -259,6 +260,10 @@ function ResultsContent() {
             const h = parsed as unknown as { priceRange: string; destination: string; nights: number };
             setHotelsData({ priceRange: h.priceRange, destination: h.destination, nights: h.nights });
           }
+          if (parsed.type === "activities") {
+            const a = parsed as unknown as { count: number; priceRange: string };
+            setActivitiesData({ count: a.count, priceRange: a.priceRange });
+          }
         }
       }
 
@@ -380,7 +385,7 @@ function ResultsContent() {
               Budget €{budget.toLocaleString()} pro Person
               {isMultiCity && ` · ${cityDaysArr.reduce((s, d) => s + d, 0)} Tage gesamt`}
             </p>
-            {(flightsData || hotelsData) && (
+            {(flightsData || hotelsData || activitiesData) && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {flightsData && (
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800/50 text-xs font-semibold text-sky-700 dark:text-sky-400">
@@ -393,6 +398,13 @@ function ResultsContent() {
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
                     <span>🏨</span>
                     <span>{hotelsData.priceRange} · {hotelsData.nights} nights</span>
+                    <span className="opacity-60 font-normal">live</span>
+                  </div>
+                )}
+                {activitiesData && (
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800/50 text-xs font-semibold text-violet-700 dark:text-violet-400">
+                    <span>🎯</span>
+                    <span>{activitiesData.count} activities · {activitiesData.priceRange}</span>
                     <span className="opacity-60 font-normal">live</span>
                   </div>
                 )}

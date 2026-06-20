@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { tavily } from "@tavily/core";
 import { NextRequest, NextResponse } from "next/server";
-import { searchAmadeusFlights, searchAmadeusHotels, cityToIATA } from "@/lib/amadeus";
+import { searchAmadeusFlights, searchAmadeusHotels, searchAmadeusActivities, cityToIATA } from "@/lib/amadeus";
 
 export const maxDuration = 300;
 
@@ -153,6 +153,20 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
       }
     }
     case "get_activities": {
+      // Try Amadeus Tours & Activities first
+      if (process.env.AMADEUS_CLIENT_ID && process.env.AMADEUS_CLIENT_SECRET) {
+        try {
+          const result = await searchAmadeusActivities({
+            destination: String(input.destination),
+            interests: Array.isArray(input.interests) ? (input.interests as string[]) : [],
+            durationDays: input.duration_days ? Number(input.duration_days) : undefined,
+          });
+          return JSON.stringify(result);
+        } catch {
+          // Fall through to Tavily
+        }
+      }
+      // Fallback: Tavily search
       const interests = Array.isArray(input.interests) && input.interests.length > 0
         ? ` ${(input.interests as string[]).join(", ")}`
         : "";
@@ -162,6 +176,7 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
         const result = await tvly.search(query, { searchDepth: "basic", maxResults: 3 });
         return JSON.stringify({
           destination: input.destination,
+          source: "tavily",
           results: result.results.map((r) => ({ title: r.title, url: r.url, snippet: r.content })),
         });
       } catch {
@@ -448,6 +463,16 @@ RULES:
                     if (parsed.source === "amadeus" && parsed.priceRange) {
                       controller.enqueue(
                         encoder.encode(`data: ${JSON.stringify({ type: "hotels", ...parsed })}\n\n`)
+                      );
+                    }
+                  } catch { /* non-JSON result — ignore */ }
+                }
+                if (toolUse.name === "get_activities") {
+                  try {
+                    const parsed = JSON.parse(content);
+                    if (parsed.source === "amadeus" && parsed.count) {
+                      controller.enqueue(
+                        encoder.encode(`data: ${JSON.stringify({ type: "activities", ...parsed })}\n\n`)
                       );
                     }
                   } catch { /* non-JSON result — ignore */ }
