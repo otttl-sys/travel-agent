@@ -43,13 +43,20 @@ Non-blocking panel between the AI plan and booking links on every results page.
 - Loads async with skeleton (never blocks the main result)
 - Hidden for multi-city trips
 
+### Season-based Discovery (2026-06-20) `09d802c`
+New `/discover` page — inverse flow: start with when + interests, not where.
+
+- **Form**: month pills (Jan–Dec, defaults to current month), interest chips (same 10 as /plan), 5 budget tiers with price ranges (ultra-budget < €600 → luxury > €5k)
+- **API** `/api/discover`: single Claude tool-call (`suggest_destinations`), forced structured output — returns 5 cards with destination, country, emoji, tagline, whyNow, climate, highlights, priceFrom/priceTo, gradient. No Tavily needed — Claude's seasonal knowledge is sufficient.
+- **Cards**: gradient header (emoji + name + country + price range), why-now text, climate summary, expandable highlights, "Plan this trip →" → `/plan?destination=X`
+- **Entry points**: "Discover" in desktop nav + mobile menu; "🌍 Where to go?" chip button on homepage alongside Scanner and Adventure toggle
+
 ---
 
 ## Planned
 
 | # | Feature | Priority | Description |
 |---|---------|----------|-------------|
-| 4 | **Season-based "Where to go?"** | Medium | User picks month + interests + budget, leaves destination blank → AI suggests 5 seasonal matches |
 | 5 | **Family mode** | Medium | Auto-detects "Familie" interest → AI adapts for kid-friendly activities, avoids harsh hikes, adds family cost breakdown |
 | 6 | **Login / profile** | Medium | Supabase auth → persist origin, interests, budget server-side; show saved searches |
 | 7 | **Real flight prices** | High | Amadeus API — live prices from BER/MUC/FRA |
