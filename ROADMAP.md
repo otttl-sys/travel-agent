@@ -51,17 +51,69 @@ New `/discover` page — inverse flow: start with when + interests, not where.
 - **Cards**: gradient header (emoji + name + country + price range), why-now text, climate summary, expandable highlights, "Plan this trip →" → `/plan?destination=X`
 - **Entry points**: "Discover" in desktop nav + mobile menu; "🌍 Where to go?" chip button on homepage alongside Scanner and Adventure toggle
 
+### Family Mode (2026-06-21) `06ca150`
+Automatic — activates when "Familie" interest is selected in Step 4. No separate toggle.
+
+- **Plan wizard**: teal `🎡 Family Mode` banner appears when Familie is selected; summary step shows confirmation badge
+- **AI system prompt addition**: prioritize kid-friendly activities (theme parks, beaches, gentle walks, interactive museums), avoid strenuous hikes / extreme sports, recommend family rooms + resorts with pools / kids clubs, include child discount notes (under-12 free, family passes), safe walkable neighbourhoods, child-paced itinerary
+- **Card tiers**: budget self-catering apartment → affordable family hotel (pool, kids menu) → family resort (kids club) → premium villa → luxury all-inclusive
+- **Results badge**: "🎡 Family Mode · 5 kid-friendly options"
+
+### Login / User Profile (2026-06-21) `40590e5`
+Supabase magic link auth — no password required.
+
+- `@supabase/ssr` installed; browser client (`createBrowserClient`) + server client (`createServerClient` with cookies)
+- **Middleware** at `src/middleware.ts`: refreshes session on every request so auth tokens never silently expire
+- **`/login` page**: email input → magic link sent; confirmation screen with "use different email" escape
+- **`/auth/callback`** route: PKCE code exchange → redirects to `/saved` on success
+- **`UserNav` component**: shows "Sign in" link when logged out; email + "Sign out" when logged in — wired into both `SiteNav` (all inner pages) and the homepage custom nav
+- **New trips tagged with `user_id`** when logged in (server-side, via cookie session)
+
+> **Setup required:**
+> 1. Add `NEXT_PUBLIC_SUPABASE_ANON_KEY` to `.env.local` + Vercel (get from Supabase dashboard → Project Settings → API → "anon public" key)
+> 2. Run in Supabase SQL editor: `ALTER TABLE trips ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id);`
+
+### Real Flight Prices — Amadeus (2026-06-21) `65fb834`
+Replaces Tavily web-scraping for flights with live Amadeus Flight Offers Search API.
+
+- **`src/lib/amadeus.ts`**: OAuth2 token fetch with in-memory cache; 100+ city → IATA airport code mapping; partial-match handles "Tokyo, Japan" / "Berlin, Germany" style names; ISO 8601 duration parser ("PT10H30M" → "10h 30m")
+- **Sandbox** default (`test.api.amadeus.com`); set `AMADEUS_PRODUCTION=1` for live data
+- **`executeTool`** for `search_flights` and `executeMultiCityTool` for `search_flight_leg`: Amadeus first, Tavily fallback (transparent if keys absent or IATA unknown)
+- **SSE event** `{ type: "flights" }` forwarded when real data returns
+- **Results page**: sky-blue pill `"✈️ BER → NRT · €450–€650 per person  live via Amadeus"`
+
+> **Setup:** `AMADEUS_CLIENT_ID` + `AMADEUS_CLIENT_SECRET` in Vercel (free sandbox: developers.amadeus.com)
+
+### Real Hotel Prices — Amadeus (2026-06-21) `1ea3e1a`
+Amadeus Hotel Search API — 2-step: hotel IDs by city → live offers with prices.
+
+- **`HOTEL_CITY` map**: separate city-code overrides for cities where IATA city code ≠ airport code (LON/PAR/NYC/TYO/ROM/MIL/OSA/SEL/BJS/SHA…); falls back to airport code for European cities
+- **`searchAmadeusHotels()`**: `/v1/reference-data/locations/hotels/by-city` (5km radius, rating filter) → `/v3/shopping/hotel-offers` (check-in/out, adults, EUR, best-rate-only)
+- Star-rating filter by style: `luxury` → 4-5★, `budget` → 2-3★, default → 3-5★
+- Returns price per night (= total ÷ nights), priceRange, up to 8 hotels
+- **SSE event** `{ type: "hotels" }`; emerald pill `"🏨 €150–€280/night · 7 nights  live"` in results
+
+### Real Activities — Amadeus Tours & Activities (2026-06-21) `3326ee5`
+Amadeus Tours & Activities API (backed by Musement). No new credentials — same Amadeus keys.
+
+- **`getCityCoordinates()`**: Amadeus `/v1/reference-data/locations/cities` city search → lat/lng
+- **`searchAmadeusActivities()`**: `/v1/shopping/activities` by geocode, 20km radius; interest keyword ranking so "culture" trips surface museum/temple activities first
+- Returns count, priceRange, up to 10 activities with name/description/price/rating/category
+- **SSE event** `{ type: "activities" }`; violet pill `"🎯 10 activities · €15–€89  live"` in results
+
+**When all three Amadeus pills are active, the results header shows:**
+```
+✈️ BER → NRT · €450–€650 per person  live
+🏨 €150–€280/night · 7 nights  live
+🎯 10 activities · €15–€89  live
+```
+
 ---
 
 ## Planned
 
 | # | Feature | Priority | Description |
 |---|---------|----------|-------------|
-| 5 | **Family mode** | Medium | Auto-detects "Familie" interest → AI adapts for kid-friendly activities, avoids harsh hikes, adds family cost breakdown |
-| 6 | **Login / profile** | Medium | Supabase auth → persist origin, interests, budget server-side; show saved searches |
-| 7 | **Real flight prices** | High | Amadeus API — live prices from BER/MUC/FRA |
-| 8 | **Real hotel prices** | High | Booking.com Affiliate API or Amadeus Hotel Search |
-| 9 | **Real activities** | Medium | Viator Affiliate API or GetYourGuide Partner API |
 | 10 | **Icon upgrade** | Low | Replace emoji with Lucide SVG icons in interest selection |
 
 ---
@@ -70,13 +122,15 @@ New `/discover` page — inverse flow: start with when + interests, not where.
 
 | Layer | Choice |
 |-------|--------|
-| Framework | Next.js (App Router) + React 18 |
+| Framework | Next.js 16 (App Router) + React 19 |
 | Styling | Tailwind CSS + shadcn/ui + OKLCH color tokens |
-| AI | `claude-sonnet-4-6` — text planning + vision (photo scan) |
-| Search grounding | Tavily API |
-| Database | Supabase (trips table, service-key server-side) |
+| AI | `claude-sonnet-4-6` — text planning + vision (photo scan) + tool use |
+| Search grounding | Tavily API (fallback when live APIs unavailable) |
+| Live prices | Amadeus API — flights, hotels, activities (sandbox free; prod requires approval) |
+| Auth | Supabase Auth — magic link, `@supabase/ssr`, middleware session refresh |
+| Database | Supabase (trips table, service-key server-side, RLS + public policy) |
 | Geo + Weather | Open-Meteo geocoding + forecast (free, no key) |
 | Safety data | Auswärtiges Amt open data JSON |
 | Hosting | Vercel — push to `main` = auto-deploy |
-| MCP server | `~/02_Travel_Agent/mcp-server/server.js` (5 tools, `travel-agent-db` scope) |
 | Domain | vagamundo.io (Cloudflare transfer available 2026-08-16) |
+| MCP server | `~/02_Travel_Agent/mcp-server/server.js` (5 tools, `travel-agent-db` scope) |
