@@ -39,6 +39,7 @@ export default function Home() {
             <Link href="/packing" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Packing</Link>
             <Link href="/saved" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Saved Trips</Link>
             <Link href="/about" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">About</Link>
+            <Link href="/chat" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Chat</Link>
             <Link href="/plan">
               <button className="bg-foreground text-background px-6 py-2.5 rounded-full text-xs uppercase tracking-[0.18em] font-semibold hover:bg-brand transition-colors">
                 Plan a trip
@@ -73,6 +74,7 @@ export default function Home() {
 
         {mobileMenuOpen && (
           <div className="md:hidden absolute top-full left-0 right-0 bg-background border-b border-border shadow-sm z-50 px-6 py-5 flex flex-col gap-4">
+            <Link href="/chat" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">Chat with AI</Link>
             <Link href="/discover" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">Discover</Link>
             <Link href="/research" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">Research</Link>
             <Link href="/budget" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">Budget</Link>
@@ -126,6 +128,19 @@ export default function Home() {
                 >
                   {adventureMode ? "⚡ Go →" : "Plan trip →"}
                 </button>
+              </div>
+
+              {/* Chat entry point */}
+              <div className="mt-4 flex items-center gap-3">
+                <span className="text-white/50 text-xs">or</span>
+                <Link
+                  href={query.trim() ? `/chat?q=${encodeURIComponent(query.trim())}` : "/chat"}
+                  className="flex items-center gap-2 text-white/80 hover:text-white text-xs font-semibold uppercase tracking-[0.18em] transition-colors group"
+                >
+                  <span className="w-6 h-6 rounded-full bg-white/15 group-hover:bg-white/25 flex items-center justify-center text-base transition-colors">🤖</span>
+                  Chat with AI
+                  <span className="opacity-60">→</span>
+                </Link>
               </div>
             </div>
           </div>
