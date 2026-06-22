@@ -108,12 +108,33 @@ Amadeus Tours & Activities API (backed by Musement). No new credentials — same
 🎯 10 activities · €15–€89  live
 ```
 
+### Conversational Plan Refinement (2026-06-22) `1f98b06`
+Chat widget on the results page for iterative plan adjustments without leaving the page.
+
+- **`RefinementChat` component**: sits between the AI plan and the SafetyPanel; never blocks the initial load
+- **6 quick-chips**: Make it cheaper 💰 / More culture 🏛️ / More adventure ⚡ / Better beaches 🏖️ / Family-friendly 👨‍👩‍👧 / Luxury upgrade ✨
+- **Free-text input**: "Add a day trip to the countryside", "Swap the resort for a boutique hotel", etc.
+- **`/api/refine`** SSE endpoint: sends current plan + user message to Claude, streams revised plan back token by token
+- Plan replaces `aiResult` inline — no page reload, no re-running the original agents
+- Each refinement calls `/api/refine` with the **current** (already-refined) plan, so follow-ups stack correctly
+- "Refined ×N" badge on the plan card header; previous requests shown as chips at the bottom
+
+### AI Chat Entry Point (2026-06-22) `3a30639`
+Conversational alternative to the 6-step wizard — Claude gathers trip details through dialogue.
+
+- **`/chat` page**: clean chat UI, message bubbles, typing indicator, 4 starter-prompt chips
+- **`/api/chat`**: Claude with a `plan_trip` tool. System prompt: ask ONE question at a time; call `plan_trip` as soon as destination + travelers are known; default travelers to 2 if unspecified
+- When `plan_trip` fires: "Planning your trip to X now…" transition screen → navigate to `/results?destination=…&travelers=…&budget=…&startDate=…&endDate=…&interests=…`
+- **Homepage entry**: "Chat with AI →" link below the hero search bar; if the user already typed something in the search box the text is forwarded as `?q=` to `/chat` and auto-sent
+- **Nav links**: "Chat" added to desktop nav + mobile menu on homepage
+
 ---
 
 ## Planned
 
 | # | Feature | Priority | Description |
 |---|---------|----------|-------------|
+| C | **Share Link** | Medium | Public `/trip/[id]` URL — read-only view of a saved plan, shareable on LinkedIn |
 | 10 | **Icon upgrade** | Low | Replace emoji with Lucide SVG icons in interest selection |
 
 ---

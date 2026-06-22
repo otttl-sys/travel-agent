@@ -14,15 +14,18 @@ gibt Claude (außerhalb der App) Lesezugriff auf diese Trips.
 02_Travel_Agent/
 ├── travel-agent/                # Next.js 16 App (Vercel-deployed)
 │   ├── src/app/
-│   │   ├── page.tsx              # Landing/Suche
+│   │   ├── page.tsx              # Landing/Suche (+ "Chat with AI" entry point)
+│   │   ├── chat/page.tsx         # AI-Chat-Einstieg → /api/chat → /results
 │   │   ├── plan/page.tsx         # Multi-Step-Formular (6 Schritte) → /api/plan
-│   │   ├── results/page.tsx      # Plan-Ergebnis, "Save Trip"
+│   │   ├── results/page.tsx      # Plan-Ergebnis, "Save Trip", Refinement-Chat
 │   │   ├── saved/page.tsx        # Trip-Hub: gespeicherte Trips + alle Module
 │   │   ├── research/page.tsx     # Standalone Destination-Recherche → /api/research
 │   │   ├── packing/page.tsx      # Packlisten-Generator → /api/packing
 │   │   ├── disruption/page.tsx   # Flugausfall/-verspätung Hilfe → /api/disruption
 │   │   ├── agentic-commerce/page.tsx  # Projekt-Erklärseite (Marketing/Doku)
 │   │   └── api/
+│   │       ├── chat/route.ts          # AI-Chat: Claude + plan_trip Tool → strukturierte Params
+│   │       ├── refine/route.ts        # Plan-Refinement: SSE-Stream (aktueller Plan + User-Msg)
 │   │       ├── plan/route.ts          # Haupt-Reiseplan (Flüge, Hotels, Itinerary)
 │   │       ├── itinerary/route.ts     # Tag-für-Tag-Plan (search_logistics + Maps)
 │   │       ├── briefing/route.ts      # Vorab-Briefing (Wetter/Saison/Tipps)
@@ -112,8 +115,30 @@ manuellen Einzel-Check eines Trips aus der UI.
 | Secrets | Doppler (Projekt `travel-agent`) |
 | UI | Tailwind 4, shadcn/ui, react-markdown |
 
+## AI-Chat-Flow (`/chat` → `/api/chat` → `/results`)
+
+```text
+/chat (page)
+   → Nutzer beschreibt Reisewunsch per Chat
+   → POST /api/chat  (Claude + plan_trip Tool)
+       ├─ Text-Antwort  → nächste Frage (1 max) an Nutzer
+       └─ plan_trip     → strukturierte Params extrahiert
+           → Transition-Screen "Planning…"
+           → Redirect zu /results?destination=…&travelers=…&budget=…
+```
+
+## Refinement-Flow (`/results` → `/api/refine`)
+
+```text
+/results (page) — nach initialem /api/plan-Lauf
+   → RefinementChat-Chip oder Freitext
+   → POST /api/refine  (aktueller Plan als Kontext + User-Message)
+   → SSE-Stream: tokens → aiResult inline ersetzt
+   → Folge-Refinements nutzen jeweils den aktualisierten Plan
+```
+
 ## Geplante Erweiterungen
 
-Siehe [TRIP_HUB_PLAN.md](TRIP_HUB_PLAN.md) für das Trip-as-Hub-Redesign
-(abgeschlossen) sowie offene Punkte: Datenmodell-Audit, Sherpa-Visa-Ausbau,
-GetYourGuide/Eventseekr-Integration für Events-Modul.
+- **Share Link**: öffentliche `/trip/[id]`-Seite (read-only), shareable
+- Sherpa-Visa-Ausbau (Key fehlt)
+- GetYourGuide/Eventseekr-Integration für Events-Modul
