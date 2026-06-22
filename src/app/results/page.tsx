@@ -131,6 +131,7 @@ function ResultsContent() {
   const [hotelsData, setHotelsData] = useState<{ priceRange: string; destination: string; nights: number } | null>(null);
   const [activitiesData, setActivitiesData] = useState<{ count: number; priceRange: string } | null>(null);
   const [saved, setSaved] = useState(false);
+  const [refinementCount, setRefinementCount] = useState(0);
   const hasFetchedRef = useRef(false);
 
   const destination = searchParams.get("destination") || "";
@@ -455,11 +456,33 @@ function ResultsContent() {
                   <div className="flex items-center gap-2 mb-5">
                     <span className="text-xl">🤖</span>
                     <h3 className="font-semibold text-foreground">Dein persönlicher Reiseplan von Claude</h3>
+                    {refinementCount > 0 && (
+                      <Badge variant="secondary" className="text-xs ml-auto">
+                        ✨ Refined ×{refinementCount}
+                      </Badge>
+                    )}
                   </div>
                   <div className="prose prose-sm max-w-none text-foreground leading-relaxed">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{aiResult}</ReactMarkdown>
                   </div>
                 </div>
+              )}
+
+              {/* Conversational refinement */}
+              {aiResult && (
+                <RefinementChat
+                  currentPlan={aiResult}
+                  destination={isMultiCity ? cityNames.join(", ") : destination}
+                  budget={budget}
+                  startDate={searchParams.get("startDate") || ""}
+                  endDate={searchParams.get("endDate") || ""}
+                  travelers={searchParams.get("travelers") || "2"}
+                  interests={searchParams.get("interests") || ""}
+                  onPlanUpdate={(newPlan) => {
+                    setAiResult(newPlan);
+                    setRefinementCount((n) => n + 1);
+                  }}
+                />
               )}
 
               {/* Safety & Weather */}
@@ -539,6 +562,173 @@ function ResultsContent() {
           </div>
         </div>
       </main>
+    </div>
+  );
+}
+
+const REFINEMENT_CHIPS = [
+  { label: "Make it cheaper 💰", prompt: "Make this trip cheaper. Find budget-friendly alternatives for flights, hotels, and activities while keeping the same destination and duration." },
+  { label: "More culture 🏛️", prompt: "Add more cultural depth: include museums, historical sites, local festivals, traditional food markets, and authentic neighborhood experiences." },
+  { label: "More adventure ⚡", prompt: "Make it more adventurous with outdoor activities, hiking, and off-the-beaten-path experiences. Include at least one physical challenge." },
+  { label: "Better beaches 🏖️", prompt: "Emphasize beach and coastal experiences. Prioritize seaside stays, water activities, and scenic coastal routes." },
+  { label: "Family-friendly 👨‍👩‍👧", prompt: "Adapt for families with children: add kid-friendly activities, shorter activity blocks, family hotels, child discounts, and safe neighbourhoods." },
+  { label: "Luxury upgrade ✨", prompt: "Upgrade to a luxury experience: 5-star hotels, Michelin-starred dining, private tours, and premium activities." },
+];
+
+function RefinementChat({
+  currentPlan,
+  destination,
+  budget,
+  startDate,
+  endDate,
+  travelers,
+  interests,
+  onPlanUpdate,
+}: {
+  currentPlan: string;
+  destination: string;
+  budget: number;
+  startDate: string;
+  endDate: string;
+  travelers: string;
+  interests: string;
+  onPlanUpdate: (plan: string) => void;
+}) {
+  const [input, setInput] = useState("");
+  const [isRefining, setIsRefining] = useState(false);
+  const [streamPreview, setStreamPreview] = useState("");
+  const [lastMessage, setLastMessage] = useState("");
+  const [history, setHistory] = useState<string[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  async function submit(message: string) {
+    if (!message.trim() || isRefining) return;
+    setIsRefining(true);
+    setStreamPreview("");
+    setLastMessage(message);
+    setInput("");
+
+    try {
+      const res = await fetch("/api/refine", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message,
+          currentPlan,
+          destination,
+          budget,
+          startDate,
+          endDate,
+          travelers,
+          interests,
+        }),
+      });
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No reader");
+      const decoder = new TextDecoder();
+      let fullText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const lines = decoder.decode(value).split("\n").filter((l) => l.startsWith("data: "));
+        for (const line of lines) {
+          let parsed: { type: string; text?: string; message?: string };
+          try { parsed = JSON.parse(line.replace("data: ", "")); } catch { continue; }
+          if (parsed.type === "token") {
+            fullText += parsed.text ?? "";
+            setStreamPreview(fullText.slice(0, 160));
+          }
+          if (parsed.type === "result") fullText = parsed.text ?? fullText;
+          if (parsed.type === "error") throw new Error(parsed.message);
+        }
+      }
+
+      onPlanUpdate(fullText);
+      setHistory((prev) => [...prev, message]);
+    } catch {
+      // silently swallow — parent plan unchanged
+    } finally {
+      setIsRefining(false);
+      setStreamPreview("");
+      inputRef.current?.focus();
+    }
+  }
+
+  return (
+    <div className="bg-surface rounded-2xl border border-brand/20 p-4 sm:p-6 mb-4 sm:mb-6 no-print">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-lg">✨</span>
+        <h3 className="font-semibold text-foreground">Refine your plan</h3>
+        <span className="text-xs text-muted-foreground">— ask Claude to adjust anything</span>
+      </div>
+
+      {/* Quick chips */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {REFINEMENT_CHIPS.map((chip) => (
+          <button
+            key={chip.label}
+            onClick={() => submit(chip.prompt)}
+            disabled={isRefining}
+            className="text-xs px-3 py-1.5 rounded-full border border-border bg-background hover:bg-brand-subtle hover:border-brand/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {chip.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Free-text input */}
+      <div className="flex gap-2">
+        <input
+          ref={inputRef}
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") submit(input); }}
+          placeholder='e.g. "Add a day trip outside the city" or "Swap the beach resort for a boutique hotel"'
+          disabled={isRefining}
+          className="flex-1 text-sm rounded-xl border border-border bg-background px-4 py-2.5 placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-brand/30 disabled:opacity-50"
+        />
+        <Button
+          onClick={() => submit(input)}
+          disabled={isRefining || !input.trim()}
+          size="sm"
+          className="px-4 shrink-0"
+        >
+          {isRefining ? (
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce [animation-delay:0ms]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce [animation-delay:150ms]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce [animation-delay:300ms]" />
+            </span>
+          ) : "→"}
+        </Button>
+      </div>
+
+      {/* Streaming indicator */}
+      {isRefining && (
+        <div className="mt-3 p-3 rounded-xl bg-brand-subtle">
+          <div className="flex items-center gap-2 mb-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
+            <span className="text-xs font-medium text-brand">"{lastMessage.slice(0, 60)}{lastMessage.length > 60 ? "…" : ""}"</span>
+          </div>
+          {streamPreview && (
+            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{streamPreview}…</p>
+          )}
+        </div>
+      )}
+
+      {/* History */}
+      {history.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-border flex flex-wrap gap-1.5">
+          {history.slice(-4).map((msg, i) => (
+            <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-brand-subtle text-muted-foreground">
+              ✓ {msg.length > 50 ? msg.slice(0, 50) + "…" : msg}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
