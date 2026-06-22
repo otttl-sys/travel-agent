@@ -131,6 +131,8 @@ function ResultsContent() {
   const [hotelsData, setHotelsData] = useState<{ priceRange: string; destination: string; nights: number } | null>(null);
   const [activitiesData, setActivitiesData] = useState<{ count: number; priceRange: string } | null>(null);
   const [saved, setSaved] = useState(false);
+  const [savedId, setSavedId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [refinementCount, setRefinementCount] = useState(0);
   const hasFetchedRef = useRef(false);
 
@@ -138,7 +140,7 @@ function ResultsContent() {
   const budget = Number(searchParams.get("budget") || 3000);
 
   async function handleSave() {
-    await saveTrip({
+    const id = await saveTrip({
       destination: isMultiCity ? cityNames.join(", ") : destination,
       isMultiCity,
       cities: cityNames,
@@ -150,6 +152,15 @@ function ResultsContent() {
       cards: dynamicCards,
     });
     setSaved(true);
+    setSavedId(id);
+  }
+
+  async function handleCopyShareLink() {
+    if (!savedId) return;
+    const url = `${window.location.origin}/trip/${savedId}`;
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
   const isMultiCity = searchParams.get("multiCity") === "1";
   const citiesParam = searchParams.get("cities") || "";
@@ -369,6 +380,16 @@ function ResultsContent() {
                   >
                     {saved ? "✓ Saved" : "Save Trip"}
                   </Button>
+                  {savedId && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopyShareLink}
+                      className={copied ? "text-green-600 border-green-200 bg-green-50" : ""}
+                    >
+                      {copied ? "✓ Copied!" : "Share Link"}
+                    </Button>
+                  )}
                   <Button variant="outline" size="sm" onClick={() => window.print()}>
                     PDF
                   </Button>

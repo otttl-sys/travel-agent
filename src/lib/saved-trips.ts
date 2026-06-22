@@ -144,13 +144,14 @@ export async function getSavedTrips(): Promise<SavedTrip[]> {
   return migrateFromLocalStorage(trips);
 }
 
-export async function saveTrip(trip: Omit<SavedTrip, 'id' | 'savedAt'>): Promise<void> {
+export async function saveTrip(trip: Omit<SavedTrip, 'id' | 'savedAt'>): Promise<string> {
+  const id = Date.now().toString();
   const baseline = trip.cards?.[0]?.budget;
   await fetch('/api/trips', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      id: Date.now().toString(),
+      id,
       destination: trip.destination,
       is_multi_city: trip.isMultiCity,
       cities: trip.cities,
@@ -165,6 +166,7 @@ export async function saveTrip(trip: Omit<SavedTrip, 'id' | 'savedAt'>): Promise
       baseline_hotel: baseline?.hotel ?? null,
     }),
   });
+  return id;
 }
 
 export async function deleteTrip(id: string): Promise<void> {

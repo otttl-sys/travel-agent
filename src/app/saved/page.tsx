@@ -62,6 +62,7 @@ export default function SavedPage() {
   // single tab-per-card replaces 7 separate open/close states
   const [activeTab, setActiveTab] = useState<Record<string, TabId | null>>({});
 
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [checkingId, setCheckingId] = useState<string | null>(null);
   const [priceTraces, setPriceTraces] = useState<Record<string, TraceEntry[]>>({});
   const [verdicts, setVerdicts] = useState<Record<string, string>>({});
@@ -153,6 +154,13 @@ export default function SavedPage() {
   }
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
+
+  async function handleShare(id: string) {
+    const url = `${window.location.origin}/trip/${id}`;
+    await navigator.clipboard.writeText(url);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  }
 
   function handleDelete(id: string) {
     void deleteTrip(id);
@@ -555,6 +563,14 @@ export default function SavedPage() {
                         <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                           <Button variant="outline" size="sm" disabled={checkingId !== null} onClick={() => checkPrice(trip)}>
                             {checkingId === trip.id ? "Checking…" : "Check Price"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleShare(trip.id)}
+                            className={copiedId === trip.id ? "text-green-600 border-green-200 bg-green-50" : ""}
+                          >
+                            {copiedId === trip.id ? "✓ Copied!" : "Share"}
                           </Button>
                           <button onClick={() => handleDelete(trip.id)} className="text-muted-foreground/60 hover:text-red-400 transition-colors text-xl leading-none p-1" aria-label="Delete trip">×</button>
                         </div>
