@@ -128,14 +128,58 @@ Conversational alternative to the 6-step wizard — Claude gathers trip details 
 - **Homepage entry**: "Chat with AI →" link below the hero search bar; if the user already typed something in the search box the text is forwarded as `?q=` to `/chat` and auto-sent
 - **Nav links**: "Chat" added to desktop nav + mobile menu on homepage
 
+### Share Link (2026-06-23) `5b62d22`
+- `/trip/[id]` public server component — AI plan markdown, trip cards, OG meta (LinkedIn preview), CTA
+- `GET /api/trips/[id]` — new public endpoint via `supabaseAdmin`
+- Share button on results page (after saving) + per-trip on /saved
+
+### Icon Upgrade (2026-06-23) `5b33cfc`
+- Lucide SVG icons replace emoji in interest selection: Landmark / Mountain / Waves / Building2 / Zap / UtensilsCrossed / Gem / Leaf / Baby / Music2
+
+### Public Trip Gallery (2026-06-23) `902102c`
+- `/explore` page: opt-in public gallery, newest trips first
+- "Make Public" toggle on /saved per trip → sets `is_public = true` in Supabase
+- `GET /api/trips/public` endpoint; Clone button → `/plan?destination=X&travelers=N`
+
+### Google Calendar Export (2026-06-23) `902102c`
+- `GET /api/trips/[id]/calendar` → `.ics` download
+- Export buttons on `/saved` and `/trip/[id]`
+
+### Onboarding after Login (2026-06-23) `902102c`
+- `/onboarding` page: passport country + home city form
+- `POST /api/profile` → upsert into `profiles` table (RLS active)
+- Auth callback redirects new users to /onboarding on first login
+
+### Profile Data in Plan Wizard (2026-06-23) `876c126`
+- `home_city` from profile → pre-fills origin in Plan Wizard Step 1
+- `passport_country` from profile → default in Visa Agent
+
+### PWA Support (2026-06-23) `03ffd1c` + `77c89f3`
+- `manifest.json`, `themeColor`, `appleWebApp` — installable from browser on iOS/Android
+- Duplicate meta removed, `themeColor` moved to Next.js metadata API
+
+### Clone Trip (2026-06-23) `03ffd1c` + `4019fb3`
+- "Plan similar trip →" button on /explore cards → `/plan?destination=X&travelers=N&startDate=…&endDate=…`
+- Dates passed in clone params, read from URL in plan wizard
+
+### Culture & Etiquette Agent (2026-06-23) `03ffd1c`
+- New 🌍 tab on /saved per trip
+- `POST /api/culture` SSE — Tavily research → structured guide: Phrases / Etiquette / Tipping / Dining / Do & Don't
+
+### Nav Cleanup (2026-06-23) `ef48d04`
+- Collapsed 9 flat desktop links into: Discover · Explore · Chat · Saved · Tools▾ · [Plan a Trip]
+- Tools dropdown: Research / Budget / Disruption / Packing / About
+
 ---
 
 ## Planned
 
 | # | Feature | Priority | Description |
 |---|---------|----------|-------------|
-| C | **Share Link** | Medium | Public `/trip/[id]` URL — read-only view of a saved plan, shareable on LinkedIn |
-| 10 | **Icon upgrade** | Low | Replace emoji with Lucide SVG icons in interest selection |
+| K | **Trip-Timeline** | Medium | Visual timeline replacing Markdown itinerary — day-by-day scroll |
+| J | **Insurance Agent** | Low | Travel insurance recommendations based on destination + trip type |
+| L | **Explore-Stats** | Low | Top destinations + avg budget stats on /explore |
+| M | **SIM Agent** | Low | TBD |
 
 ---
 
