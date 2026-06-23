@@ -145,14 +145,16 @@ export default async function ExplorePage() {
                     className="group flex flex-col rounded-2xl border border-border overflow-hidden bg-surface hover:border-foreground/30 transition-colors"
                   >
                     {/* Photo */}
-                    <Link href={`/trip/${trip.id}`} className="block relative h-44 overflow-hidden bg-muted">
-                      <Image
-                        src={`https://images.unsplash.com/${photo}?auto=format&fit=crop&w=600&q=75`}
-                        alt={dest}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      />
+                    <Link href={`/trip/${trip.id}`} className="block">
+                      <div className="relative h-44 overflow-hidden bg-muted">
+                        <Image
+                          src={`https://images.unsplash.com/${photo}?auto=format&fit=crop&w=600&q=75`}
+                          alt={dest}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        />
+                      </div>
                     </Link>
 
                     {/* Content */}
