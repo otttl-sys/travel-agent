@@ -137,6 +137,8 @@ export default async function ExplorePage() {
                   destination: trip.destination,
                   travelers: String(trip.travelers ?? 2),
                   ...(trip.budget ? { budget: String(trip.budget) } : {}),
+                  ...(trip.start_date ? { startDate: trip.start_date } : {}),
+                  ...(trip.end_date ? { endDate: trip.end_date } : {}),
                 }).toString();
 
                 return (
