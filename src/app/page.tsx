@@ -12,6 +12,7 @@ export default function Home() {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
   const [adventureMode, setAdventureMode] = useState(false);
 
   function handleSearch(dest?: string) {
@@ -31,16 +32,43 @@ export default function Home() {
             <span className="font-bold text-foreground text-base tracking-[0.2em] uppercase">Vagamundo</span>
           </div>
 
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-6">
             <Link href="/discover" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Discover</Link>
             <Link href="/explore" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Explore</Link>
-            <Link href="/research" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Research</Link>
-            <Link href="/budget" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Budget</Link>
-            <Link href="/disruption" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Disruption</Link>
-            <Link href="/packing" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Packing</Link>
-            <Link href="/saved" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Saved Trips</Link>
-            <Link href="/about" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">About</Link>
             <Link href="/chat" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Chat</Link>
+            <Link href="/saved" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Saved</Link>
+            {/* Tools dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setToolsOpen((o) => !o)}
+                className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+              >
+                Tools <span className="text-[10px]">▾</span>
+              </button>
+              {toolsOpen && (
+                <div
+                  className="absolute top-full left-0 mt-2 w-44 bg-background border border-border rounded-lg shadow-lg z-50 py-1"
+                  onMouseLeave={() => setToolsOpen(false)}
+                >
+                  {[
+                    { href: "/research", label: "Research" },
+                    { href: "/budget", label: "Budget" },
+                    { href: "/disruption", label: "Disruption" },
+                    { href: "/packing", label: "Packing List" },
+                    { href: "/about", label: "About" },
+                  ].map(({ href, label }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={() => setToolsOpen(false)}
+                      className="block px-4 py-2 text-xs uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                    >
+                      {label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
             <Link href="/plan">
               <button className="bg-foreground text-background px-6 py-2.5 rounded-full text-xs uppercase tracking-[0.18em] font-semibold hover:bg-brand transition-colors">
                 Plan a trip
