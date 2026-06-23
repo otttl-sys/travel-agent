@@ -7,20 +7,21 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { SiteNav } from "@/components/site-nav";
 import { DestinationScanner } from "@/components/destination-scanner";
+import { Landmark, Mountain, Waves, Building2, Zap, UtensilsCrossed, Gem, Leaf, Baby, Music2, type LucideIcon } from "lucide-react";
 
 const TOTAL_STEPS = 6;
 
-const INTERESTS = [
-  { id: "culture", label: "Kultur & Geschichte", icon: "🏛️" },
-  { id: "nature", label: "Natur & Berge", icon: "🏔️" },
-  { id: "beach", label: "Strand & Meer", icon: "🏄" },
-  { id: "city", label: "Städtetrip", icon: "🌆" },
-  { id: "adventure", label: "Abenteuer", icon: "🪂" },
-  { id: "food", label: "Kulinarik", icon: "🍜" },
-  { id: "luxury", label: "Luxus", icon: "💎" },
-  { id: "wellness", label: "Wellness & Spa", icon: "🧘" },
-  { id: "family", label: "Familie", icon: "🎡" },
-  { id: "nightlife", label: "Nightlife & Events", icon: "🎭" },
+const INTERESTS: { id: string; label: string; Icon: LucideIcon }[] = [
+  { id: "culture",   label: "Kultur & Geschichte", Icon: Landmark },
+  { id: "nature",    label: "Natur & Berge",        Icon: Mountain },
+  { id: "beach",     label: "Strand & Meer",        Icon: Waves },
+  { id: "city",      label: "Städtetrip",           Icon: Building2 },
+  { id: "adventure", label: "Abenteuer",            Icon: Zap },
+  { id: "food",      label: "Kulinarik",            Icon: UtensilsCrossed },
+  { id: "luxury",    label: "Luxus",                Icon: Gem },
+  { id: "wellness",  label: "Wellness & Spa",       Icon: Leaf },
+  { id: "family",    label: "Familie",              Icon: Baby },
+  { id: "nightlife", label: "Nightlife & Events",   Icon: Music2 },
 ];
 
 const DESTINATIONS = [
@@ -668,7 +669,11 @@ function StepInterests({
                   : "border-border hover:border-foreground"
               }`}
             >
-              <span className="text-xl">{interest.icon}</span>
+              <interest.Icon
+                size={18}
+                className={isSelected ? "text-background" : "text-muted-foreground"}
+                strokeWidth={1.75}
+              />
               <span className={`text-sm font-medium ${isSelected ? "text-background" : "text-foreground"}`}>
                 {interest.label}
               </span>
