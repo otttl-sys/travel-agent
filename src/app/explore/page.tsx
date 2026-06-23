@@ -123,9 +123,35 @@ export default async function ExplorePage() {
           </div>
         ) : (
           <>
-            <p className="text-xs text-muted-foreground uppercase tracking-widest mb-6">
-              {trips.length} {trips.length === 1 ? "trip" : "trips"} shared
-            </p>
+            {/* Stats bar */}
+            {(() => {
+              const destCounts: Record<string, number> = {};
+              let totalBudget = 0; let budgetCount = 0;
+              for (const t of trips) {
+                const d = t.destination || (t.cities?.[0] ?? "Unknown");
+                destCounts[d] = (destCounts[d] ?? 0) + 1;
+                if (t.budget) { totalBudget += t.budget; budgetCount++; }
+              }
+              const topDests = Object.entries(destCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([d]) => d);
+              const avgBudget = budgetCount > 0 ? Math.round(totalBudget / budgetCount) : null;
+              return (
+                <div className="flex flex-wrap gap-3 mb-8">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
+                    🌍 <span className="font-medium text-foreground">{trips.length}</span> {trips.length === 1 ? "trip" : "trips"} shared
+                  </span>
+                  {topDests.length > 0 && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
+                      🔥 Top: <span className="font-medium text-foreground">{topDests.join(", ")}</span>
+                    </span>
+                  )}
+                  {avgBudget && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
+                      💶 Avg budget: <span className="font-medium text-foreground">€{avgBudget.toLocaleString()}</span>
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {trips.map((trip) => {
                 const dest = trip.is_multi_city && trip.cities?.length

@@ -21,11 +21,12 @@ import { TripMap } from "@/components/trip-map";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type TabId = "ideas" | "plan" | "concierge" | "day-plan" | "briefing" | "events" | "visa" | "budget" | "weather" | "culture";
+type TabId = "ideas" | "plan" | "concierge" | "day-plan" | "briefing" | "events" | "visa" | "budget" | "weather" | "culture" | "sim" | "insurance" | "timeline";
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: "ideas",     label: "Ideas",     icon: "💡" },
   { id: "plan",      label: "Plan",      icon: "🗺️" },
+  { id: "timeline",  label: "Timeline",  icon: "📅" },
   { id: "concierge", label: "Concierge", icon: "💬" },
   { id: "day-plan",  label: "Day Plan",  icon: "🗓️" },
   { id: "briefing",  label: "Briefing",  icon: "📋" },
@@ -34,19 +35,20 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: "budget",    label: "Budget",    icon: "💶" },
   { id: "weather",   label: "Weather",   icon: "🌤️" },
   { id: "culture",   label: "Culture",   icon: "🌍" },
+  { id: "sim",       label: "SIM",       icon: "📱" },
+  { id: "insurance", label: "Insurance", icon: "🛡️" },
 ];
 
-type CultureItem = {
+type AgentItem = {
   icon: string;
   category: string;
   title: string;
   details: string;
 };
 
-type CultureResult = {
-  destination: string;
-  items: CultureItem[];
-};
+type CultureResult = { destination: string; items: AgentItem[] };
+type SimResult    = { destination: string; items: AgentItem[] };
+type InsuranceResult = { destination: string; items: AgentItem[] };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -114,6 +116,17 @@ export default function SavedPage() {
   const [generatingCultureId, setGeneratingCultureId] = useState<string | null>(null);
   const [cultureTraces, setCultureTraces] = useState<Record<string, TraceEntry[]>>({});
 
+  const [simData, setSimData] = useState<Record<string, SimResult>>({});
+  const [generatingSimId, setGeneratingSimId] = useState<string | null>(null);
+  const [simTraces, setSimTraces] = useState<Record<string, TraceEntry[]>>({});
+
+  const [insuranceData, setInsuranceData] = useState<Record<string, InsuranceResult>>({});
+  const [generatingInsuranceId, setGeneratingInsuranceId] = useState<string | null>(null);
+  const [insuranceTraces, setInsuranceTraces] = useState<Record<string, TraceEntry[]>>({});
+
+  const [timelineData, setTimelineData] = useState<Record<string, DaySchedule[]>>({});
+  const [generatingTimelineId, setGeneratingTimelineId] = useState<string | null>(null);
+
   useEffect(() => {
     getSavedTrips().then(loaded => {
       setTrips(loaded);
@@ -160,6 +173,9 @@ export default function SavedPage() {
       case "budget":    return !!trip.budgetResult;
       case "weather":   return !!weatherData[trip.id];
       case "culture":   return !!cultureData[trip.id];
+      case "sim":       return !!simData[trip.id];
+      case "insurance": return !!insuranceData[trip.id];
+      case "timeline":  return !!timelineData[trip.id];
     }
   }
 
@@ -557,7 +573,7 @@ export default function SavedPage() {
         for (const line of decoder.decode(value).split("\n").filter(l => l.startsWith("data: "))) {
           const data = line.replace("data: ", "");
           if (data === "[DONE]") break;
-          let parsed: { type: string; id?: string; tool?: string; input?: Record<string, unknown>; iteration?: number; items?: CultureItem[]; message?: string };
+          let parsed: { type: string; id?: string; tool?: string; input?: Record<string, unknown>; iteration?: number; items?: AgentItem[]; message?: string };
           try { parsed = JSON.parse(data); } catch { continue; }
           if (parsed.type === "tool_call" && parsed.id && parsed.tool)
             setCultureTraces(prev => ({ ...prev, [trip.id]: [...(prev[trip.id] ?? []), { id: parsed.id!, iteration: parsed.iteration ?? 1, tool: parsed.tool!, input: parsed.input ?? {}, status: "running" }] }));
@@ -572,6 +588,63 @@ export default function SavedPage() {
       setGeneratingCultureId(null);
       setCultureTraces(prev => ({ ...prev, [trip.id]: [] }));
     }
+  }
+
+  async function generateSim(trip: SavedTrip) {
+    if (generatingSimId) return;
+    setGeneratingSimId(trip.id);
+    setSimTraces(prev => ({ ...prev, [trip.id]: [] }));
+    const dest = trip.isMultiCity ? trip.cities[0] : trip.destination;
+    try {
+      const res = await fetch("/api/sim", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ destination: dest }) });
+      const reader = res.body?.getReader(); const decoder = new TextDecoder();
+      if (!reader) return;
+      while (true) {
+        const { done, value } = await reader.read(); if (done) break;
+        for (const line of decoder.decode(value).split("\n").filter(l => l.startsWith("data: "))) {
+          const data = line.replace("data: ", ""); if (data === "[DONE]") break;
+          let parsed: { type: string; id?: string; tool?: string; input?: Record<string, unknown>; iteration?: number; items?: AgentItem[]; message?: string };
+          try { parsed = JSON.parse(data); } catch { continue; }
+          if (parsed.type === "tool_call" && parsed.id && parsed.tool) setSimTraces(prev => ({ ...prev, [trip.id]: [...(prev[trip.id] ?? []), { id: parsed.id!, iteration: parsed.iteration ?? 1, tool: parsed.tool!, input: parsed.input ?? {}, status: "running" }] }));
+          if (parsed.type === "tool_done" && parsed.id) setSimTraces(prev => ({ ...prev, [trip.id]: (prev[trip.id] ?? []).map(e => e.id === parsed.id ? { ...e, status: "done" } : e) }));
+          if (parsed.type === "sim" && parsed.items) setSimData(prev => ({ ...prev, [trip.id]: { destination: dest, items: parsed.items! } }));
+        }
+      }
+    } catch { /* non-fatal */ } finally { setGeneratingSimId(null); setSimTraces(prev => ({ ...prev, [trip.id]: [] })); }
+  }
+
+  async function generateInsurance(trip: SavedTrip) {
+    if (generatingInsuranceId) return;
+    setGeneratingInsuranceId(trip.id);
+    setInsuranceTraces(prev => ({ ...prev, [trip.id]: [] }));
+    const dest = trip.isMultiCity ? trip.cities[0] : trip.destination;
+    try {
+      const res = await fetch("/api/insurance", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ destination: dest, startDate: trip.startDate, endDate: trip.endDate, travelers: trip.travelers }) });
+      const reader = res.body?.getReader(); const decoder = new TextDecoder();
+      if (!reader) return;
+      while (true) {
+        const { done, value } = await reader.read(); if (done) break;
+        for (const line of decoder.decode(value).split("\n").filter(l => l.startsWith("data: "))) {
+          const data = line.replace("data: ", ""); if (data === "[DONE]") break;
+          let parsed: { type: string; id?: string; tool?: string; input?: Record<string, unknown>; iteration?: number; items?: AgentItem[]; message?: string };
+          try { parsed = JSON.parse(data); } catch { continue; }
+          if (parsed.type === "tool_call" && parsed.id && parsed.tool) setInsuranceTraces(prev => ({ ...prev, [trip.id]: [...(prev[trip.id] ?? []), { id: parsed.id!, iteration: parsed.iteration ?? 1, tool: parsed.tool!, input: parsed.input ?? {}, status: "running" }] }));
+          if (parsed.type === "tool_done" && parsed.id) setInsuranceTraces(prev => ({ ...prev, [trip.id]: (prev[trip.id] ?? []).map(e => e.id === parsed.id ? { ...e, status: "done" } : e) }));
+          if (parsed.type === "insurance" && parsed.items) setInsuranceData(prev => ({ ...prev, [trip.id]: { destination: dest, items: parsed.items! } }));
+        }
+      }
+    } catch { /* non-fatal */ } finally { setGeneratingInsuranceId(null); setInsuranceTraces(prev => ({ ...prev, [trip.id]: [] })); }
+  }
+
+  async function generateTimeline(trip: SavedTrip) {
+    if (generatingTimelineId || !trip.aiResult) return;
+    setGeneratingTimelineId(trip.id);
+    try {
+      const res = await fetch("/api/timeline", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ aiResult: trip.aiResult, startDate: trip.startDate }) });
+      if (!res.ok) return;
+      const { days } = await res.json();
+      if (Array.isArray(days) && days.length > 0) setTimelineData(prev => ({ ...prev, [trip.id]: days }));
+    } catch { /* non-fatal */ } finally { setGeneratingTimelineId(null); }
   }
 
   // ─── Render ───────────────────────────────────────────────────────────────────
@@ -1000,6 +1073,71 @@ export default function SavedPage() {
                               <div className="text-center py-6">
                                 <p className="text-sm text-muted-foreground mb-4">Key phrases, social etiquette, tipping rules, and dining customs for your destination.</p>
                                 <Button size="sm" onClick={() => generateCulture(trip)}>🌍 Get Culture Guide</Button>
+                              </div>
+                            ) : null}
+                          </>
+                        )}
+
+                        {/* SIM */}
+                        {tab === "sim" && (
+                          <>
+                            <div className="flex items-center justify-between mb-4">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">SIM &amp; Connectivity</p>
+                              {simData[trip.id] && <button onClick={() => { setSimData(prev => { const n = { ...prev }; delete n[trip.id]; return n; }); generateSim(trip); }} disabled={generatingSimId !== null} className="text-xs font-medium text-brand hover:text-brand/80 disabled:opacity-50">🔄 Refresh</button>}
+                            </div>
+                            {generatingSimId === trip.id && (<div className="mb-4"><AgentTrace trace={simTraces[trip.id] ?? []} />{(simTraces[trip.id]?.length ?? 0) === 0 && <p className="text-sm text-muted-foreground">Researching connectivity options…</p>}</div>)}
+                            {simData[trip.id] ? (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {simData[trip.id].items.map((item, i) => (
+                                  <div key={i} className="rounded-xl border border-border bg-surface p-4 flex gap-3">
+                                    <span className="text-2xl shrink-0">{item.icon}</span>
+                                    <div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-0.5">{item.category}</p><p className="text-sm font-semibold text-foreground mb-1">{item.title}</p><p className="text-xs text-muted-foreground leading-relaxed">{item.details}</p></div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : generatingSimId !== trip.id ? (
+                              <div className="text-center py-6"><p className="text-sm text-muted-foreground mb-4">Local SIM options, eSIM providers, data costs, and coverage tips for your destination.</p><Button size="sm" onClick={() => generateSim(trip)}>📱 Get Connectivity Guide</Button></div>
+                            ) : null}
+                          </>
+                        )}
+
+                        {/* Insurance */}
+                        {tab === "insurance" && (
+                          <>
+                            <div className="flex items-center justify-between mb-4">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Travel Insurance</p>
+                              {insuranceData[trip.id] && <button onClick={() => { setInsuranceData(prev => { const n = { ...prev }; delete n[trip.id]; return n; }); generateInsurance(trip); }} disabled={generatingInsuranceId !== null} className="text-xs font-medium text-brand hover:text-brand/80 disabled:opacity-50">🔄 Refresh</button>}
+                            </div>
+                            {generatingInsuranceId === trip.id && (<div className="mb-4"><AgentTrace trace={insuranceTraces[trip.id] ?? []} />{(insuranceTraces[trip.id]?.length ?? 0) === 0 && <p className="text-sm text-muted-foreground">Researching insurance options…</p>}</div>)}
+                            {insuranceData[trip.id] ? (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {insuranceData[trip.id].items.map((item, i) => (
+                                  <div key={i} className="rounded-xl border border-border bg-surface p-4 flex gap-3">
+                                    <span className="text-2xl shrink-0">{item.icon}</span>
+                                    <div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-0.5">{item.category}</p><p className="text-sm font-semibold text-foreground mb-1">{item.title}</p><p className="text-xs text-muted-foreground leading-relaxed">{item.details}</p></div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : generatingInsuranceId !== trip.id ? (
+                              <div className="text-center py-6"><p className="text-sm text-muted-foreground mb-4">Recommended coverage types, what to look for, and approx costs for your trip.</p><Button size="sm" onClick={() => generateInsurance(trip)}>🛡️ Get Insurance Guide</Button></div>
+                            ) : null}
+                          </>
+                        )}
+
+                        {/* Timeline */}
+                        {tab === "timeline" && (
+                          <>
+                            <div className="flex items-center justify-between mb-4">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Trip Timeline</p>
+                              {timelineData[trip.id] && <button onClick={() => { setTimelineData(prev => { const n = { ...prev }; delete n[trip.id]; return n; }); generateTimeline(trip); }} disabled={generatingTimelineId !== null} className="text-xs font-medium text-brand hover:text-brand/80 disabled:opacity-50">🔄 Refresh</button>}
+                            </div>
+                            {generatingTimelineId === trip.id && <div className="flex items-center gap-2 text-sm text-muted-foreground py-6 justify-center"><span className="animate-spin">🌀</span> Parsing your plan…</div>}
+                            {timelineData[trip.id] ? (
+                              <DayTimeline days={timelineData[trip.id]} />
+                            ) : generatingTimelineId !== trip.id ? (
+                              <div className="text-center py-6">
+                                <p className="text-sm text-muted-foreground mb-4">{trip.aiResult ? "Auto-generate a visual day-by-day timeline from your AI plan." : "Generate an AI plan first, then come back here."}</p>
+                                {trip.aiResult && <Button size="sm" onClick={() => generateTimeline(trip)}>📅 Generate Timeline</Button>}
                               </div>
                             ) : null}
                           </>
