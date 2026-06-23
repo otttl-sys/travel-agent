@@ -133,15 +133,19 @@ export default async function ExplorePage() {
                   : trip.destination;
                 const photo = getPhoto(trip.destination);
                 const budgetLabel = getBudgetLabel(trip.cards);
+                const cloneParams = new URLSearchParams({
+                  destination: trip.destination,
+                  travelers: String(trip.travelers ?? 2),
+                  ...(trip.budget ? { budget: String(trip.budget) } : {}),
+                }).toString();
 
                 return (
-                  <Link
+                  <div
                     key={trip.id}
-                    href={`/trip/${trip.id}`}
                     className="group flex flex-col rounded-2xl border border-border overflow-hidden bg-surface hover:border-foreground/30 transition-colors"
                   >
                     {/* Photo */}
-                    <div className="relative h-44 overflow-hidden bg-muted">
+                    <Link href={`/trip/${trip.id}`} className="block relative h-44 overflow-hidden bg-muted">
                       <Image
                         src={`https://images.unsplash.com/${photo}?auto=format&fit=crop&w=600&q=75`}
                         alt={dest}
@@ -149,13 +153,15 @@ export default async function ExplorePage() {
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       />
-                    </div>
+                    </Link>
 
                     {/* Content */}
                     <div className="p-5 flex flex-col gap-2 flex-1">
-                      <h2 className="font-heading font-extrabold text-lg tracking-[-0.02em] text-foreground line-clamp-1">
-                        {dest}
-                      </h2>
+                      <Link href={`/trip/${trip.id}`}>
+                        <h2 className="font-heading font-extrabold text-lg tracking-[-0.02em] text-foreground line-clamp-1 hover:text-brand transition-colors">
+                          {dest}
+                        </h2>
+                      </Link>
 
                       <div className="flex flex-wrap gap-1.5 text-xs text-muted-foreground">
                         {trip.start_date && (
@@ -177,8 +183,14 @@ export default async function ExplorePage() {
                           </Badge>
                         )}
                       </div>
+
+                      <Link href={`/plan?${cloneParams}`} className="block mt-2">
+                        <Button variant="outline" size="sm" className="w-full text-xs">
+                          Plan similar trip →
+                        </Button>
+                      </Link>
                     </div>
-                  </Link>
+                  </div>
                 );
               })}
             </div>

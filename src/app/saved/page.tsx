@@ -21,7 +21,7 @@ import { TripMap } from "@/components/trip-map";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type TabId = "ideas" | "plan" | "concierge" | "day-plan" | "briefing" | "events" | "visa" | "budget" | "weather";
+type TabId = "ideas" | "plan" | "concierge" | "day-plan" | "briefing" | "events" | "visa" | "budget" | "weather" | "culture";
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: "ideas",     label: "Ideas",     icon: "💡" },
@@ -33,7 +33,20 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: "visa",      label: "Visa",      icon: "🛂" },
   { id: "budget",    label: "Budget",    icon: "💶" },
   { id: "weather",   label: "Weather",   icon: "🌤️" },
+  { id: "culture",   label: "Culture",   icon: "🌍" },
 ];
+
+type CultureItem = {
+  icon: string;
+  category: string;
+  title: string;
+  details: string;
+};
+
+type CultureResult = {
+  destination: string;
+  items: CultureItem[];
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -97,6 +110,10 @@ export default function SavedPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [profilePassport, setProfilePassport] = useState<string>("");
 
+  const [cultureData, setCultureData] = useState<Record<string, CultureResult>>({});
+  const [generatingCultureId, setGeneratingCultureId] = useState<string | null>(null);
+  const [cultureTraces, setCultureTraces] = useState<Record<string, TraceEntry[]>>({});
+
   useEffect(() => {
     getSavedTrips().then(loaded => {
       setTrips(loaded);
@@ -142,6 +159,7 @@ export default function SavedPage() {
       case "visa":      return !!trip.visa;
       case "budget":    return !!trip.budgetResult;
       case "weather":   return !!weatherData[trip.id];
+      case "culture":   return !!cultureData[trip.id];
     }
   }
 
@@ -520,6 +538,39 @@ export default function SavedPage() {
     } catch { /* non-fatal */ } finally {
       setGeneratingVisaId(null);
       setVisaTraces(prev => ({ ...prev, [trip.id]: [] }));
+    }
+  }
+
+  async function generateCulture(trip: SavedTrip) {
+    if (generatingCultureId) return;
+    setGeneratingCultureId(trip.id);
+    setCultureTraces(prev => ({ ...prev, [trip.id]: [] }));
+    const dest = trip.isMultiCity ? trip.cities[0] : trip.destination;
+    try {
+      const res = await fetch("/api/culture", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ destination: dest }) });
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) return;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        for (const line of decoder.decode(value).split("\n").filter(l => l.startsWith("data: "))) {
+          const data = line.replace("data: ", "");
+          if (data === "[DONE]") break;
+          let parsed: { type: string; id?: string; tool?: string; input?: Record<string, unknown>; iteration?: number; items?: CultureItem[]; message?: string };
+          try { parsed = JSON.parse(data); } catch { continue; }
+          if (parsed.type === "tool_call" && parsed.id && parsed.tool)
+            setCultureTraces(prev => ({ ...prev, [trip.id]: [...(prev[trip.id] ?? []), { id: parsed.id!, iteration: parsed.iteration ?? 1, tool: parsed.tool!, input: parsed.input ?? {}, status: "running" }] }));
+          if (parsed.type === "tool_done" && parsed.id)
+            setCultureTraces(prev => ({ ...prev, [trip.id]: (prev[trip.id] ?? []).map(e => e.id === parsed.id ? { ...e, status: "done" } : e) }));
+          if (parsed.type === "culture" && parsed.items) {
+            setCultureData(prev => ({ ...prev, [trip.id]: { destination: dest, items: parsed.items! } }));
+          }
+        }
+      }
+    } catch { /* non-fatal */ } finally {
+      setGeneratingCultureId(null);
+      setCultureTraces(prev => ({ ...prev, [trip.id]: [] }));
     }
   }
 
@@ -914,6 +965,43 @@ export default function SavedPage() {
                               <p className="text-sm text-red-500 text-center py-4">{weatherError[trip.id]}</p>
                             )}
                             {weatherData[trip.id] && <WeatherForecast result={weatherData[trip.id]} />}
+                          </>
+                        )}
+
+                        {/* Culture */}
+                        {tab === "culture" && (
+                          <>
+                            <div className="flex items-center justify-between mb-4">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Culture &amp; Etiquette</p>
+                              {cultureData[trip.id] && (
+                                <button onClick={() => { setCultureData(prev => { const next = { ...prev }; delete next[trip.id]; return next; }); generateCulture(trip); }} disabled={generatingCultureId !== null} className="text-xs font-medium text-brand hover:text-brand/80 disabled:opacity-50">🔄 Refresh</button>
+                              )}
+                            </div>
+                            {generatingCultureId === trip.id && (
+                              <div className="mb-4">
+                                <AgentTrace trace={cultureTraces[trip.id] ?? []} />
+                                {(cultureTraces[trip.id]?.length ?? 0) === 0 && <p className="text-sm text-muted-foreground">Researching local customs…</p>}
+                              </div>
+                            )}
+                            {cultureData[trip.id] ? (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {cultureData[trip.id].items.map((item, i) => (
+                                  <div key={i} className="rounded-xl border border-border bg-surface p-4 flex gap-3">
+                                    <span className="text-2xl shrink-0">{item.icon}</span>
+                                    <div className="min-w-0">
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-0.5">{item.category}</p>
+                                      <p className="text-sm font-semibold text-foreground mb-1">{item.title}</p>
+                                      <p className="text-xs text-muted-foreground leading-relaxed">{item.details}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : generatingCultureId !== trip.id ? (
+                              <div className="text-center py-6">
+                                <p className="text-sm text-muted-foreground mb-4">Key phrases, social etiquette, tipping rules, and dining customs for your destination.</p>
+                                <Button size="sm" onClick={() => generateCulture(trip)}>🌍 Get Culture Guide</Button>
+                              </div>
+                            ) : null}
                           </>
                         )}
 

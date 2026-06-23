@@ -23,6 +23,12 @@ export const metadata: Metadata = {
     url: "https://vagamundo.io",
     siteName: "Vagamundo",
   },
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Vagamundo",
+  },
 };
 
 export default function RootLayout({
@@ -32,6 +38,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${geist.variable} ${inter.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <meta name="theme-color" content="#1a1a1a" />
+        <meta name="mobile-web-app-capable" content="yes" />
+      </head>
       <body className="min-h-full flex flex-col">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}
