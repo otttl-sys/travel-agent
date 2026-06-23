@@ -145,6 +145,17 @@ function PlanContent() {
   useEffect(() => { lsSave("vagamundo_travelers", form.travelers); }, [form.travelers]);
   useEffect(() => { lsSave("vagamundo_interests", form.interests); }, [form.interests]);
 
+  useEffect(() => {
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then(({ profile }) => {
+        if (profile?.home_city) {
+          setForm((f) => ({ ...f, origin: f.origin || profile.home_city }));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   function nextStep() { if (step < TOTAL_STEPS) setStep((s) => s + 1); }
   function prevStep() { if (step > 1) setStep((s) => s - 1); }
 

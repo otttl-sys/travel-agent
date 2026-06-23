@@ -95,6 +95,7 @@ export default function SavedPage() {
   const [nearbyPlaces, setNearbyPlaces] = useState<Record<string, NearbyPlace[]>>({});
   const [publicState, setPublicState] = useState<Record<string, boolean>>({});
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [profilePassport, setProfilePassport] = useState<string>("");
 
   useEffect(() => {
     getSavedTrips().then(loaded => {
@@ -108,6 +109,10 @@ export default function SavedPage() {
       setNearbyPlaces(prev => ({ ...prev, ...places }));
       setPublicState(pub);
     });
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then(({ profile }) => { if (profile?.passport_country) setProfilePassport(profile.passport_country); })
+      .catch(() => {});
   }, []);
 
   // Auto-fetch weather when weather tab is opened
@@ -852,8 +857,8 @@ export default function SavedPage() {
                               <div className="space-y-4 max-w-sm py-2">
                                 <p className="text-sm text-muted-foreground">Check visa requirements, health rules, and entry conditions for your passport.</p>
                                 <div className="flex gap-2">
-                                  <input type="text" placeholder="Your passport (e.g. German, US, UK)" value={visaPassport[trip.id] ?? ""} onChange={(e) => setVisaPassport(prev => ({ ...prev, [trip.id]: e.target.value }))} className="flex-1 rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40" />
-                                  <Button size="sm" onClick={() => generateVisa(trip, visaPassport[trip.id] || "German")} disabled={generatingVisaId !== null}>Check</Button>
+                                  <input type="text" placeholder={profilePassport ? `Your passport (e.g. ${profilePassport})` : "Your passport (e.g. German, US, UK)"} value={visaPassport[trip.id] ?? ""} onChange={(e) => setVisaPassport(prev => ({ ...prev, [trip.id]: e.target.value }))} className="flex-1 rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40" />
+                                  <Button size="sm" onClick={() => generateVisa(trip, visaPassport[trip.id] || profilePassport || "German")} disabled={generatingVisaId !== null}>Check</Button>
                                 </div>
                               </div>
                             ) : null}
