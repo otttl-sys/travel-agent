@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -25,9 +26,16 @@ export async function GET(request: NextRequest) {
         },
       }
     );
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+    const { data: sessionData, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error && sessionData.user) {
+      // First-time login check: no profile → onboarding, existing profile → next
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("user_id")
+        .eq("user_id", sessionData.user.id)
+        .maybeSingle();
+
+      return NextResponse.redirect(`${origin}${profile ? next : "/onboarding"}`);
     }
   }
 

@@ -238,6 +238,17 @@ export default async function TripPage({ params }: Props) {
                 </div>
               )}
 
+              {/* Calendar Export */}
+              <a href={`/api/trips/${trip.id}/calendar`} download className="block">
+                <div className="bg-surface rounded-2xl border border-border p-4 flex items-center gap-3 hover:border-foreground/30 transition-colors cursor-pointer">
+                  <span className="text-2xl">📅</span>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Export to Calendar</p>
+                    <p className="text-xs text-muted-foreground">Download .ics for Google / Apple Calendar</p>
+                  </div>
+                </div>
+              </a>
+
               {/* CTA */}
               <div className="bg-surface rounded-2xl border border-border p-5 text-center">
                 <p className="text-sm font-extrabold text-foreground mb-1">Plan your own trip</p>

@@ -33,6 +33,7 @@ export default function Home() {
 
           <div className="hidden md:flex items-center gap-8">
             <Link href="/discover" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Discover</Link>
+            <Link href="/explore" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Explore</Link>
             <Link href="/research" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Research</Link>
             <Link href="/budget" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Budget</Link>
             <Link href="/disruption" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Disruption</Link>
@@ -76,6 +77,7 @@ export default function Home() {
           <div className="md:hidden absolute top-full left-0 right-0 bg-background border-b border-border shadow-sm z-50 px-6 py-5 flex flex-col gap-4">
             <Link href="/chat" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">Chat with AI</Link>
             <Link href="/discover" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">Discover</Link>
+            <Link href="/explore" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">Explore</Link>
             <Link href="/research" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">Research</Link>
             <Link href="/budget" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">Budget</Link>
             <Link href="/disruption" onClick={() => setMobileMenuOpen(false)} className="text-xs uppercase tracking-[0.18em] text-foreground">Disruption</Link>

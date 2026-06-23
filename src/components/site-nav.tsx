@@ -11,6 +11,7 @@ const NAV_LINKS = [
   { href: "/plan",       label: "Plan a trip" },
   { href: "/chat",       label: "Chat with AI" },
   { href: "/discover",   label: "Discover" },
+  { href: "/explore",    label: "Explore" },
   { href: "/research",   label: "Research" },
   { href: "/budget",     label: "Budget" },
   { href: "/disruption", label: "Disruption" },

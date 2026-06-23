@@ -17,6 +17,7 @@ const UPDATABLE_FIELDS = [
   "budget_result",
   "conversations",
   "nearby_places",
+  "is_public",
 ] as const;
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

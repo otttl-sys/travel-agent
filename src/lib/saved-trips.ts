@@ -70,6 +70,7 @@ export type SavedTrip = {
   nearbyPlaces?: NearbyPlace[];
   baselineFlights?: number | null;
   baselineHotel?: number | null;
+  isPublic?: boolean;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -96,6 +97,7 @@ function fromRow(row: Record<string, any>): SavedTrip {
     nearbyPlaces: row.nearby_places ?? undefined,
     baselineFlights: row.baseline_flights ?? null,
     baselineHotel: row.baseline_hotel ?? null,
+    isPublic: row.is_public ?? false,
   };
 }
 
@@ -203,6 +205,10 @@ export async function updateConversations(id: string, conversations: Conversatio
 
 export async function updateNearbyPlaces(id: string, nearbyPlaces: NearbyPlace[]): Promise<void> {
   await patchTrip(id, { nearby_places: nearbyPlaces });
+}
+
+export async function updateTripVisibility(id: string, isPublic: boolean): Promise<void> {
+  await patchTrip(id, { is_public: isPublic });
 }
 
 async function patchTrip(id: string, fields: Record<string, unknown>): Promise<void> {

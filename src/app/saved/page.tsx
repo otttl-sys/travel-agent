@@ -7,7 +7,7 @@ import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SiteNav } from "@/components/site-nav";
-import { getSavedTrips, deleteTrip, updatePriceWatch, updateDayPlan, updateBriefing, updateEvents, updateVisa, updateBudget, updateConversations, updateNearbyPlaces, type SavedTrip, type PriceWatch, type DayPlan, type Briefing, type EventsResult, type VisaResult, type BudgetResult, type ConversationThread } from "@/lib/saved-trips";
+import { getSavedTrips, deleteTrip, updatePriceWatch, updateDayPlan, updateBriefing, updateEvents, updateVisa, updateBudget, updateConversations, updateNearbyPlaces, updateTripVisibility, type SavedTrip, type PriceWatch, type DayPlan, type Briefing, type EventsResult, type VisaResult, type BudgetResult, type ConversationThread } from "@/lib/saved-trips";
 import { AgentTrace, type TraceEntry } from "@/components/agent-trace";
 import { ConciergeChat, type ChatMessage } from "@/components/concierge-chat";
 import { DayTimeline, type DaySchedule } from "@/components/day-timeline";
@@ -93,15 +93,20 @@ export default function SavedPage() {
   const [weatherError, setWeatherError] = useState<Record<string, string>>({});
 
   const [nearbyPlaces, setNearbyPlaces] = useState<Record<string, NearbyPlace[]>>({});
+  const [publicState, setPublicState] = useState<Record<string, boolean>>({});
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
     getSavedTrips().then(loaded => {
       setTrips(loaded);
       const places: Record<string, NearbyPlace[]> = {};
+      const pub: Record<string, boolean> = {};
       for (const trip of loaded) {
         if (trip.nearbyPlaces?.length) places[trip.id] = trip.nearbyPlaces;
+        pub[trip.id] = trip.isPublic ?? false;
       }
       setNearbyPlaces(prev => ({ ...prev, ...places }));
+      setPublicState(pub);
     });
   }, []);
 
@@ -166,6 +171,15 @@ export default function SavedPage() {
     void deleteTrip(id);
     setTrips(prev => prev.filter(t => t.id !== id));
     setActiveTab(prev => { const next = { ...prev }; delete next[id]; return next; });
+  }
+
+  async function handleTogglePublic(id: string) {
+    if (togglingId) return;
+    setTogglingId(id);
+    const next = !publicState[id];
+    setPublicState(prev => ({ ...prev, [id]: next }));
+    await updateTripVisibility(id, next);
+    setTogglingId(null);
   }
 
   async function checkPrice(trip: SavedTrip) {
@@ -571,6 +585,20 @@ export default function SavedPage() {
                             className={copiedId === trip.id ? "text-green-600 border-green-200 bg-green-50" : ""}
                           >
                             {copiedId === trip.id ? "✓ Copied!" : "Share"}
+                          </Button>
+                          <a href={`/api/trips/${trip.id}/calendar`} download>
+                            <Button variant="outline" size="sm">
+                              📅 Calendar
+                            </Button>
+                          </a>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={togglingId === trip.id}
+                            onClick={() => handleTogglePublic(trip.id)}
+                            className={publicState[trip.id] ? "text-brand border-brand/40 bg-brand/5" : ""}
+                          >
+                            {publicState[trip.id] ? "🌍 Public" : "Make public"}
                           </Button>
                           <button onClick={() => handleDelete(trip.id)} className="text-muted-foreground/60 hover:text-red-400 transition-colors text-xl leading-none p-1" aria-label="Delete trip">×</button>
                         </div>
