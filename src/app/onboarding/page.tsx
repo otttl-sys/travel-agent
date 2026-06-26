@@ -44,14 +44,14 @@ const TRAVEL_STYLES: { id: string; label: string }[] = [
 ];
 
 const INTERESTS: { id: string; label: string; Icon: LucideIcon }[] = [
-  { id: "culture",   label: "Culture & History",  Icon: Compass },
-  { id: "nature",    label: "Nature & Mountains", Icon: TreePine },
-  { id: "beach",     label: "Beach & Sea",        Icon: Waves },
-  { id: "city",      label: "City Trips",         Icon: Building2 },
-  { id: "adventure", label: "Adventure",          Icon: Tent },
-  { id: "food",      label: "Food & Drink",       Icon: UtensilsCrossed },
-  { id: "luxury",    label: "Luxury",             Icon: Crown },
-  { id: "wellness",  label: "Wellness & Spa",     Icon: Wind },
+  { id: "culture",   label: "Culture",     Icon: Compass },
+  { id: "nature",    label: "Nature",      Icon: TreePine },
+  { id: "beach",     label: "Beach & Sea", Icon: Waves },
+  { id: "city",      label: "City Trips",  Icon: Building2 },
+  { id: "adventure", label: "Adventure",   Icon: Tent },
+  { id: "food",      label: "Food & Drink",Icon: UtensilsCrossed },
+  { id: "luxury",    label: "Luxury",      Icon: Crown },
+  { id: "wellness",  label: "Wellness",    Icon: Wind },
 ];
 
 const STEPS = [
