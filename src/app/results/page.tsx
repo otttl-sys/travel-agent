@@ -5,7 +5,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Bot, Compass, WifiOff, AlertTriangle, Plane, Hotel, Target, Map, Coins, BedDouble, Bus, UtensilsCrossed, Home, Ticket, ExternalLink, MapPin, Mic, Square, CircleDollarSign, Landmark, Zap, Waves, Users, Sparkles, ChevronDown, type LucideIcon } from "lucide-react";
+import Image from "next/image";
+import { Bot, Compass, WifiOff, AlertTriangle, Plane, Hotel, Target, Map, Coins, BedDouble, Bus, UtensilsCrossed, Home, Ticket, ExternalLink, MapPin, Mic, Square, CircleDollarSign, Landmark, Zap, Waves, Users, Sparkles, ChevronDown, CalendarDays, ShieldCheck, CloudSun, Calendar, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +16,69 @@ import { saveTrip } from "@/lib/saved-trips";
 import { SiteNav } from "@/components/site-nav";
 import { AgentTrace, type TraceEntry } from "@/components/agent-trace";
 import { SafetyPanel } from "@/components/safety-panel";
+
+// ─── Destination photos ───────────────────────────────────────────────────────
+const DESTINATION_PHOTOS: [string[], string][] = [
+  [["japan", "tokyo", "kyoto", "osaka"],         "photo-1540959733332-eab4deabeeaf"],
+  [["portugal", "lisbon", "porto"],              "photo-1555881400-74d7acaacd8b"],
+  [["morocco", "marrakech"],                     "photo-1539020140153-e479b8c22e70"],
+  [["bali", "indonesia"],                        "photo-1537996194471-e657df975ab4"],
+  [["greece", "santorini", "athens", "mykonos"], "photo-1533105079780-92b9be482077"],
+  [["italy", "rome", "venice", "florence"],      "photo-1523906834658-6e24ef2386f9"],
+  [["thailand", "bangkok", "phuket"],            "photo-1528360983277-13d401cdc186"],
+  [["france", "paris"],                          "photo-1502602898657-3e91760cbb34"],
+  [["spain", "barcelona", "madrid"],             "photo-1539037116277-4db20889f2d4"],
+  [["colombia", "cartagena", "medellin"],        "photo-1566438480900-0609be27a4be"],
+  [["brazil", "rio"],                            "photo-1483729558449-99ef09a8c325"],
+  [["kenya", "safari", "nairobi"],               "photo-1516026672322-bc52d61a55d5"],
+  [["vietnam", "hanoi"],                         "photo-1559592413-7cec4d0cae2b"],
+  [["dubai", "uae"],                             "photo-1512453979798-5ea266f8880c"],
+  [["canada", "toronto", "vancouver"],           "photo-1534430480872-3498386e7856"],
+  [["australia", "sydney", "melbourne"],         "photo-1523482580672-f109ba8cb9be"],
+  [["iceland", "reykjavik"],                     "photo-1504893524553-b855bce32c67"],
+  [["maldives"],                                 "photo-1514282401047-d79a71a590e8"],
+  [["peru", "machu picchu"],                     "photo-1526392060635-9d6019884377"],
+  [["mexico"],                                   "photo-1518638150340-f706e86654de"],
+  [["india", "delhi", "mumbai"],                 "photo-1506905925346-21bda4d32df4"],
+  [["turkey", "istanbul"],                       "photo-1524231757912-21f4fe3a7200"],
+  [["new zealand"],                              "photo-1469521669194-babb45599def"],
+  [["suriname", "paramaribo"],                   "photo-1441974231531-c6227db76b6e"],
+  [["costa rica"],                               "photo-1558618666-fcd25c85cd64"],
+  [["norway", "oslo"],                           "photo-1469854523086-cc02fe5d8800"],
+  [["switzerland"],                              "photo-1530122037265-a5f1f91d3b99"],
+  [["egypt", "cairo"],                           "photo-1539768942893-daf53e448371"],
+  [["vietnam"],                                  "photo-1528702748617-c64d49f918af"],
+  [["cambodia", "angkor"],                       "photo-1538845481880-f44dfb403a6d"],
+];
+const FALLBACK_PHOTO = "photo-1488646953014-85cb44e25828";
+
+function getDestinationPhoto(dest: string): string {
+  const lower = dest.toLowerCase();
+  for (const [keywords, id] of DESTINATION_PHOTOS) {
+    if (keywords.some((k) => lower.includes(k))) return id;
+  }
+  return FALLBACK_PHOTO;
+}
+
+// ─── Section visual config ─────────────────────────────────────────────────────
+type SectionStyle = { icon: LucideIcon; accent: string; photoId: string | null };
+
+function getSectionStyle(heading: string): SectionStyle {
+  const h = heading.toLowerCase();
+  if (/flight|flug/.test(h))
+    return { icon: Plane,        accent: "border-l-sky-400",     photoId: "photo-1436491865332-7a61a109cc05" };
+  if (/accommodation|hotel|unterkunft|lodge|stay/.test(h))
+    return { icon: Hotel,        accent: "border-l-emerald-400",  photoId: "photo-1566073771259-6a8506099945" };
+  if (/itinerary|week|day|programme|tage|schedule/.test(h))
+    return { icon: CalendarDays, accent: "border-l-violet-400",   photoId: null }; // uses destination photo
+  if (/budget|cost|price|kosten/.test(h))
+    return { icon: Coins,        accent: "border-l-amber-400",    photoId: "photo-1554224155-8d04cb21cd6c" };
+  if (/practical|visa|health|info|packing|entry|safety/.test(h))
+    return { icon: ShieldCheck,  accent: "border-l-rose-400",     photoId: "photo-1507608616759-54f48f0af0ee" };
+  if (/season|weather|climate|outlook|when/.test(h))
+    return { icon: CloudSun,     accent: "border-l-blue-400",     photoId: "photo-1504608524841-42584120d693" };
+  return       { icon: MapPin,   accent: "border-l-brand",        photoId: null };
+}
 
 type Trip = {
   id: string;
@@ -420,7 +484,7 @@ function ResultsContent() {
             router.push(`/plan?${params.toString()}`);
           }}
         >
-          ✏️ Edit Search
+          Edit Search
         </Button>
         <Button variant="outline" size="sm" onClick={() => router.push("/plan")} className="ml-1">
           + New
@@ -429,84 +493,125 @@ function ResultsContent() {
 
       <main className="flex-1 px-4 py-6 sm:px-6 sm:py-12">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="mb-6 sm:mb-10">
-            <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
-              <Badge variant="secondary" className="text-xs flex items-center gap-1">
-                {isMultiCity
-                ? `Multi-City Tour · ${cityNames.length} Stationen`
-                : searchParams.get("adventure") === "1"
-                  ? <><Zap size={11} strokeWidth={1.5} /> Adventure Mode · 5 off-beat options</>
-                  : searchParams.get("interests")?.split(",").includes("family")
-                    ? <><Users size={11} strokeWidth={1.5} /> Family Mode · kid-friendly options</>
-                    : dynamicCards
-                      ? `AI created ${dynamicCards.length} trip options for you`
-                      : "AI is creating your personalised trip options"}
-              </Badge>
-              {aiResult && (
-                <div className="flex items-center gap-2 no-print">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSave}
-                    disabled={saved}
-                    className={saved ? "text-green-600 border-green-200 bg-green-50" : ""}
-                  >
-                    {saved ? "✓ Saved" : "Save Trip"}
-                  </Button>
-                  {savedId && (
+          {/* ── Hero image banner ── */}
+          {(() => {
+            const heroName = isMultiCity ? cityNames[0] : destination;
+            const photoId = getDestinationPhoto(heroName);
+            const startDate = searchParams.get("startDate") || "";
+            const endDate   = searchParams.get("endDate")   || "";
+            const travelers = searchParams.get("travelers")  || "2";
+            const nights = startDate && endDate
+              ? Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000))
+              : null;
+            const titleText = isMultiCity ? cityNames.join(" → ") : (destination || "Your trip");
+            return (
+              <div className="relative rounded-2xl overflow-hidden mb-6 sm:mb-8 h-52 sm:h-72">
+                <Image
+                  src={`https://images.unsplash.com/${photoId}?w=1200&q=80&auto=format&fit=crop`}
+                  alt={titleText}
+                  fill
+                  className="object-cover"
+                  priority
+                  unoptimized
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/20" />
+
+                {/* Top-right action buttons */}
+                {aiResult && (
+                  <div className="absolute top-4 right-4 flex items-center gap-2 no-print">
                     <Button
-                      variant="outline"
                       size="sm"
-                      onClick={handleCopyShareLink}
-                      className={copied ? "text-green-600 border-green-200 bg-green-50" : ""}
+                      onClick={handleSave}
+                      disabled={saved}
+                      className={`backdrop-blur-sm ${saved ? "bg-green-600 text-white border-0" : "bg-white/20 text-white border border-white/30 hover:bg-white/30"}`}
                     >
-                      {copied ? "✓ Copied!" : "Share Link"}
+                      {saved ? "✓ Saved" : "Save trip"}
                     </Button>
-                  )}
-                  <Button variant="outline" size="sm" onClick={() => window.print()}>
-                    PDF
-                  </Button>
+                    {savedId && (
+                      <Button
+                        size="sm"
+                        onClick={handleCopyShareLink}
+                        className={`backdrop-blur-sm ${copied ? "bg-green-600 text-white border-0" : "bg-white/20 text-white border border-white/30 hover:bg-white/30"}`}
+                      >
+                        {copied ? "✓ Copied!" : "Share"}
+                      </Button>
+                    )}
+                    <Button size="sm" onClick={() => window.print()} className="bg-white/20 text-white border border-white/30 hover:bg-white/30 backdrop-blur-sm">
+                      PDF
+                    </Button>
+                  </div>
+                )}
+
+                {/* Bottom: title + stats */}
+                <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-7">
+                  <h1 className="text-white text-2xl sm:text-4xl font-extrabold tracking-[-0.03em] leading-tight mb-2 drop-shadow">
+                    {titleText}
+                  </h1>
+                  <div className="flex flex-wrap gap-2">
+                    {nights && (
+                      <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1.5 rounded-full">
+                        <Calendar size={11} strokeWidth={1.5} />
+                        {nights} {nights === 1 ? "night" : "nights"}
+                      </span>
+                    )}
+                    {startDate && (
+                      <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1.5 rounded-full">
+                        <CalendarDays size={11} strokeWidth={1.5} />
+                        {new Date(startDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                        {endDate ? ` → ${new Date(endDate).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` : ""}
+                      </span>
+                    )}
+                    <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1.5 rounded-full">
+                      <Users size={11} strokeWidth={1.5} />
+                      {travelers} {Number(travelers) === 1 ? "traveler" : "travelers"}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1.5 rounded-full">
+                      <Coins size={11} strokeWidth={1.5} />
+                      €{budget.toLocaleString()} / person
+                    </span>
+                    {isMultiCity && (
+                      <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1.5 rounded-full">
+                        <MapPin size={11} strokeWidth={1.5} />
+                        {cityNames.length} destinations
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* ── Live price chips ── */}
+          {(flightsData || hotelsData || activitiesData) && (
+            <div className="flex flex-wrap gap-2 mb-6">
+              {flightsData && (
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800/50 text-xs font-semibold text-sky-700 dark:text-sky-400">
+                  <Plane size={12} strokeWidth={1.5} className="shrink-0" />
+                  <span>{flightsData.originCode} → {flightsData.destCode} · {flightsData.priceRange}</span>
+                  <span className="opacity-60 font-normal">live</span>
                 </div>
               )}
+              {hotelsData && (
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                  <Hotel size={12} strokeWidth={1.5} className="shrink-0" />
+                  <span>{hotelsData.priceRange} · {hotelsData.nights} nights</span>
+                  <span className="opacity-60 font-normal">live</span>
+                </div>
+              )}
+              {activitiesData && (
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800/50 text-xs font-semibold text-violet-700 dark:text-violet-400">
+                  <Target size={12} strokeWidth={1.5} className="shrink-0" />
+                  <span>{activitiesData.count} activities · {activitiesData.priceRange}</span>
+                  <span className="opacity-60 font-normal">live</span>
+                </div>
+              )}
+              {(searchParams.get("adventure") === "1") && (
+                <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                  <Zap size={11} strokeWidth={1.5} /> Adventure Mode
+                </Badge>
+              )}
             </div>
-            <h1 className="text-2xl sm:text-headline font-extrabold tracking-[-0.03em] text-foreground break-words">
-              {isMultiCity
-                ? cityNames.join(" → ")
-                : destination ? `Your trip to ${destination}` : "Your trip options"}
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              {searchParams.get("travelers") || "2"} Personen ·{" "}
-              {searchParams.get("startDate") || "Flexibles Datum"} ·{" "}
-              Budget €{budget.toLocaleString()} pro Person
-              {isMultiCity && ` · ${cityDaysArr.reduce((s, d) => s + d, 0)} Tage gesamt`}
-            </p>
-            {(flightsData || hotelsData || activitiesData) && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {flightsData && (
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800/50 text-xs font-semibold text-sky-700 dark:text-sky-400">
-                    <Plane size={12} strokeWidth={1.5} className="shrink-0" />
-                    <span>{flightsData.originCode} → {flightsData.destCode} · {flightsData.priceRange}</span>
-                    <span className="opacity-60 font-normal">live</span>
-                  </div>
-                )}
-                {hotelsData && (
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-                    <Hotel size={12} strokeWidth={1.5} className="shrink-0" />
-                    <span>{hotelsData.priceRange} · {hotelsData.nights} nights</span>
-                    <span className="opacity-60 font-normal">live</span>
-                  </div>
-                )}
-                {activitiesData && (
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800/50 text-xs font-semibold text-violet-700 dark:text-violet-400">
-                    <Target size={12} strokeWidth={1.5} className="shrink-0" />
-                    <span>{activitiesData.count} activities · {activitiesData.priceRange}</span>
-                    <span className="opacity-60 font-normal">live</span>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          )}
 
           {/* Multi-City Route Visual */}
           {isMultiCity && (
@@ -547,19 +652,18 @@ function ResultsContent() {
             <div className="flex-1 min-w-0">
               {/* AI Result */}
               {aiResult && (
-                <div className="bg-surface rounded-2xl border border-border p-4 sm:p-8 mb-4 sm:mb-6" style={{ overflowAnchor: "none" }}>
-                  <div className="flex items-center gap-2 mb-5">
-                    <div className="w-8 h-8 rounded-md bg-foreground flex items-center justify-center shrink-0">
-                      <Compass size={14} strokeWidth={1.5} className="text-background" />
-                    </div>
-                    <h3 className="font-semibold text-foreground">Your personalised travel plan by Vagamundo</h3>
-                    {refinementCount > 0 && (
-                      <Badge variant="secondary" className="text-xs ml-auto flex items-center gap-1">
+                <div className="mb-4 sm:mb-6" style={{ overflowAnchor: "none" }}>
+                  {refinementCount > 0 && (
+                    <div className="flex items-center gap-2 mb-3">
+                      <Badge variant="secondary" className="text-xs flex items-center gap-1">
                         <Sparkles size={10} strokeWidth={1.5} /> Refined ×{refinementCount}
                       </Badge>
-                    )}
-                  </div>
-                  <CollapsiblePlanContent text={aiResult} />
+                    </div>
+                  )}
+                  <CollapsiblePlanContent
+                    text={aiResult}
+                    destination={isMultiCity ? cityNames[0] : destination}
+                  />
                 </div>
               )}
 
@@ -932,9 +1036,11 @@ function splitPlanSections(text: string): { heading: string; body: string }[] {
   }).filter((s) => s.heading || s.body);
 }
 
-function CollapsiblePlanContent({ text }: { text: string }) {
+function CollapsiblePlanContent({ text, destination }: { text: string; destination: string }) {
   const sections = useMemo(() => splitPlanSections(text), [text]);
+  // Start with everything expanded
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
+
   function toggle(i: number) {
     setCollapsed((prev) => {
       const next = new Set(prev);
@@ -942,28 +1048,74 @@ function CollapsiblePlanContent({ text }: { text: string }) {
       return next;
     });
   }
+
   return (
-    <div>
-      {sections.map((section, i) => (
-        <div key={i}>
-          {section.heading && (
-            <button
-              onClick={() => toggle(i)}
-              className="w-full flex items-center justify-between gap-2 text-left px-3 py-2.5 bg-muted rounded-lg border-l-4 border-foreground hover:bg-muted/80 transition-colors mt-6 mb-1"
-            >
-              <span className="text-sm font-bold text-foreground">{section.heading}</span>
-              <ChevronDown size={14} strokeWidth={2} className={`shrink-0 text-muted-foreground transition-transform ${collapsed.has(i) ? "-rotate-90" : ""}`} />
-            </button>
-          )}
-          {!collapsed.has(i) && section.body && (
-            <div className="prose prose-sm max-w-none text-foreground leading-relaxed mt-3">
+    <div className="space-y-3">
+      {sections.map((section, i) => {
+        if (!section.heading && !section.body) return null;
+
+        // The leading body (before first ## ) renders without a card header
+        if (!section.heading) {
+          return (
+            <div key={i} className="prose prose-sm max-w-none text-foreground leading-relaxed px-1">
               <ReactMarkdown remarkPlugins={[remarkGfm]} components={PLAN_MARKDOWN_COMPONENTS}>
                 {section.body}
               </ReactMarkdown>
             </div>
-          )}
-        </div>
-      ))}
+          );
+        }
+
+        const style = getSectionStyle(section.heading);
+        const isCollapsed = collapsed.has(i);
+        // Pick photo: for itinerary sections use destination photo; otherwise use section photo
+        const isItinerary = /itinerary|week|day|programme|tage/i.test(section.heading);
+        const photoId = isItinerary ? getDestinationPhoto(destination) : style.photoId;
+
+        return (
+          <div key={i} className={`rounded-2xl border border-border overflow-hidden border-l-4 ${style.accent}`}>
+            {/* Section photo strip */}
+            {photoId && !isCollapsed && (
+              <div className="relative h-32 sm:h-40 overflow-hidden">
+                <Image
+                  src={`https://images.unsplash.com/${photoId}?w=900&q=70&auto=format&fit=crop`}
+                  alt={section.heading}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/5" />
+              </div>
+            )}
+
+            {/* Section header (always visible, toggle) */}
+            <button
+              onClick={() => toggle(i)}
+              className="w-full flex items-center gap-3 text-left px-4 sm:px-5 py-3.5 bg-surface hover:bg-muted/50 transition-colors"
+            >
+              <div className="w-7 h-7 rounded-md bg-foreground/90 flex items-center justify-center shrink-0">
+                <style.icon size={13} strokeWidth={1.5} className="text-background" />
+              </div>
+              <span className="font-bold text-foreground text-sm flex-1">{section.heading}</span>
+              <ChevronDown
+                size={15}
+                strokeWidth={2}
+                className={`shrink-0 text-muted-foreground transition-transform duration-200 ${isCollapsed ? "-rotate-90" : ""}`}
+              />
+            </button>
+
+            {/* Section body */}
+            {!isCollapsed && section.body && (
+              <div className="px-4 sm:px-5 pb-5 pt-2 bg-surface">
+                <div className="prose prose-sm max-w-none text-foreground leading-relaxed">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={PLAN_MARKDOWN_COMPONENTS}>
+                    {section.body}
+                  </ReactMarkdown>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
