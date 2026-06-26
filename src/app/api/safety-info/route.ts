@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
 
   // 2. AA travel warning — open data JSON list
   let level: SafetyData["aaWarning"]["level"] = "unknown";
-  const aaUrl = "https://www.auswaertiges-amt.de/de/ReiseUndSicherheit/reisewarnungen";
+  let aaUrl = "https://www.auswaertiges-amt.de/de/service/laender-informationen";
   try {
     const aaRes = await fetch("https://www.auswaertiges-amt.de/opendata/travelwarning", {
       next: { revalidate: 3600 },
@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
     });
     if (aaRes.ok) {
       const aaData = await aaRes.json();
-      // Response: { response: { items: { "DE": { warning, partialWarning, ... } } } }
+      // Response: { response: { items: { "JP": { warning, partialWarning, contentUrl, ... } } } }
       const items =
         aaData?.response?.items ??
         aaData?.items ??
@@ -101,6 +101,9 @@ export async function GET(req: NextRequest) {
         else if (c.partialWarning) level = "partial";
         else if (c.uppertextShort || c.uppertextLong) level = "notice";
         else level = "none";
+        // Use the country-specific page URL from the AA API if available
+        if (c.contentUrl) aaUrl = c.contentUrl;
+        else if (c.slug) aaUrl = `https://www.auswaertiges-amt.de/de/service/laender-informationen/${c.slug}`;
       } else if (items) {
         // Country not in list → assume safe
         level = "none";

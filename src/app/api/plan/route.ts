@@ -503,10 +503,12 @@ RULES:
             messages.push({ role: "user", content: toolResults });
           } else {
             // Text was already streamed token-by-token via stream.on("text")
-            const fullText = finalMessage.content
+            const rawText = finalMessage.content
               .filter((b): b is Anthropic.TextBlock => b.type === "text")
               .map((b) => b.text)
-              .join("");
+              .join(" ");
+            // Ensure a space exists at every sentence boundary between adjacent chunks
+            const fullText = rawText.replace(/([.!?:])([A-Z][a-z])/g, "$1 $2");
             controller.enqueue(
               encoder.encode(`data: ${JSON.stringify({ type: "result", text: fullText })}\n\n`)
             );

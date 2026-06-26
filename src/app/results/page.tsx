@@ -1,11 +1,11 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Bot, Compass, WifiOff, AlertTriangle, Plane, Hotel, Target, Map, Coins } from "lucide-react";
+import { Bot, Compass, WifiOff, AlertTriangle, Plane, Hotel, Target, Map, Coins, BedDouble, Bus, UtensilsCrossed, Home, Ticket, ExternalLink, MapPin, Mic, Square, CircleDollarSign, Landmark, Zap, Waves, Users, Sparkles, ChevronDown, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -432,13 +432,13 @@ function ResultsContent() {
           {/* Header */}
           <div className="mb-6 sm:mb-10">
             <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-xs flex items-center gap-1">
                 {isMultiCity
                 ? `Multi-City Tour · ${cityNames.length} Stationen`
                 : searchParams.get("adventure") === "1"
-                  ? "⚡ Adventure Mode · 5 off-beat options"
+                  ? <><Zap size={11} strokeWidth={1.5} /> Adventure Mode · 5 off-beat options</>
                   : searchParams.get("interests")?.split(",").includes("family")
-                    ? "🎡 Family Mode · 5 kid-friendly options"
+                    ? <><Users size={11} strokeWidth={1.5} /> Family Mode · kid-friendly options</>
                     : dynamicCards
                       ? `AI created ${dynamicCards.length} trip options for you`
                       : "AI is creating your personalised trip options"}
@@ -549,17 +549,17 @@ function ResultsContent() {
               {aiResult && (
                 <div className="bg-surface rounded-2xl border border-border p-4 sm:p-8 mb-4 sm:mb-6" style={{ overflowAnchor: "none" }}>
                   <div className="flex items-center gap-2 mb-5">
-                    <span className="text-xl">🧭</span>
+                    <div className="w-8 h-8 rounded-md bg-foreground flex items-center justify-center shrink-0">
+                      <Compass size={14} strokeWidth={1.5} className="text-background" />
+                    </div>
                     <h3 className="font-semibold text-foreground">Your personalised travel plan by Vagamundo</h3>
                     {refinementCount > 0 && (
-                      <Badge variant="secondary" className="text-xs ml-auto">
-                        ✨ Refined ×{refinementCount}
+                      <Badge variant="secondary" className="text-xs ml-auto flex items-center gap-1">
+                        <Sparkles size={10} strokeWidth={1.5} /> Refined ×{refinementCount}
                       </Badge>
                     )}
                   </div>
-                  <div className="prose prose-sm max-w-none text-foreground leading-relaxed">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{aiResult}</ReactMarkdown>
-                  </div>
+                  <CollapsiblePlanContent text={aiResult} />
                 </div>
               )}
 
@@ -600,7 +600,14 @@ function ResultsContent() {
               />
 
               {/* Budget Tracker */}
-              <BudgetTracker budget={budget} aiResult={aiResult} isMultiCity={isMultiCity} travelers={Number(searchParams.get("travelers") || 2)} />
+              <BudgetTracker
+                budget={budget}
+                aiResult={aiResult}
+                isMultiCity={isMultiCity}
+                travelers={Number(searchParams.get("travelers") || 2)}
+                includeFlights={searchParams.get("includeFlights") !== "false"}
+                includeHotel={searchParams.get("includeHotel") !== "false"}
+              />
 
               {/* Agent Summary */}
               <div className="bg-surface rounded-2xl border border-border p-4 sm:p-6 no-print">
@@ -663,13 +670,13 @@ function ResultsContent() {
   );
 }
 
-const REFINEMENT_CHIPS = [
-  { label: "Make it cheaper 💰", prompt: "Make this trip cheaper. Find budget-friendly alternatives for flights, hotels, and activities while keeping the same destination and duration." },
-  { label: "More culture 🏛️", prompt: "Add more cultural depth: include museums, historical sites, local festivals, traditional food markets, and authentic neighborhood experiences." },
-  { label: "More adventure ⚡", prompt: "Make it more adventurous with outdoor activities, hiking, and off-the-beaten-path experiences. Include at least one physical challenge." },
-  { label: "Better beaches 🏖️", prompt: "Emphasize beach and coastal experiences. Prioritize seaside stays, water activities, and scenic coastal routes." },
-  { label: "Family-friendly 👨‍👩‍👧", prompt: "Adapt for families with children: add kid-friendly activities, shorter activity blocks, family hotels, child discounts, and safe neighbourhoods." },
-  { label: "Luxury upgrade ✨", prompt: "Upgrade to a luxury experience: 5-star hotels, Michelin-starred dining, private tours, and premium activities." },
+const REFINEMENT_CHIPS: { label: string; Icon: LucideIcon; prompt: string }[] = [
+  { label: "Make it cheaper",   Icon: CircleDollarSign, prompt: "Make this trip cheaper. Find budget-friendly alternatives for flights, hotels, and activities while keeping the same destination and duration." },
+  { label: "More culture",      Icon: Landmark,         prompt: "Add more cultural depth: include museums, historical sites, local festivals, traditional food markets, and authentic neighborhood experiences." },
+  { label: "More adventure",    Icon: Zap,              prompt: "Make it more adventurous with outdoor activities, hiking, and off-the-beaten-path experiences. Include at least one physical challenge." },
+  { label: "Better beaches",    Icon: Waves,            prompt: "Emphasize beach and coastal experiences. Prioritize seaside stays, water activities, and scenic coastal routes." },
+  { label: "Family-friendly",   Icon: Users,            prompt: "Adapt for families with children: add kid-friendly activities, shorter activity blocks, family hotels, child discounts, and safe neighbourhoods." },
+  { label: "Luxury upgrade",    Icon: Sparkles,         prompt: "Upgrade to a luxury experience: 5-star hotels, Michelin-starred dining, private tours, and premium activities." },
 ];
 
 function VoiceButton({ onTranscript, disabled }: { onTranscript: (t: string) => void; disabled: boolean }) {
@@ -715,7 +722,7 @@ function VoiceButton({ onTranscript, disabled }: { onTranscript: (t: string) => 
           : "border-border bg-background text-muted-foreground hover:border-brand hover:text-brand"
       }`}
     >
-      {listening ? "⏹" : "🎤"}
+      {listening ? <Square size={13} strokeWidth={2} /> : <Mic size={13} strokeWidth={1.5} />}
     </button>
   );
 }
@@ -814,7 +821,9 @@ function RefinementChat({
   return (
     <div className="bg-gradient-to-br from-surface to-brand-subtle/30 rounded-2xl border border-brand/40 p-4 sm:p-6 mb-4 sm:mb-6 no-print shadow-sm">
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-xl">🤖</span>
+        <div className="w-8 h-8 rounded-md bg-foreground flex items-center justify-center shrink-0">
+          <Bot size={14} strokeWidth={1.5} className="text-background" />
+        </div>
         <h3 className="font-bold text-foreground text-base">Chat with Claude</h3>
         <span className="ml-auto text-[10px] font-semibold uppercase tracking-wider text-brand bg-brand/10 px-2 py-0.5 rounded-full">AI</span>
       </div>
@@ -827,8 +836,9 @@ function RefinementChat({
             key={chip.label}
             onClick={() => submit(chip.prompt)}
             disabled={isRefining}
-            className="text-xs px-3 py-1.5 rounded-full border border-border bg-background hover:bg-brand-subtle hover:border-brand/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-border bg-background hover:bg-brand-subtle hover:border-brand/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
+            <chip.Icon size={11} strokeWidth={1.5} />
             {chip.label}
           </button>
         ))}
@@ -867,7 +877,7 @@ function RefinementChat({
           ) : "→"}
         </Button>
       </div>
-      <p className="text-[10px] text-muted-foreground mt-1.5">Enter senden · Shift+Enter Zeilenumbruch · 🎤 Spracheingabe</p>
+      <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-1">Enter senden · Shift+Enter Zeilenumbruch · <Mic size={9} strokeWidth={1.5} /> Spracheingabe</p>
 
       {/* Streaming indicator */}
       {isRefining && (
@@ -899,12 +909,71 @@ function RefinementChat({
   );
 }
 
-const BUDGET_CATEGORIES = [
-  { key: "flights",    label: "Flüge",        icon: "✈️",  pct: 0.35 },
-  { key: "hotel",      label: "Unterkunft",   icon: "🏨",  pct: 0.35 },
-  { key: "activities", label: "Aktivitäten",  icon: "🗺️",  pct: 0.15 },
-  { key: "food",       label: "Essen",        icon: "🍽️",  pct: 0.10 },
-  { key: "transport",  label: "Transport",    icon: "🚌",  pct: 0.05 },
+const PLAN_MARKDOWN_COMPONENTS: Parameters<typeof ReactMarkdown>[0]["components"] = {
+  h3: ({ children }) => (
+    <h3 className="text-sm font-bold text-foreground mt-5 mb-1.5 border-b border-border pb-1 not-prose">{children}</h3>
+  ),
+  h4: ({ children }) => (
+    <h4 className="text-sm font-semibold text-foreground mt-3 mb-1 not-prose">{children}</h4>
+  ),
+  li: ({ children }) => <li className="my-1.5 leading-snug">{children}</li>,
+  em: ({ children }) => <em className="not-italic text-muted-foreground text-xs">{children}</em>,
+};
+
+function splitPlanSections(text: string): { heading: string; body: string }[] {
+  const parts = text.split(/^## /m);
+  return parts.map((part, i) => {
+    if (i === 0) return { heading: "", body: part.trimStart() };
+    const nl = part.indexOf("\n");
+    return {
+      heading: nl === -1 ? part.trim() : part.slice(0, nl).trim(),
+      body: nl === -1 ? "" : part.slice(nl + 1).trimStart(),
+    };
+  }).filter((s) => s.heading || s.body);
+}
+
+function CollapsiblePlanContent({ text }: { text: string }) {
+  const sections = useMemo(() => splitPlanSections(text), [text]);
+  const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
+  function toggle(i: number) {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i); else next.add(i);
+      return next;
+    });
+  }
+  return (
+    <div>
+      {sections.map((section, i) => (
+        <div key={i}>
+          {section.heading && (
+            <button
+              onClick={() => toggle(i)}
+              className="w-full flex items-center justify-between gap-2 text-left px-3 py-2.5 bg-muted rounded-lg border-l-4 border-foreground hover:bg-muted/80 transition-colors mt-6 mb-1"
+            >
+              <span className="text-sm font-bold text-foreground">{section.heading}</span>
+              <ChevronDown size={14} strokeWidth={2} className={`shrink-0 text-muted-foreground transition-transform ${collapsed.has(i) ? "-rotate-90" : ""}`} />
+            </button>
+          )}
+          {!collapsed.has(i) && section.body && (
+            <div className="prose prose-sm max-w-none text-foreground leading-relaxed">
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={PLAN_MARKDOWN_COMPONENTS}>
+                {section.body}
+              </ReactMarkdown>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const BUDGET_CATEGORIES: { key: string; label: string; Icon: LucideIcon; pct: number }[] = [
+  { key: "flights",    label: "Flüge",        Icon: Plane,            pct: 0.35 },
+  { key: "hotel",      label: "Unterkunft",   Icon: BedDouble,        pct: 0.35 },
+  { key: "activities", label: "Aktivitäten",  Icon: Compass,          pct: 0.15 },
+  { key: "food",       label: "Essen",        Icon: UtensilsCrossed,  pct: 0.10 },
+  { key: "transport",  label: "Transport",    Icon: Bus,              pct: 0.05 },
 ];
 
 function extractBudgetFromAI(aiResult: string | null, budget: number): Record<string, number> {
@@ -931,12 +1000,17 @@ function extractBudgetFromAI(aiResult: string | null, budget: number): Record<st
   return result;
 }
 
-function BudgetTracker({ budget: initialBudget, aiResult, isMultiCity, travelers }: {
+function BudgetTracker({ budget: initialBudget, aiResult, isMultiCity, travelers, includeFlights, includeHotel }: {
   budget: number;
   aiResult: string | null;
   isMultiCity: boolean;
   travelers: number;
+  includeFlights: boolean;
+  includeHotel: boolean;
 }) {
+  const activeCategories = BUDGET_CATEGORIES.filter(
+    (c) => (c.key !== "flights" || includeFlights) && (c.key !== "hotel" || includeHotel)
+  );
   const [totalBudget, setTotalBudget] = useState(initialBudget);
   const [editingTotal, setEditingTotal] = useState(false);
   const [totalInputVal, setTotalInputVal] = useState(String(initialBudget));
@@ -969,7 +1043,9 @@ function BudgetTracker({ budget: initialBudget, aiResult, isMultiCity, travelers
     <div id="budget-tracker" className="bg-surface rounded-2xl border border-border p-4 sm:p-8 mb-4 sm:mb-6">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
         <div className="flex items-center gap-2">
-          <span className="text-xl">💶</span>
+          <div className="w-8 h-8 rounded-md bg-foreground flex items-center justify-center shrink-0">
+            <Coins size={14} strokeWidth={1.5} className="text-background" />
+          </div>
           <h3 className="font-semibold text-foreground">Budget Tracker</h3>
           <span className="text-xs text-muted-foreground ml-1">per person · drag sliders to adjust</span>
         </div>
@@ -1013,12 +1089,14 @@ function BudgetTracker({ budget: initialBudget, aiResult, isMultiCity, travelers
 
       {/* Sliders */}
       <div className="space-y-4 mb-6">
-        {BUDGET_CATEGORIES.map((cat) => {
+        {activeCategories.map((cat) => {
           const sliderPct = Math.min(Math.round((items[cat.key] / totalBudget) * 100), 100);
           return (
             <div key={cat.key} className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="text-base w-6">{cat.icon}</span>
+                <div className="w-6 h-6 rounded flex items-center justify-center shrink-0 bg-muted">
+                  <cat.Icon size={12} strokeWidth={1.5} className="text-muted-foreground" />
+                </div>
                 <span className="text-sm text-muted-foreground flex-1">{cat.label}</span>
                 <span className="text-sm font-semibold text-foreground tabular-nums">€{items[cat.key].toLocaleString()}</span>
                 <span className="text-xs text-muted-foreground w-8 text-right">{sliderPct}%</span>
@@ -1070,9 +1148,9 @@ function BookingSection({
   const destRaw = destination || "Europe";
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const links = [
+  const links: { Icon: LucideIcon; label: string; sub: string; description: string; tip: string; url: string; cardClass: string; accentClass: string; labelClass: string }[] = [
     {
-      icon: "🛫",
+      Icon: Plane,
       label: "Flights",
       sub: "Google Flights",
       description: "Google's global flight search — compare airlines, see price calendars, set fare alerts.",
@@ -1085,7 +1163,7 @@ function BookingSection({
       labelClass: "text-blue-700 dark:text-blue-400",
     },
     {
-      icon: "✈️",
+      Icon: Plane,
       label: "Flights",
       sub: "Skyscanner",
       description: "Skyscanner aggregates hundreds of airlines and OTAs. Great for finding cheapest month / flexible dates.",
@@ -1096,7 +1174,7 @@ function BookingSection({
       labelClass: "text-sky-700 dark:text-sky-400",
     },
     {
-      icon: "🔍",
+      Icon: Plane,
       label: "Flights",
       sub: "Kayak",
       description: "Kayak searches 200+ travel sites at once. Price alerts and flexible destination search.",
@@ -1107,7 +1185,7 @@ function BookingSection({
       labelClass: "text-orange-700 dark:text-orange-400",
     },
     {
-      icon: "🏕️",
+      Icon: Hotel,
       label: "Hotels",
       sub: "Booking.com",
       description: "World's largest hotel platform. 28M+ listings, free cancellation options, genius loyalty tier.",
@@ -1118,7 +1196,7 @@ function BookingSection({
       labelClass: "text-amber-700 dark:text-amber-400",
     },
     {
-      icon: "🏡",
+      Icon: Home,
       label: "Apartments",
       sub: "Airbnb",
       description: "Homes, apartments & unique stays. Great for longer trips, families, and local neighbourhood immersion.",
@@ -1129,7 +1207,7 @@ function BookingSection({
       labelClass: "text-rose-700 dark:text-rose-400",
     },
     {
-      icon: "🧭",
+      Icon: Compass,
       label: "Activities",
       sub: "GetYourGuide",
       description: "50,000+ guided tours, day trips and experiences worldwide. Instant confirmation, free cancellation.",
@@ -1140,7 +1218,7 @@ function BookingSection({
       labelClass: "text-green-700 dark:text-green-400",
     },
     {
-      icon: "🌟",
+      Icon: Map,
       label: "Activities",
       sub: "Viator",
       description: "TripAdvisor's booking platform. 300,000+ experiences with verified reviews and best-price guarantee.",
@@ -1151,7 +1229,7 @@ function BookingSection({
       labelClass: "text-violet-700 dark:text-violet-400",
     },
     {
-      icon: "🎫",
+      Icon: Ticket,
       label: "Attractions",
       sub: "Klook",
       description: "Asia-focused activities & passes. Strong for Japan, Korea, SE Asia — city passes, airport transfers.",
@@ -1166,7 +1244,9 @@ function BookingSection({
   return (
     <div className="bg-surface rounded-2xl border border-border p-4 sm:p-8 mb-4 sm:mb-6 no-print">
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-xl">🔗</span>
+        <div className="w-8 h-8 rounded-md bg-foreground flex items-center justify-center shrink-0">
+          <ExternalLink size={14} strokeWidth={1.5} className="text-background" />
+        </div>
         <h3 className="font-semibold text-foreground">Book direct</h3>
         <span className="text-xs text-muted-foreground ml-1">— tap to expand, then open in app</span>
       </div>
@@ -1180,7 +1260,9 @@ function BookingSection({
                 onClick={() => setExpanded(isOpen ? null : link.sub)}
                 className="w-full flex items-center gap-3 p-3 text-left"
               >
-                <span className="text-xl">{link.icon}</span>
+                <div className="w-8 h-8 rounded-md bg-foreground flex items-center justify-center shrink-0">
+                  <link.Icon size={14} strokeWidth={1.5} className="text-background" />
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className={`text-xs font-bold uppercase tracking-wide ${link.labelClass}`}>{link.label}</span>
@@ -1193,7 +1275,7 @@ function BookingSection({
               {isOpen && (
                 <div className={`px-3 pb-3 ${link.accentClass}`}>
                   <p className="text-xs text-muted-foreground leading-relaxed mb-2">{link.description}</p>
-                  <p className="text-xs font-medium text-foreground/70 mb-3">📍 {link.tip}</p>
+                  <p className="text-xs font-medium text-foreground/70 mb-3 flex items-center gap-1"><MapPin size={10} strokeWidth={1.5} /> {link.tip}</p>
                   <a
                     href={link.url}
                     target="_blank"
