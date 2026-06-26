@@ -172,10 +172,31 @@ Conversational alternative to the 6-step wizard — Claude gathers trip details 
 
 ---
 
+### iPhone Feedback Batch 1 (2026-06-26) `e471864`
+- App background/switch bug fixed: `visibilitychange` listener shows retry UI instead of broken stream
+- Separate "include flights" + "include hotel" checkboxes in budget step (both default ON)
+- Per-category budget sliders on results page; total budget editable inline
+- "✏️ Edit Search" button pre-fills /plan with current search params
+- TripCard itinerary blocks individually collapsible + collapse-all / expand-all
+- BookingSection: in-app expandable cards with description + deep link (not bare external links)
+- Viator + Klook added to booking options (8 providers total)
+- AI prompt: transit always includes station names + times; "why selected" per stop; occupancy outlook
+- 8 trip option tiers (up from 5): ultra-budget → hostel → balanced → comfort → premium → biz → boutique luxury → ultra-luxury
+- Refinement chat now shows animated progress bar while AI is working
+- Icons: Compass/Tent/TreePine/Crown/Wind/Sparkles for interests; 🧭🛫🌍🗞️ for agents
+- Mobile nav: "Plan a trip" full label; wider gap between logo and action buttons
+- `showPicker()` called on return date after departure pick for better mobile UX
+
+---
+
 ## Planned
 
 | # | Feature | Priority | Description |
 |---|---------|----------|-------------|
+| N | **vagamundo.ai domain** | High | Register `vagamundo.ai` on Cloudflare Registrar (~$140/yr). Go to dash.cloudflare.com → Domain Registration → search vagamundo.ai. Then add in Vercel Project Settings → Domains. Add CNAME/A records in Cloudflare DNS. Note: `.ai` is Anguilla ccTLD, Cloudflare supports it. |
+| O | **Booking.com affiliate widget** | Medium | Apply for Booking.com affiliate (partners.booking.com) — free. Get affiliate ID to show embedded search widget in-app. |
+| P | **TripAdvisor ratings** | Medium | Apply for TripAdvisor API key (tripadvisor.com/developers) — shows hotel ratings + reviews inline. |
+| Q | **Skyscanner affiliate** | Medium | Apply at skyscanner.net/affiliates for API access; unlocks real-time price comparison in-app. |
 | K | **Trip-Timeline** | Medium | Visual timeline replacing Markdown itinerary — day-by-day scroll |
 | J | **Insurance Agent** | Low | Travel insurance recommendations based on destination + trip type |
 | L | **Explore-Stats** | Low | Top destinations + avg budget stats on /explore |
@@ -197,5 +218,5 @@ Conversational alternative to the 6-step wizard — Claude gathers trip details 
 | Geo + Weather | Open-Meteo geocoding + forecast (free, no key) |
 | Safety data | Auswärtiges Amt open data JSON |
 | Hosting | Vercel — push to `main` = auto-deploy |
-| Domain | vagamundo.io (Cloudflare transfer available 2026-08-16) |
+| Domain | vagamundo.io (Cloudflare transfer available 2026-08-16) · vagamundo.ai planned (register via Cloudflare Registrar ~$140/yr) |
 | MCP server | `~/02_Travel_Agent/mcp-server/server.js` (5 tools, `travel-agent-db` scope) |
