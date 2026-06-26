@@ -153,10 +153,15 @@ function PlanContent() {
       .then((r) => r.json())
       .then(({ profile }) => {
         if (!profile) return;
+        const savedInterests: string[] = profile.interests ?? [];
+        // Auto-add "family" interest when group_type is family
+        const derived = profile.group_type === "family" && !savedInterests.includes("family")
+          ? [...savedInterests, "family"]
+          : savedInterests;
         setForm((f) => ({
           ...f,
           origin: f.origin || profile.home_city || f.origin,
-          interests: f.interests.length > 0 ? f.interests : (profile.interests ?? f.interests),
+          interests: f.interests.length > 0 ? f.interests : (derived.length > 0 ? derived : f.interests),
         }));
       })
       .catch(() => {});
