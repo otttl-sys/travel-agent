@@ -54,7 +54,7 @@ function LoginContent() {
       }
 
     } else if (mode === "signup") {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
@@ -62,7 +62,12 @@ function LoginContent() {
       setLoading(false);
       if (error) {
         setError(error.message);
+      } else if (data.session) {
+        // Email confirmation disabled — session returned immediately
+        router.push("/onboarding");
+        router.refresh();
       } else {
+        // Email confirmation still enabled (fallback)
         setSuccess("Account created — check your inbox to confirm your email, then sign in.");
         setMode("signin");
         setPassword("");

@@ -152,9 +152,12 @@ function PlanContent() {
     fetch("/api/profile")
       .then((r) => r.json())
       .then(({ profile }) => {
-        if (profile?.home_city) {
-          setForm((f) => ({ ...f, origin: f.origin || profile.home_city }));
-        }
+        if (!profile) return;
+        setForm((f) => ({
+          ...f,
+          origin: f.origin || profile.home_city || f.origin,
+          interests: f.interests.length > 0 ? f.interests : (profile.interests ?? f.interests),
+        }));
       })
       .catch(() => {});
   }, []);

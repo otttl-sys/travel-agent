@@ -18,7 +18,7 @@ export async function GET() {
 
   const { data, error } = await supabaseAdmin
     .from("profiles")
-    .select("passport_country, home_city")
+    .select("passport_country, home_city, travel_style, group_type, interests")
     .eq("user_id", userId)
     .maybeSingle();
 
@@ -30,11 +30,14 @@ export async function POST(req: NextRequest) {
   const userId = await getCurrentUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { passport_country, home_city } = await req.json();
+  const { passport_country, home_city, travel_style, group_type, interests } = await req.json();
 
   const { error } = await supabaseAdmin
     .from("profiles")
-    .upsert({ user_id: userId, passport_country, home_city }, { onConflict: "user_id" });
+    .upsert(
+      { user_id: userId, passport_country, home_city, travel_style, group_type, interests },
+      { onConflict: "user_id" }
+    );
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
