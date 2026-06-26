@@ -3,17 +3,19 @@
 import { useState } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
+import { Waves, Building2, Mountain, Flame, Snowflake, Gem, Backpack, AlertTriangle } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SiteNav } from "@/components/site-nav";
 
-const TRIP_TYPES = [
-  { id: "beach", label: "Beach", icon: "🏖️" },
-  { id: "city", label: "City Trip", icon: "🏙️" },
-  { id: "mountains", label: "Mountains", icon: "⛰️" },
-  { id: "adventure", label: "Adventure", icon: "🧗" },
-  { id: "winter", label: "Winter / Ski", icon: "⛷️" },
-  { id: "luxury", label: "Luxury", icon: "✨" },
+const TRIP_TYPES: { id: string; label: string; icon: LucideIcon }[] = [
+  { id: "beach", label: "Beach", icon: Waves },
+  { id: "city", label: "City Trip", icon: Building2 },
+  { id: "mountains", label: "Mountains", icon: Mountain },
+  { id: "adventure", label: "Adventure", icon: Flame },
+  { id: "winter", label: "Winter / Ski", icon: Snowflake },
+  { id: "luxury", label: "Luxury", icon: Gem },
 ];
 
 export default function PackingPage() {
@@ -181,7 +183,7 @@ export default function PackingPage() {
                           : "border-border text-muted-foreground hover:border-brand"
                       }`}
                     >
-                      <span className="text-xl">{t.icon}</span>
+                      <t.icon size={18} strokeWidth={1.5} className="shrink-0" />
                       {t.label}
                     </button>
                   ))}
@@ -201,7 +203,9 @@ export default function PackingPage() {
           {/* Loading state */}
           {loading && !result && (
             <div className="bg-surface rounded-2xl border border-border p-8 text-center">
-              <div className="text-4xl mb-3 animate-pulse">🎒</div>
+              <div className="w-12 h-12 rounded-xl bg-foreground flex items-center justify-center mb-3 mx-auto animate-pulse">
+                <Backpack size={20} strokeWidth={1.5} className="text-background" />
+              </div>
               <p className="text-muted-foreground">Building your packing list…</p>
             </div>
           )}

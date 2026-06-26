@@ -2,8 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import {
+  PlaneLanding, MapPinned, Globe2, CircleDollarSign, Binoculars,
+  Zap, BaggageClaim, BookOpenText, Bot, Globe,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserNav } from "@/components/user-nav";
 import { DestinationScanner } from "@/components/destination-scanner";
@@ -14,6 +19,19 @@ export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [adventureMode, setAdventureMode] = useState(false);
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [heroVisible, setHeroVisible] = useState(true);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setHeroVisible(false);
+      setTimeout(() => {
+        setHeroIndex((i) => (i + 1) % QUICK_DESTINATIONS.length);
+        setHeroVisible(true);
+      }, 600);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, []);
 
   function handleSearch(dest?: string) {
     const q = dest ?? query;
@@ -120,16 +138,19 @@ export default function Home() {
         {/* Hero */}
         <section className="relative h-[80vh] min-h-[580px] w-full overflow-hidden">
           <Image
-            src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1800&q=80&auto=format&fit=crop"
-            alt="Travel destination at golden hour"
+            src={QUICK_DESTINATIONS[heroIndex].img.replace(/w=\d+/, "w=1800")}
+            alt={QUICK_DESTINATIONS[heroIndex].name}
             fill
             priority
-            className="object-cover"
+            className={`object-cover transition-opacity duration-700 ${heroVisible ? "opacity-100" : "opacity-0"}`}
             unoptimized
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-black/30" />
 
           <div className="relative h-full max-w-7xl mx-auto px-6 flex flex-col justify-end pb-20">
+            <p className={`text-white/60 text-[10px] font-semibold uppercase tracking-[0.3em] mb-2 transition-opacity duration-700 ${heroVisible ? "opacity-100" : "opacity-0"}`}>
+              {QUICK_DESTINATIONS[heroIndex].tag} · {QUICK_DESTINATIONS[heroIndex].name}
+            </p>
             <p className="text-white/85 text-xs font-semibold uppercase tracking-[0.28em] mb-5">
               Powered by 8 AI agents
             </p>
@@ -167,7 +188,9 @@ export default function Home() {
                   href={query.trim() ? `/chat?q=${encodeURIComponent(query.trim())}` : "/chat"}
                   className="flex items-center gap-2 text-white/80 hover:text-white text-xs font-semibold uppercase tracking-[0.18em] transition-colors group"
                 >
-                  <span className="w-6 h-6 rounded-full bg-white/15 group-hover:bg-white/25 flex items-center justify-center text-base transition-colors">🤖</span>
+                  <span className="w-6 h-6 rounded-full bg-white/15 group-hover:bg-white/25 flex items-center justify-center transition-colors">
+                    <Bot size={13} strokeWidth={1.5} className="text-white" />
+                  </span>
                   Chat with AI
                   <span className="opacity-60">→</span>
                 </Link>
@@ -194,7 +217,7 @@ export default function Home() {
                 href="/discover"
                 className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-[0.15em] border border-border text-muted-foreground hover:border-foreground hover:text-foreground transition-colors"
               >
-                <span>🌍</span>
+                <Globe size={13} strokeWidth={1.5} />
                 <span>Where to go?</span>
               </Link>
             </div>
@@ -206,7 +229,7 @@ export default function Home() {
                   : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
               }`}
             >
-              <span>⚡</span>
+              <Zap size={13} strokeWidth={1.5} />
               <span>Adventure</span>
             </button>
           </div>
@@ -334,7 +357,9 @@ export default function Home() {
                   key={agent.name}
                   className="p-6 hover:bg-surface transition-colors"
                 >
-                  <span className="text-2xl mb-4 block">{agent.icon}</span>
+                  <div className="w-8 h-8 rounded-md bg-foreground flex items-center justify-center mb-4">
+                    <agent.icon size={14} strokeWidth={1.5} className="text-background" />
+                  </div>
                   <h3 className="font-semibold text-foreground text-sm mb-1.5">{agent.name}</h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">{agent.description}</p>
                 </div>
@@ -461,13 +486,13 @@ const STEPS = [
   },
 ];
 
-const AGENTS = [
-  { icon: "🛫", name: "Flight Agent", description: "Best routes, cheapest windows, layover hacks." },
-  { icon: "🏕️", name: "Hotel Agent", description: "Prime location, boutique finds, best price-performance." },
-  { icon: "🧭", name: "Activity Agent", description: "Hidden gems, local adventures, off-beat experiences." },
-  { icon: "💎", name: "Budget Agent", description: "Squeeze every euro — finds alternatives you'd never spot." },
-  { icon: "🌍", name: "Research Agent", description: "Visa, climate, safety intel — everything before you go." },
-  { icon: "⚡", name: "Disruption Agent", description: "Flight chaos? Finds alternatives and your rights instantly." },
-  { icon: "🎒", name: "Packing Agent", description: "Smart packing list tuned to climate and trip style." },
-  { icon: "🗞️", name: "Briefing Agent", description: "Culture codes, currency, health, safety — the full picture." },
+const AGENTS: { icon: LucideIcon; name: string; description: string }[] = [
+  { icon: PlaneLanding, name: "Flight Agent", description: "Best routes, cheapest windows, layover hacks." },
+  { icon: MapPinned, name: "Hotel Agent", description: "Prime location, boutique finds, best price-performance." },
+  { icon: Globe2, name: "Activity Agent", description: "Hidden gems, local adventures, off-beat experiences." },
+  { icon: CircleDollarSign, name: "Budget Agent", description: "Squeeze every euro — finds alternatives you'd never spot." },
+  { icon: Binoculars, name: "Research Agent", description: "Visa, climate, safety intel — everything before you go." },
+  { icon: Zap, name: "Disruption Agent", description: "Flight chaos? Finds alternatives and your rights instantly." },
+  { icon: BaggageClaim, name: "Packing Agent", description: "Smart packing list tuned to climate and trip style." },
+  { icon: BookOpenText, name: "Briefing Agent", description: "Culture codes, currency, health, safety — the full picture." },
 ];

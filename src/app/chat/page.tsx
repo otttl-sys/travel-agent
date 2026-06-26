@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import Link from "next/link";
+import { Bot, Map } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteNav } from "@/components/site-nav";
 
@@ -164,8 +165,8 @@ function ChatContent() {
               className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
               {msg.role === "assistant" && (
-                <div className="w-8 h-8 rounded-full bg-foreground text-background flex items-center justify-center text-base shrink-0 mt-0.5 select-none">
-                  🤖
+                <div className="w-8 h-8 rounded-full bg-foreground flex items-center justify-center shrink-0 mt-0.5 select-none">
+                  <Bot size={14} strokeWidth={1.5} className="text-background" />
                 </div>
               )}
               <div
@@ -183,8 +184,8 @@ function ChatContent() {
           {/* Typing indicator */}
           {isLoading && !transitioning && (
             <div className="flex gap-3 justify-start">
-              <div className="w-8 h-8 rounded-full bg-foreground text-background flex items-center justify-center text-base shrink-0">
-                🤖
+              <div className="w-8 h-8 rounded-full bg-foreground flex items-center justify-center shrink-0">
+                <Bot size={14} strokeWidth={1.5} className="text-background" />
               </div>
               <div className="bg-surface border border-border px-4 py-3.5 rounded-2xl rounded-tl-sm">
                 <span className="flex gap-1 items-center">
@@ -200,7 +201,9 @@ function ChatContent() {
           {transitioning && (
             <div className="flex justify-center py-8">
               <div className="text-center">
-                <div className="text-5xl mb-3 animate-pulse">🗺️</div>
+                <div className="w-14 h-14 rounded-xl bg-foreground flex items-center justify-center mb-3 mx-auto animate-pulse">
+                  <Map size={22} strokeWidth={1.5} className="text-background" />
+                </div>
                 <p className="text-sm font-semibold text-foreground">Planning your trip…</p>
                 <p className="text-xs text-muted-foreground mt-1">8 AI agents are on it</p>
               </div>

@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { Bot, Compass, WifiOff, AlertTriangle, Plane, Hotel, Target, Map, Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -105,7 +106,9 @@ export default function ResultsPage() {
       fallback={
         <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="text-center">
-            <div className="text-5xl mb-4 animate-pulse">🤖</div>
+            <div className="w-14 h-14 rounded-xl bg-foreground flex items-center justify-center mb-4 mx-auto animate-pulse">
+              <Bot size={22} strokeWidth={1.5} className="text-background" />
+            </div>
             <p className="text-muted-foreground">Agenten starten…</p>
           </div>
         </div>
@@ -330,7 +333,9 @@ function ResultsContent() {
         <div className="w-full max-w-lg text-center">
           {loadingInterrupted ? (
             <>
-              <div className="text-5xl mb-6">📵</div>
+              <div className="w-14 h-14 rounded-xl bg-foreground flex items-center justify-center mb-6 mx-auto">
+                <WifiOff size={22} strokeWidth={1.5} className="text-background" />
+              </div>
               <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-foreground mb-2">Verbindung unterbrochen</h2>
               <p className="text-muted-foreground text-sm mb-8">
                 Die Suche wurde pausiert als du die App verlassen hast. Bitte neu starten.
@@ -341,7 +346,9 @@ function ResultsContent() {
             </>
           ) : (
             <>
-              <div className="text-5xl mb-6 animate-pulse">🧭</div>
+              <div className="w-14 h-14 rounded-xl bg-foreground flex items-center justify-center mb-6 mx-auto animate-pulse">
+                <Compass size={22} strokeWidth={1.5} className="text-background" />
+              </div>
               <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-foreground mb-2">AI analysiert deine Reise</h2>
               <p className="text-muted-foreground text-sm mb-8">
                 {destination ? `Wir suchen die besten Optionen für ${destination}.` : "Mehrere Agenten arbeiten für dich."}
@@ -368,7 +375,9 @@ function ResultsContent() {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
         <div className="w-full max-w-md text-center">
-          <div className="text-5xl mb-6">⚠️</div>
+          <div className="w-14 h-14 rounded-xl bg-foreground flex items-center justify-center mb-6 mx-auto">
+            <AlertTriangle size={22} strokeWidth={1.5} className="text-background" />
+          </div>
           <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-foreground mb-2">Etwas ist schiefgelaufen</h2>
           <p className="text-muted-foreground text-sm mb-8">{error}</p>
           <Button onClick={() => window.location.reload()}>Nochmal versuchen</Button>
@@ -468,21 +477,21 @@ function ResultsContent() {
               <div className="mt-3 flex flex-wrap gap-2">
                 {flightsData && (
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800/50 text-xs font-semibold text-sky-700 dark:text-sky-400">
-                    <span>✈️</span>
+                    <Plane size={12} strokeWidth={1.5} className="shrink-0" />
                     <span>{flightsData.originCode} → {flightsData.destCode} · {flightsData.priceRange}</span>
                     <span className="opacity-60 font-normal">live</span>
                   </div>
                 )}
                 {hotelsData && (
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-                    <span>🏨</span>
+                    <Hotel size={12} strokeWidth={1.5} className="shrink-0" />
                     <span>{hotelsData.priceRange} · {hotelsData.nights} nights</span>
                     <span className="opacity-60 font-normal">live</span>
                   </div>
                 )}
                 {activitiesData && (
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800/50 text-xs font-semibold text-violet-700 dark:text-violet-400">
-                    <span>🎯</span>
+                    <Target size={12} strokeWidth={1.5} className="shrink-0" />
                     <span>{activitiesData.count} activities · {activitiesData.priceRange}</span>
                     <span className="opacity-60 font-normal">live</span>
                   </div>
@@ -590,18 +599,20 @@ function ResultsContent() {
                 <h3 className="font-semibold text-foreground mb-4">What the agents analysed</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {(isMultiCity ? [
-                    { icon: "✈️", label: "Flug-Legs", value: toolCounts.search_flight_leg > 0 ? `${toolCounts.search_flight_leg}` : "—" },
-                    { icon: "🏨", label: "Städte geplant", value: toolCounts.plan_city_stop > 0 ? `${toolCounts.plan_city_stop}` : "—" },
-                    { icon: "🗺️", label: "Stationen", value: cityNames.length > 0 ? `${cityNames.length}` : "—" },
-                    { icon: "💰", label: "Budget optimiert", value: toolCounts.optimize_total_budget > 0 ? "✓" : "—" },
+                    { icon: Plane, label: "Flug-Legs", value: toolCounts.search_flight_leg > 0 ? `${toolCounts.search_flight_leg}` : "—" },
+                    { icon: Hotel, label: "Städte geplant", value: toolCounts.plan_city_stop > 0 ? `${toolCounts.plan_city_stop}` : "—" },
+                    { icon: Map, label: "Stationen", value: cityNames.length > 0 ? `${cityNames.length}` : "—" },
+                    { icon: Coins, label: "Budget optimiert", value: toolCounts.optimize_total_budget > 0 ? "✓" : "—" },
                   ] : [
-                    { icon: "✈️", label: "Flug-Ergebnisse", value: toolCounts.search_flights > 0 ? `${toolCounts.search_flights * 5}` : "—" },
-                    { icon: "🏨", label: "Hotel-Ergebnisse", value: toolCounts.search_hotels > 0 ? `${toolCounts.search_hotels * 5}` : "—" },
-                    { icon: "🗺️", label: "Aktivitäten", value: toolCounts.get_activities > 0 ? `${toolCounts.get_activities * 5}` : "—" },
-                    { icon: "💰", label: "Budget optimiert", value: toolCounts.optimize_budget > 0 ? "✓" : "—" },
+                    { icon: Plane, label: "Flug-Ergebnisse", value: toolCounts.search_flights > 0 ? `${toolCounts.search_flights * 5}` : "—" },
+                    { icon: Hotel, label: "Hotel-Ergebnisse", value: toolCounts.search_hotels > 0 ? `${toolCounts.search_hotels * 5}` : "—" },
+                    { icon: Map, label: "Aktivitäten", value: toolCounts.get_activities > 0 ? `${toolCounts.get_activities * 5}` : "—" },
+                    { icon: Coins, label: "Budget optimiert", value: toolCounts.optimize_budget > 0 ? "✓" : "—" },
                   ]).map((item) => (
                     <div key={item.label} className="text-center p-4 rounded-xl bg-brand-subtle">
-                      <span className="text-2xl block mb-2">{item.icon}</span>
+                      <div className="w-8 h-8 rounded-md bg-foreground flex items-center justify-center mb-2 mx-auto">
+                        <item.icon size={14} strokeWidth={1.5} className="text-background" />
+                      </div>
                       <p className="text-xs text-muted-foreground mb-1">{item.label}</p>
                       <p className="text-sm font-semibold text-foreground">{item.value}</p>
                     </div>

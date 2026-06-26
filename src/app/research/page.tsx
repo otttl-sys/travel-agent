@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
+import { Search, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -197,7 +198,9 @@ export default function ResearchPage() {
 
         {loading && (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="text-5xl mb-6 animate-pulse">🔍</div>
+            <div className="w-14 h-14 rounded-xl bg-foreground flex items-center justify-center mb-6 mx-auto animate-pulse">
+              <Search size={22} strokeWidth={1.5} className="text-background" />
+            </div>
             <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-foreground mb-2">Research läuft...</h2>
             <p className="text-muted-foreground text-sm mb-10">{activeToolLabel}</p>
 
@@ -223,7 +226,9 @@ export default function ResearchPage() {
 
         {error && (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="text-5xl mb-6">⚠️</div>
+          <div className="w-14 h-14 rounded-xl bg-foreground flex items-center justify-center mb-6 mx-auto">
+              <AlertTriangle size={22} strokeWidth={1.5} className="text-background" />
+            </div>
             <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-foreground mb-2">Fehler beim Research</h2>
             <p className="text-muted-foreground text-sm mb-8">{error}</p>
             <Button onClick={() => { setError(null); setLoading(false); }}>Nochmal versuchen</Button>
@@ -244,7 +249,7 @@ export default function ResearchPage() {
 
             <div className="bg-surface rounded-2xl border border-border p-8 mb-6">
               <div className="flex items-center gap-2 mb-6">
-                <span className="text-xl">🔍</span>
+                <Search size={16} strokeWidth={1.5} className="text-foreground shrink-0" />
                 <span className="font-semibold text-foreground">Dein Reise-Research von Claude</span>
               </div>
               <div className="prose prose-sm max-w-none text-foreground leading-relaxed">

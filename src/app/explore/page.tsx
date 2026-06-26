@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { Globe } from "lucide-react";
 import { SiteNav } from "@/components/site-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -112,7 +113,9 @@ export default async function ExplorePage() {
 
         {trips.length === 0 ? (
           <div className="text-center py-24 border border-dashed border-border rounded-2xl">
-            <p className="text-4xl mb-4">🌍</p>
+            <div className="w-12 h-12 rounded-xl bg-foreground flex items-center justify-center mb-4 mx-auto">
+              <Globe size={20} strokeWidth={1.5} className="text-background" />
+            </div>
             <p className="text-lg font-heading font-bold text-foreground mb-2">No public trips yet</p>
             <p className="text-muted-foreground text-sm mb-6">
               Be the first — plan a trip and share it from your Saved Trips.
@@ -137,7 +140,7 @@ export default async function ExplorePage() {
               return (
                 <div className="flex flex-wrap gap-3 mb-8">
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
-                    🌍 <span className="font-medium text-foreground">{trips.length}</span> {trips.length === 1 ? "trip" : "trips"} shared
+                    <Globe size={12} strokeWidth={1.5} className="shrink-0" /> <span className="font-medium text-foreground">{trips.length}</span> {trips.length === 1 ? "trip" : "trips"} shared
                   </span>
                   {topDests.length > 0 && (
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">

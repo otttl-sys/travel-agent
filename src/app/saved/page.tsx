@@ -4,6 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import {
+  Lightbulb, Map, CalendarDays, MessageCircle, CalendarRange, FileText,
+  PartyPopper, Stamp, Coins, CloudSun, Globe, Smartphone, ShieldCheck,
+  Plane, Calendar, Globe2, MapPinned,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SiteNav } from "@/components/site-nav";
@@ -23,20 +29,20 @@ import { TripMap } from "@/components/trip-map";
 
 type TabId = "ideas" | "plan" | "concierge" | "day-plan" | "briefing" | "events" | "visa" | "budget" | "weather" | "culture" | "sim" | "insurance" | "timeline";
 
-const TABS: { id: TabId; label: string; icon: string }[] = [
-  { id: "ideas",     label: "Ideas",     icon: "💡" },
-  { id: "plan",      label: "Plan",      icon: "🗺️" },
-  { id: "timeline",  label: "Timeline",  icon: "📅" },
-  { id: "concierge", label: "Concierge", icon: "💬" },
-  { id: "day-plan",  label: "Day Plan",  icon: "🗓️" },
-  { id: "briefing",  label: "Briefing",  icon: "📋" },
-  { id: "events",    label: "Events",    icon: "🎉" },
-  { id: "visa",      label: "Visa",      icon: "🛂" },
-  { id: "budget",    label: "Budget",    icon: "💶" },
-  { id: "weather",   label: "Weather",   icon: "🌤️" },
-  { id: "culture",   label: "Culture",   icon: "🌍" },
-  { id: "sim",       label: "SIM",       icon: "📱" },
-  { id: "insurance", label: "Insurance", icon: "🛡️" },
+const TABS: { id: TabId; label: string; icon: LucideIcon }[] = [
+  { id: "ideas",     label: "Ideas",     icon: Lightbulb },
+  { id: "plan",      label: "Plan",      icon: Map },
+  { id: "timeline",  label: "Timeline",  icon: CalendarDays },
+  { id: "concierge", label: "Concierge", icon: MessageCircle },
+  { id: "day-plan",  label: "Day Plan",  icon: CalendarRange },
+  { id: "briefing",  label: "Briefing",  icon: FileText },
+  { id: "events",    label: "Events",    icon: PartyPopper },
+  { id: "visa",      label: "Visa",      icon: Stamp },
+  { id: "budget",    label: "Budget",    icon: Coins },
+  { id: "weather",   label: "Weather",   icon: CloudSun },
+  { id: "culture",   label: "Culture",   icon: Globe },
+  { id: "sim",       label: "SIM",       icon: Smartphone },
+  { id: "insurance", label: "Insurance", icon: ShieldCheck },
 ];
 
 type AgentItem = {
@@ -667,7 +673,9 @@ export default function SavedPage() {
 
           {trips.length === 0 ? (
             <div className="bg-surface rounded-2xl border border-border p-8 sm:p-12 text-center">
-              <div className="text-5xl mb-4">✈️</div>
+              <div className="w-14 h-14 rounded-xl bg-foreground flex items-center justify-center mb-4 mx-auto">
+                <Plane size={22} strokeWidth={1.5} className="text-background" />
+              </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">No saved trips yet</h3>
               <p className="text-muted-foreground mb-6 text-sm">Plan a trip and tap &quot;Save Trip&quot; to see it here.</p>
               <Link href="/plan"><Button>Plan your first trip →</Button></Link>
@@ -690,7 +698,7 @@ export default function SavedPage() {
                             {trip.isMultiCity && <Badge variant="secondary" className="text-xs shrink-0">Multi-City</Badge>}
                           </div>
                           <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
-                            {trip.startDate && <span>📅 {formatDate(trip.startDate)}{trip.endDate ? ` → ${formatDate(trip.endDate)}` : ""}</span>}
+                            {trip.startDate && <span className="inline-flex items-center gap-1"><Calendar size={12} strokeWidth={1.5} className="shrink-0" /> {formatDate(trip.startDate)}{trip.endDate ? ` → ${formatDate(trip.endDate)}` : ""}</span>}
                             <span>👥 {trip.travelers} {trip.travelers === 1 ? "person" : "people"}</span>
                             <span>💶 €{trip.budget.toLocaleString()} / person</span>
                             <span className="text-muted-foreground">Saved {new Date(trip.savedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
@@ -717,7 +725,7 @@ export default function SavedPage() {
                           </Button>
                           <a href={`/api/trips/${trip.id}/calendar`} download>
                             <Button variant="outline" size="sm">
-                              📅 Calendar
+                              <Calendar size={13} strokeWidth={1.5} className="shrink-0" /> Calendar
                             </Button>
                           </a>
                           <Button
@@ -727,7 +735,7 @@ export default function SavedPage() {
                             onClick={() => handleTogglePublic(trip.id)}
                             className={publicState[trip.id] ? "text-brand border-brand/40 bg-brand/5" : ""}
                           >
-                            {publicState[trip.id] ? "🌍 Public" : "Make public"}
+                            {publicState[trip.id] ? <><Globe2 size={13} strokeWidth={1.5} className="shrink-0" /> Public</> : "Make public"}
                           </Button>
                           <button onClick={() => handleDelete(trip.id)} className="text-muted-foreground/60 hover:text-red-400 transition-colors text-xl leading-none p-1" aria-label="Delete trip">×</button>
                         </div>
@@ -762,7 +770,7 @@ export default function SavedPage() {
                                   : "border-transparent text-muted-foreground hover:text-foreground hover:bg-brand-subtle"
                               }`}
                             >
-                              <span>{t.icon}</span>
+                              <t.icon size={13} strokeWidth={1.5} className="shrink-0" />
                               <span>{t.label}</span>
                               {ready && !active && (
                                 <span className="w-1.5 h-1.5 rounded-full bg-brand absolute top-2.5 right-1.5" />
@@ -899,13 +907,13 @@ export default function SavedPage() {
                             ) : generatingBriefingId !== trip.id ? (
                               <div className="text-center py-6">
                                 <p className="text-sm text-muted-foreground mb-4">Get a pre-departure briefing covering prices, weather, practical tips, and highlights.</p>
-                                <Button size="sm" onClick={() => generateBriefing(trip)}>📋 Create Briefing</Button>
+                                <Button size="sm" onClick={() => generateBriefing(trip)} className="inline-flex items-center gap-1.5"><FileText size={13} strokeWidth={1.5} /> Create Briefing</Button>
                               </div>
                             ) : null}
                             {/* Nearby Places — emitted at start of briefing SSE stream */}
                             {nearbyPlaces[trip.id]?.length ? (
                               <div className="mt-5">
-                                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">📍 Nearby on Google Maps</p>
+                                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3 inline-flex items-center gap-1.5"><MapPinned size={12} strokeWidth={1.5} /> Nearby on Google Maps</p>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                   {nearbyPlaces[trip.id].map((place, i) => (
                                     <div key={i} className="flex items-start gap-2 rounded-xl bg-surface ring-1 ring-foreground/10 px-3 py-2.5">
@@ -1072,7 +1080,7 @@ export default function SavedPage() {
                             ) : generatingCultureId !== trip.id ? (
                               <div className="text-center py-6">
                                 <p className="text-sm text-muted-foreground mb-4">Key phrases, social etiquette, tipping rules, and dining customs for your destination.</p>
-                                <Button size="sm" onClick={() => generateCulture(trip)}>🌍 Get Culture Guide</Button>
+                                <Button size="sm" onClick={() => generateCulture(trip)} className="inline-flex items-center gap-1.5"><Globe size={13} strokeWidth={1.5} /> Get Culture Guide</Button>
                               </div>
                             ) : null}
                           </>
@@ -1096,7 +1104,7 @@ export default function SavedPage() {
                                 ))}
                               </div>
                             ) : generatingSimId !== trip.id ? (
-                              <div className="text-center py-6"><p className="text-sm text-muted-foreground mb-4">Local SIM options, eSIM providers, data costs, and coverage tips for your destination.</p><Button size="sm" onClick={() => generateSim(trip)}>📱 Get Connectivity Guide</Button></div>
+                              <div className="text-center py-6"><p className="text-sm text-muted-foreground mb-4">Local SIM options, eSIM providers, data costs, and coverage tips for your destination.</p><Button size="sm" onClick={() => generateSim(trip)} className="inline-flex items-center gap-1.5"><Smartphone size={13} strokeWidth={1.5} /> Get Connectivity Guide</Button></div>
                             ) : null}
                           </>
                         )}
@@ -1119,7 +1127,7 @@ export default function SavedPage() {
                                 ))}
                               </div>
                             ) : generatingInsuranceId !== trip.id ? (
-                              <div className="text-center py-6"><p className="text-sm text-muted-foreground mb-4">Recommended coverage types, what to look for, and approx costs for your trip.</p><Button size="sm" onClick={() => generateInsurance(trip)}>🛡️ Get Insurance Guide</Button></div>
+                              <div className="text-center py-6"><p className="text-sm text-muted-foreground mb-4">Recommended coverage types, what to look for, and approx costs for your trip.</p><Button size="sm" onClick={() => generateInsurance(trip)} className="inline-flex items-center gap-1.5"><ShieldCheck size={13} strokeWidth={1.5} /> Get Insurance Guide</Button></div>
                             ) : null}
                           </>
                         )}
@@ -1137,7 +1145,7 @@ export default function SavedPage() {
                             ) : generatingTimelineId !== trip.id ? (
                               <div className="text-center py-6">
                                 <p className="text-sm text-muted-foreground mb-4">{trip.aiResult ? "Auto-generate a visual day-by-day timeline from your AI plan." : "Generate an AI plan first, then come back here."}</p>
-                                {trip.aiResult && <Button size="sm" onClick={() => generateTimeline(trip)}>📅 Generate Timeline</Button>}
+                                {trip.aiResult && <Button size="sm" onClick={() => generateTimeline(trip)} className="inline-flex items-center gap-1.5"><CalendarDays size={13} strokeWidth={1.5} /> Generate Timeline</Button>}
                               </div>
                             ) : null}
                           </>

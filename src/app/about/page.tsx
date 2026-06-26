@@ -1,5 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
+import {
+  PlaneLanding, MapPinned, Globe2, CircleDollarSign, Binoculars, Zap, BaggageClaim, BookOpenText,
+  MessageSquare, Search, Compass, FolderOpen,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { SiteNav } from "@/components/site-nav";
 
 export const metadata = {
@@ -52,7 +57,9 @@ export default function AboutPage() {
               <ul className="space-y-6">
                 {MINDTRIP_PATTERNS.map((p) => (
                   <li key={p.title} className="flex gap-4">
-                    <span className="text-2xl leading-none shrink-0 mt-0.5">{p.icon}</span>
+                    <div className="w-7 h-7 rounded-md bg-foreground flex items-center justify-center shrink-0 mt-0.5">
+                      <p.icon size={12} strokeWidth={1.5} className="text-background" />
+                    </div>
                     <div>
                       <h3 className="font-semibold text-foreground text-sm mb-1">{p.title}</h3>
                       <p className="text-xs text-muted-foreground leading-relaxed">{p.description}</p>
@@ -130,7 +137,9 @@ export default function AboutPage() {
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 divide-y divide-x-0 lg:divide-y-0 lg:divide-x divide-border border-y border-border">
               {AGENTS.map((agent) => (
                 <div key={agent.name} className="p-6 bg-background hover:bg-brand-subtle transition-colors">
-                  <span className="text-2xl mb-4 block">{agent.icon}</span>
+                  <div className="w-8 h-8 rounded-md bg-foreground flex items-center justify-center mb-4">
+                    <agent.icon size={14} strokeWidth={1.5} className="text-background" />
+                  </div>
                   <h3 className="font-semibold text-foreground text-sm mb-1.5">{agent.name}</h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">{agent.description}</p>
                 </div>
@@ -162,27 +171,27 @@ export default function AboutPage() {
   );
 }
 
-const MINDTRIP_PATTERNS = [
+const MINDTRIP_PATTERNS: { icon: LucideIcon; title: string; description: string }[] = [
   {
-    icon: "💬",
+    icon: MessageSquare,
     title: "Chat-first entry, no rigid form",
     description:
       "A single natural-language input replaces multi-field search forms — reflected in the home page search bar and the concierge chat.",
   },
   {
-    icon: "🔎",
+    icon: Search,
     title: "Transparent agent reasoning",
     description:
       "Live trace of which agent is working, on what, and whether it's done — visible in the agent trace panel during planning.",
   },
   {
-    icon: "🧭",
+    icon: Compass,
     title: "Narrative results, not just a grid",
     description:
       "Results come with a written rationale alongside structured comparisons — not just a table of prices.",
   },
   {
-    icon: "🗂️",
+    icon: FolderOpen,
     title: "Trip as the central object",
     description:
       "Saved trips, price watches and itineraries are organized around a persistent trip record rather than one-off searches.",
@@ -243,13 +252,13 @@ const CONTINUUM = [
   },
 ];
 
-const AGENTS = [
-  { icon: "✈️", name: "Flight Agent", description: "Best flights, cheap stopovers, optimal times." },
-  { icon: "🏨", name: "Hotel Agent", description: "Prime location, best price-performance ratio." },
-  { icon: "🗺️", name: "Activity Agent", description: "Culture, adventure, restaurants, day planning." },
-  { icon: "💰", name: "Budget Agent", description: "Optimize total costs, find alternatives." },
-  { icon: "🔍", name: "Research Agent", description: "Visa, climate, safety, local tips — all before booking." },
-  { icon: "🚨", name: "Disruption Agent", description: "Flight disrupted? Status, alternatives and rights in seconds." },
-  { icon: "🎒", name: "Packing Agent", description: "Destination-specific packing list tailored to climate and trip type." },
-  { icon: "📋", name: "Briefing Agent", description: "Full country briefing: culture, currency, health, safety." },
+const AGENTS: { icon: LucideIcon; name: string; description: string }[] = [
+  { icon: PlaneLanding, name: "Flight Agent", description: "Best flights, cheap stopovers, optimal times." },
+  { icon: MapPinned, name: "Hotel Agent", description: "Prime location, best price-performance ratio." },
+  { icon: Globe2, name: "Activity Agent", description: "Culture, adventure, restaurants, day planning." },
+  { icon: CircleDollarSign, name: "Budget Agent", description: "Optimize total costs, find alternatives." },
+  { icon: Binoculars, name: "Research Agent", description: "Visa, climate, safety, local tips — all before booking." },
+  { icon: Zap, name: "Disruption Agent", description: "Flight disrupted? Status, alternatives and rights in seconds." },
+  { icon: BaggageClaim, name: "Packing Agent", description: "Destination-specific packing list tailored to climate and trip type." },
+  { icon: BookOpenText, name: "Briefing Agent", description: "Full country briefing: culture, currency, health, safety." },
 ];
