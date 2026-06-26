@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { SiteNav } from "@/components/site-nav";
 import { DestinationScanner } from "@/components/destination-scanner";
-import { Compass, TreePine, Waves, Globe, Tent, UtensilsCrossed, Crown, Wind, Heart, Sparkles, type LucideIcon } from "lucide-react";
+import { Compass, TreePine, Waves, Globe, Tent, UtensilsCrossed, Crown, Wind, Heart, Sparkles, Plane, BedDouble, type LucideIcon } from "lucide-react";
 
 const TOTAL_STEPS = 6;
 
@@ -824,7 +824,12 @@ function StepBudget({
             className="mt-0.5 w-4 h-4 rounded accent-foreground"
           />
           <div>
-            <span className="text-sm font-medium text-foreground">✈️ Flüge</span>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-foreground flex items-center justify-center shrink-0">
+                <Plane size={12} strokeWidth={1.5} className="text-background" />
+              </div>
+              <span className="text-sm font-medium text-foreground">Flüge</span>
+            </div>
             <p className="text-xs text-muted-foreground mt-0.5">Hin- und Rückflug sind im Budget enthalten.</p>
           </div>
         </label>
@@ -836,7 +841,12 @@ function StepBudget({
             className="mt-0.5 w-4 h-4 rounded accent-foreground"
           />
           <div>
-            <span className="text-sm font-medium text-foreground">🏕️ Unterkunft</span>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-foreground flex items-center justify-center shrink-0">
+                <BedDouble size={12} strokeWidth={1.5} className="text-background" />
+              </div>
+              <span className="text-sm font-medium text-foreground">Unterkunft</span>
+            </div>
             <p className="text-xs text-muted-foreground mt-0.5">Hotel, Hostel oder Unterkunft sind im Budget enthalten.</p>
           </div>
         </label>
