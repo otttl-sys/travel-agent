@@ -956,7 +956,7 @@ function CollapsiblePlanContent({ text }: { text: string }) {
             </button>
           )}
           {!collapsed.has(i) && section.body && (
-            <div className="prose prose-sm max-w-none text-foreground leading-relaxed">
+            <div className="prose prose-sm max-w-none text-foreground leading-relaxed mt-3">
               <ReactMarkdown remarkPlugins={[remarkGfm]} components={PLAN_MARKDOWN_COMPONENTS}>
                 {section.body}
               </ReactMarkdown>
