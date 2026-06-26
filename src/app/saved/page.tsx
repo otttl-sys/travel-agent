@@ -8,6 +8,7 @@ import {
   Lightbulb, Map, CalendarDays, MessageCircle, CalendarRange, FileText,
   PartyPopper, Stamp, Coins, CloudSun, Globe, Smartphone, ShieldCheck,
   Plane, Calendar, Globe2, MapPinned,
+  Users, TrendingDown, TrendingUp, Minus, Check, CalendarPlus, Loader2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -58,10 +59,10 @@ type InsuranceResult = { destination: string; items: AgentItem[] };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const TREND_META: Record<PriceWatch["trend"], { emoji: string; label: string }> = {
-  down: { emoji: "📉", label: "Looks cheaper" },
-  up:   { emoji: "📈", label: "Looks pricier" },
-  same: { emoji: "➡️", label: "About the same" },
+const TREND_META: Record<PriceWatch["trend"], { Icon: LucideIcon; label: string; color: string }> = {
+  down: { Icon: TrendingDown, label: "Looks cheaper", color: "text-green-600" },
+  up:   { Icon: TrendingUp,   label: "Looks pricier", color: "text-red-500" },
+  same: { Icon: Minus,        label: "About the same", color: "text-brand" },
 };
 
 function detectTrend(text: string): PriceWatch["trend"] {
@@ -699,17 +700,20 @@ export default function SavedPage() {
                           </div>
                           <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
                             {trip.startDate && <span className="inline-flex items-center gap-1"><Calendar size={12} strokeWidth={1.5} className="shrink-0" /> {formatDate(trip.startDate)}{trip.endDate ? ` → ${formatDate(trip.endDate)}` : ""}</span>}
-                            <span>👥 {trip.travelers} {trip.travelers === 1 ? "person" : "people"}</span>
-                            <span>💶 €{trip.budget.toLocaleString()} / person</span>
+                            <span className="inline-flex items-center gap-1"><Users size={12} strokeWidth={1.5} className="shrink-0" /> {trip.travelers} {trip.travelers === 1 ? "person" : "people"}</span>
+                            <span className="inline-flex items-center gap-1"><Coins size={12} strokeWidth={1.5} className="shrink-0" /> €{trip.budget.toLocaleString()} / person</span>
                             <span className="text-muted-foreground">Saved {new Date(trip.savedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
                           </div>
-                          {trip.priceWatch && (
-                            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-brand-subtle px-3 py-1 text-xs text-brand">
-                              <span>{TREND_META[trip.priceWatch.trend].emoji}</span>
-                              <span className="font-medium">{TREND_META[trip.priceWatch.trend].label}</span>
-                              <span className="text-muted-foreground">· {formatDate(trip.priceWatch.lastChecked)}</span>
-                            </div>
-                          )}
+                          {trip.priceWatch && (() => {
+                            const meta = TREND_META[trip.priceWatch.trend];
+                            return (
+                              <div className={`mt-2 inline-flex items-center gap-1.5 rounded-full bg-brand-subtle px-3 py-1 text-xs ${meta.color}`}>
+                                <meta.Icon size={11} strokeWidth={1.5} className="shrink-0" />
+                                <span className="font-medium">{meta.label}</span>
+                                <span className="text-muted-foreground">· {formatDate(trip.priceWatch.lastChecked)}</span>
+                              </div>
+                            );
+                          })()}
                         </div>
                         <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                           <Button variant="outline" size="sm" disabled={checkingId !== null} onClick={() => checkPrice(trip)}>
@@ -721,7 +725,7 @@ export default function SavedPage() {
                             onClick={() => handleShare(trip.id)}
                             className={copiedId === trip.id ? "text-green-600 border-green-200 bg-green-50" : ""}
                           >
-                            {copiedId === trip.id ? "✓ Copied!" : "Share"}
+                            {copiedId === trip.id ? <><Check size={12} strokeWidth={2} /> Copied!</> : "Share"}
                           </Button>
                           <a href={`/api/trips/${trip.id}/calendar`} download>
                             <Button variant="outline" size="sm">
@@ -878,7 +882,7 @@ export default function SavedPage() {
                             ) : generatingId !== trip.id ? (
                               <div className="text-center py-6">
                                 <p className="text-sm text-muted-foreground mb-4">Turn the rough itinerary into a realistic hour-by-hour day plan.</p>
-                                <Button size="sm" onClick={() => generateItinerary(trip)}>🗓️ Create Day Plan</Button>
+                                <Button size="sm" onClick={() => generateItinerary(trip)} className="flex items-center gap-1.5"><CalendarPlus size={13} strokeWidth={1.5} /> Create Day Plan</Button>
                               </div>
                             ) : null}
                           </>
@@ -957,7 +961,7 @@ export default function SavedPage() {
                             ) : generatingEventsId !== trip.id ? (
                               <div className="text-center py-6">
                                 <p className="text-sm text-muted-foreground mb-4">Discover festivals, markets, concerts, and seasonal highlights during your trip.</p>
-                                <Button size="sm" onClick={() => generateEvents(trip)}>🎉 Find Events</Button>
+                                <Button size="sm" onClick={() => generateEvents(trip)} className="flex items-center gap-1.5"><PartyPopper size={13} strokeWidth={1.5} /> Find Events</Button>
                               </div>
                             ) : null}
                           </>
@@ -1022,7 +1026,7 @@ export default function SavedPage() {
                             ) : generatingBudgetId !== trip.id ? (
                               <div className="text-center py-6">
                                 <p className="text-sm text-muted-foreground mb-4">Get a realistic cost breakdown — flights, hotel, food, activities, transport — and see if your budget adds up.</p>
-                                <Button size="sm" onClick={() => generateBudget(trip)}>💶 Estimate Budget</Button>
+                                <Button size="sm" onClick={() => generateBudget(trip)} className="flex items-center gap-1.5"><Coins size={13} strokeWidth={1.5} /> Estimate Budget</Button>
                               </div>
                             ) : null}
                           </>
@@ -1039,7 +1043,7 @@ export default function SavedPage() {
                             </div>
                             {loadingWeatherId === trip.id && (
                               <div className="flex items-center gap-2 text-sm text-muted-foreground py-6 justify-center">
-                                <span className="animate-spin">🌀</span> Loading weather…
+                                <Loader2 size={14} strokeWidth={1.5} className="animate-spin shrink-0" /> Loading weather…
                               </div>
                             )}
                             {weatherError[trip.id] && (
@@ -1139,7 +1143,7 @@ export default function SavedPage() {
                               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Trip Timeline</p>
                               {timelineData[trip.id] && <button onClick={() => { setTimelineData(prev => { const n = { ...prev }; delete n[trip.id]; return n; }); generateTimeline(trip); }} disabled={generatingTimelineId !== null} className="text-xs font-medium text-brand hover:text-brand/80 disabled:opacity-50">🔄 Refresh</button>}
                             </div>
-                            {generatingTimelineId === trip.id && <div className="flex items-center gap-2 text-sm text-muted-foreground py-6 justify-center"><span className="animate-spin">🌀</span> Parsing your plan…</div>}
+                            {generatingTimelineId === trip.id && <div className="flex items-center gap-2 text-sm text-muted-foreground py-6 justify-center"><Loader2 size={14} strokeWidth={1.5} className="animate-spin shrink-0" /> Parsing your plan…</div>}
                             {timelineData[trip.id] ? (
                               <DayTimeline days={timelineData[trip.id]} />
                             ) : generatingTimelineId !== trip.id ? (
