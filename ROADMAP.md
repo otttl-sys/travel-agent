@@ -172,6 +172,19 @@ Conversational alternative to the 6-step wizard — Claude gathers trip details 
 
 ---
 
+### Auth Overhaul + Onboarding Wizard (2026-06-26) `multiple commits`
+- **Password auth**: switched from magic link to password sign-up/login
+- **Email confirmation disabled** in Supabase → session available immediately after signup
+- **Password strength checklist** on signup: 8 chars + uppercase + special char (submit disabled until all green)
+- **3-step onboarding wizard** (`/onboarding`):
+  - Step 1: Passport country (autocomplete, 100+ countries) + home city
+  - Step 2: Group type (Solo/Couple/Family/Group) + budget style (Budget/Mid-range/Luxury)
+  - Step 3: Interest chips (8 options)
+  - POST → `/api/profile` → Supabase `profiles` table → redirect `/plan`
+- **SQL migration**: `profiles` table extended with `travel_style`, `group_type`, `interests[]` columns
+- **Resend SMTP**: noreply@vagamundo.ai via smtp.resend.com (SPF pending)
+- **Profile sync**: Family group_type auto-adds "family" to interests; home_city pre-fills origin in wizard
+
 ### iPhone Feedback Batch 1 (2026-06-26) `e471864`
 - App background/switch bug fixed: `visibilitychange` listener shows retry UI instead of broken stream
 - Separate "include flights" + "include hotel" checkboxes in budget step (both default ON)
@@ -187,20 +200,43 @@ Conversational alternative to the 6-step wizard — Claude gathers trip details 
 - Mobile nav: "Plan a trip" full label; wider gap between logo and action buttons
 - `showPicker()` called on return date after departure pick for better mobile UX
 
+### vagamundo.ai domain (2026-06-26)
+- Registered on Cloudflare Registrar (~$140/yr, Anguilla ccTLD)
+- DNS: `A vagamundo.ai → 76.76.21.21` + `CNAME www → cname.vercel-dns.com` (both DNS only, no proxy)
+- Added to Vercel project; SSL certificate issued; both `vagamundo.ai` and `www.vagamundo.ai` → Production ✅
+
+### UX-Batch 3 (2026-06-26) `e7457a0` + `a2226a1` + `db1ea0b`
+
+**Complete Emoji → Lucide Icon Sweep** (`results/page.tsx` + `saved/page.tsx`):
+- Budget Tracker: `Coins` header, `Plane/BedDouble/Compass/UtensilsCrossed/Bus` category icons
+- Book Direct: `ExternalLink` header, all 8 providers use Dark Stamp Lucide icons, `MapPin` inline
+- Refinement Chat: `Bot` header, 6 chips with `CircleDollarSign/Landmark/Zap/Waves/Users/Sparkles`, `Mic`/`Square` voice button
+- Family/Adventure badges: `Users`/`Zap` inline icons
+- saved/page.tsx: `Users` traveler count, `Coins` budget, `TrendingDown/TrendingUp/Minus` trend badges, `Loader2` spinners, `CalendarPlus`/`PartyPopper`/`Check` action buttons
+
+**Bug Fixes:**
+- **Budget Tracker flights/hotel bug**: `BudgetTracker` now receives `includeFlights`+`includeHotel` from `searchParams`, filters `BUDGET_CATEGORIES` → `activeCategories`
+- **Collapsible plan sections**: `splitPlanSections()` splits markdown at `## ` headings; `CollapsiblePlanContent` component with `Set<number>` collapse state + ChevronDown toggle
+- **Missing space between AI chunks**: `.join(" ")` + regex `([.!?:])([A-Z][a-z]) → "$1 $2"` in `route.ts`
+- **Auswärtiges Amt 404**: uses `contentUrl` from AA open data API per country; fallback `/de/service/laender-informationen`
+- **Collapsible spacing**: `mt-3` between heading button and content area
+
+**System prompt**: "no emojis" rule added to all AI prompts
+
 ---
 
 ## Planned
 
 | # | Feature | Priority | Description |
 |---|---------|----------|-------------|
-| N | **vagamundo.ai domain** | High | Register `vagamundo.ai` on Cloudflare Registrar (~$140/yr). Go to dash.cloudflare.com → Domain Registration → search vagamundo.ai. Then add in Vercel Project Settings → Domains. Add CNAME/A records in Cloudflare DNS. Note: `.ai` is Anguilla ccTLD, Cloudflare supports it. |
-| O | **Booking.com affiliate widget** | Medium | Apply for Booking.com affiliate (partners.booking.com) — free. Get affiliate ID to show embedded search widget in-app. |
-| P | **TripAdvisor ratings** | Medium | Apply for TripAdvisor API key (tripadvisor.com/developers) — shows hotel ratings + reviews inline. |
-| Q | **Skyscanner affiliate** | Medium | Apply at skyscanner.net/affiliates for API access; unlocks real-time price comparison in-app. |
-| K | **Trip-Timeline** | Medium | Visual timeline replacing Markdown itinerary — day-by-day scroll |
-| J | **Insurance Agent** | Low | Travel insurance recommendations based on destination + trip type |
-| L | **Explore-Stats** | Low | Top destinations + avg budget stats on /explore |
-| M | **SIM Agent** | Low | TBD |
+| N1 | **Child age/gender for Family Mode** | High | Optional "Family details" text field in plan wizard when Family group type selected (e.g. "13-year-old daughter"). Injected into family system prompt. Also in /onboarding Step 2. |
+| N2 | **Language selector EFIGS** | High | En/Fr/It/De/Es picker in plan wizard or persistent nav setting. Passed as `language` param; system prompt: "Write the plan in [Language]." |
+| N3 | **Swipeable day-by-day timeline** | Medium | Horizontal swipe/carousel for itinerary days. CSS scroll-snap + card per day. Parses `### Day X —` blocks from AI markdown. Arrow buttons + keyboard for desktop. |
+| N4 | **Playwright QA** | Medium | Test suite: desktop (1280px) + mobile (390px), happy path + budget flow + collapsible sections |
+| N5 | **iOS touch fallback** | Low | Autocomplete dropdown `onTouchStart` instead of `onMouseDown` (Safari iOS) |
+| N6 | **Booking.com affiliate widget** | Medium | Apply for Booking.com affiliate (partners.booking.com) — free. Embedded search widget in-app. |
+| N7 | **SPF Resend vagamundo.ai** | Low | DNS pending (Cloudflare auto-configure) |
+| N8 | **vagamundo.io → Cloudflare transfer** | Low | Transfer lock expires 2026-08-16. ~$10/yr vs current €75/yr. |
 
 ---
 
@@ -208,15 +244,17 @@ Conversational alternative to the 6-step wizard — Claude gathers trip details 
 
 | Layer | Choice |
 |-------|--------|
-| Framework | Next.js 16 (App Router) + React 19 |
+| Framework | Next.js 15 (App Router) + React |
 | Styling | Tailwind CSS + shadcn/ui + OKLCH color tokens |
+| Icon system | Lucide React — Dark Stamp pattern (`w-8 h-8 rounded-md bg-foreground`) |
 | AI | `claude-sonnet-4-6` — text planning + vision (photo scan) + tool use |
 | Search grounding | Tavily API (fallback when live APIs unavailable) |
-| Live prices | Amadeus API — flights, hotels, activities (sandbox free; prod requires approval) |
-| Auth | Supabase Auth — magic link, `@supabase/ssr`, middleware session refresh |
-| Database | Supabase (trips table, service-key server-side, RLS + public policy) |
+| Live prices | Amadeus API — code built, keys deactivated (LH partnership conflict) |
+| Auth | Supabase Auth — password login, email confirm OFF, `@supabase/ssr`, middleware session refresh |
+| Database | Supabase (`trips` + `profiles` tables, service-key server-side, RLS active) |
+| Email | Resend SMTP — noreply@vagamundo.ai (SPF pending) |
 | Geo + Weather | Open-Meteo geocoding + forecast (free, no key) |
-| Safety data | Auswärtiges Amt open data JSON |
+| Safety data | Auswärtiges Amt open data JSON + `contentUrl` per country |
 | Hosting | Vercel — push to `main` = auto-deploy |
-| Domain | vagamundo.io (Cloudflare transfer available 2026-08-16) · vagamundo.ai planned (register via Cloudflare Registrar ~$140/yr) |
+| Domain | vagamundo.ai (Cloudflare, live ✅) · vagamundo.io (Strato, transfer available 2026-08-16) |
 | MCP server | `~/02_Travel_Agent/mcp-server/server.js` (5 tools, `travel-agent-db` scope) |
