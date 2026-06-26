@@ -156,11 +156,11 @@ function LoginContent() {
                 <div className="relative">
                   <Input
                     type={showPassword ? "text" : "password"}
-                    placeholder={mode === "signup" ? "Min. 6 characters" : "Your password"}
+                    placeholder={mode === "signup" ? "Min. 8 characters" : "Your password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    minLength={mode === "signup" ? 6 : undefined}
+                    minLength={mode === "signup" ? 8 : undefined}
                     className="text-base pr-10"
                   />
                   <button
