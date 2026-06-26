@@ -135,6 +135,8 @@ function ResultsContent() {
   const [copied, setCopied] = useState(false);
   const [refinementCount, setRefinementCount] = useState(0);
   const hasFetchedRef = useRef(false);
+  const loadingRef = useRef(true);
+  const [loadingInterrupted, setLoadingInterrupted] = useState(false);
 
   const destination = searchParams.get("destination") || "";
   const budget = Number(searchParams.get("budget") || 3000);
@@ -162,6 +164,20 @@ function ResultsContent() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
+  // Keep loadingRef in sync with state for the visibility-change handler
+  useEffect(() => { loadingRef.current = loading; }, [loading]);
+
+  // Fix: detect when user switches apps during streaming and returns to a broken state
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && loadingRef.current) {
+        setLoadingInterrupted(true);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
+
   const isMultiCity = searchParams.get("multiCity") === "1";
   const citiesParam = searchParams.get("cities") || "";
   const cityDaysParam = searchParams.get("cityDays") || "";
@@ -302,22 +318,37 @@ function ResultsContent() {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-12">
         <div className="w-full max-w-lg text-center">
-          <div className="text-5xl mb-6 animate-pulse">🤖</div>
-          <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-foreground mb-2">AI analysiert deine Reise</h2>
-          <p className="text-muted-foreground text-sm mb-8">
-            {destination ? `Wir suchen die besten Optionen für ${destination}.` : "Mehrere Agenten arbeiten für dich."}
-          </p>
-          <div className="space-y-2 mb-8">
-            <Progress value={progress} className="h-2" />
-            <p className="text-xs text-muted-foreground">{progress}%</p>
-          </div>
-          <div className="text-left">
-            {trace.length > 0 ? (
-              <AgentTrace trace={trace} />
-            ) : (
-              <p className="text-sm text-muted-foreground text-center">Orchestrator Agent startet…</p>
-            )}
-          </div>
+          {loadingInterrupted ? (
+            <>
+              <div className="text-5xl mb-6">📵</div>
+              <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-foreground mb-2">Verbindung unterbrochen</h2>
+              <p className="text-muted-foreground text-sm mb-8">
+                Die Suche wurde pausiert als du die App verlassen hast. Bitte neu starten.
+              </p>
+              <Button onClick={() => window.location.reload()} className="px-8">
+                Neu starten →
+              </Button>
+            </>
+          ) : (
+            <>
+              <div className="text-5xl mb-6 animate-pulse">🧭</div>
+              <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-foreground mb-2">AI analysiert deine Reise</h2>
+              <p className="text-muted-foreground text-sm mb-8">
+                {destination ? `Wir suchen die besten Optionen für ${destination}.` : "Mehrere Agenten arbeiten für dich."}
+              </p>
+              <div className="space-y-2 mb-8">
+                <Progress value={progress} className="h-2" />
+                <p className="text-xs text-muted-foreground tabular-nums">{Math.round(progress)}%</p>
+              </div>
+              <div className="text-left">
+                {trace.length > 0 ? (
+                  <AgentTrace trace={trace} />
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center animate-pulse">Orchestrator Agent startet…</p>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
@@ -348,8 +379,24 @@ function ResultsContent() {
         <Link href="/packing" className="text-sm text-muted-foreground hidden sm:block hover:text-foreground transition-colors mr-2">
           Packing List
         </Link>
-        <Button variant="outline" size="sm" onClick={() => router.push("/plan")}>
-          Neue Suche
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            const params = new URLSearchParams();
+            if (destination) params.set("destination", destination);
+            const sd = searchParams.get("startDate"); if (sd) params.set("startDate", sd);
+            const ed = searchParams.get("endDate"); if (ed) params.set("endDate", ed);
+            const tr = searchParams.get("travelers"); if (tr) params.set("travelers", tr);
+            const int = searchParams.get("interests"); if (int) params.set("interests", int);
+            params.set("budget", String(budget));
+            router.push(`/plan?${params.toString()}`);
+          }}
+        >
+          ✏️ Edit Search
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => router.push("/plan")} className="ml-1">
+          + New
         </Button>
       </SiteNav>
 
@@ -366,8 +413,8 @@ function ResultsContent() {
                   : searchParams.get("interests")?.split(",").includes("family")
                     ? "🎡 Family Mode · 5 kid-friendly options"
                     : dynamicCards
-                      ? "AI hat 5 Reiseoptionen für dich erstellt"
-                      : "AI hat 5 Reisen für dich zusammengestellt"}
+                      ? `AI created ${dynamicCards.length} trip options for you`
+                      : "AI is creating your personalised trip options"}
               </Badge>
               {aiResult && (
                 <div className="flex items-center gap-2 no-print">
@@ -475,8 +522,8 @@ function ResultsContent() {
               {aiResult && (
                 <div className="bg-surface rounded-2xl border border-border p-4 sm:p-8 mb-4 sm:mb-6">
                   <div className="flex items-center gap-2 mb-5">
-                    <span className="text-xl">🤖</span>
-                    <h3 className="font-semibold text-foreground">Dein persönlicher Reiseplan von Claude</h3>
+                    <span className="text-xl">🧭</span>
+                    <h3 className="font-semibold text-foreground">Your personalised travel plan by Vagamundo</h3>
                     {refinementCount > 0 && (
                       <Badge variant="secondary" className="text-xs ml-auto">
                         ✨ Refined ×{refinementCount}
@@ -573,7 +620,7 @@ function ResultsContent() {
             {!isMultiCity && displayTrips.length > 0 && (
               <div className="w-72 lg:w-80 shrink-0 hidden md:block">
                 <div className="sticky top-8 space-y-4">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Reiseoptionen</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Trip options ({displayTrips.length})</p>
                   {displayTrips.map((trip, index) => (
                     <TripCard key={trip.id} trip={trip} featured={index === 0} compact />
                   ))}
@@ -730,9 +777,13 @@ function RefinementChat({
       {/* Streaming indicator */}
       {isRefining && (
         <div className="mt-3 p-3 rounded-xl bg-brand-subtle">
-          <div className="flex items-center gap-2 mb-1.5">
+          <div className="flex items-center gap-2 mb-2">
             <div className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
-            <span className="text-xs font-medium text-brand">"{lastMessage.slice(0, 60)}{lastMessage.length > 60 ? "…" : ""}"</span>
+            <span className="text-xs font-medium text-brand">Refining: "{lastMessage.slice(0, 60)}{lastMessage.length > 60 ? "…" : ""}"</span>
+          </div>
+          {/* Progress bar for refinement */}
+          <div className="w-full bg-brand/15 rounded-full h-1.5 mb-2 overflow-hidden">
+            <div className="h-1.5 rounded-full bg-brand animate-[progress-indeterminate_1.5s_ease-in-out_infinite]" style={{ width: "40%" }} />
           </div>
           {streamPreview && (
             <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{streamPreview}…</p>
@@ -786,98 +837,124 @@ function extractBudgetFromAI(aiResult: string | null, budget: number): Record<st
   return result;
 }
 
-function BudgetTracker({ budget, aiResult, isMultiCity, travelers }: {
+function BudgetTracker({ budget: initialBudget, aiResult, isMultiCity, travelers }: {
   budget: number;
   aiResult: string | null;
   isMultiCity: boolean;
   travelers: number;
 }) {
-  const initial = extractBudgetFromAI(aiResult, budget);
-  const [items, setItems] = useState<Record<string, number>>(initial);
-  const [editing, setEditing] = useState<string | null>(null);
+  const [totalBudget, setTotalBudget] = useState(initialBudget);
+  const [editingTotal, setEditingTotal] = useState(false);
+  const [totalInputVal, setTotalInputVal] = useState(String(initialBudget));
 
-  // Re-sync when AI result arrives
+  const initial = extractBudgetFromAI(aiResult, totalBudget);
+  const [items, setItems] = useState<Record<string, number>>(initial);
+
   useEffect(() => {
-    if (aiResult) setItems(extractBudgetFromAI(aiResult, budget));
-  }, [aiResult, budget]);
+    if (aiResult) setItems(extractBudgetFromAI(aiResult, totalBudget));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aiResult]);
 
   const total = Object.values(items).reduce((s, v) => s + v, 0);
-  const remaining = budget - total;
-  const pct = Math.min((total / budget) * 100, 100);
-  const over = total > budget;
+  const remaining = totalBudget - total;
+  const pct = Math.min((total / totalBudget) * 100, 100);
+  const over = total > totalBudget;
 
-  function update(key: string, val: string) {
-    const n = Number(val.replace(/[^0-9]/g, ""));
-    if (!isNaN(n)) setItems((prev) => ({ ...prev, [key]: n }));
+  function updateSlider(key: string, val: number) {
+    setItems((prev) => ({ ...prev, [key]: val }));
+  }
+
+  function commitTotalEdit() {
+    const n = parseInt(totalInputVal.replace(/\D/g, ""), 10);
+    if (!isNaN(n) && n > 0) setTotalBudget(n);
+    else setTotalInputVal(String(totalBudget));
+    setEditingTotal(false);
   }
 
   return (
     <div className="bg-surface rounded-2xl border border-border p-4 sm:p-8 mb-4 sm:mb-6">
-      <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
         <div className="flex items-center gap-2">
           <span className="text-xl">💶</span>
           <h3 className="font-semibold text-foreground">Budget Tracker</h3>
-          <span className="text-xs text-muted-foreground ml-1">pro Person · klicken zum Bearbeiten</span>
+          <span className="text-xs text-muted-foreground ml-1">per person · drag sliders to adjust</span>
         </div>
         <div className="text-right">
           <p className={`text-lg font-bold ${over ? "text-red-600" : "text-green-600"}`}>
-            {over ? `−€${Math.abs(remaining).toLocaleString()} über Budget` : `€${remaining.toLocaleString()} übrig`}
+            {over ? `−€${Math.abs(remaining).toLocaleString()} over budget` : `€${remaining.toLocaleString()} remaining`}
           </p>
-          <p className="text-xs text-muted-foreground">Budget: €{budget.toLocaleString()} / Person</p>
+          {/* Editable total budget */}
+          <div className="flex items-center justify-end gap-1 mt-0.5">
+            <span className="text-xs text-muted-foreground">Budget:</span>
+            {editingTotal ? (
+              <input
+                autoFocus
+                type="number"
+                value={totalInputVal}
+                onChange={(e) => setTotalInputVal(e.target.value)}
+                onBlur={commitTotalEdit}
+                onKeyDown={(e) => { if (e.key === "Enter") commitTotalEdit(); if (e.key === "Escape") setEditingTotal(false); }}
+                className="w-24 text-right text-xs font-semibold border border-brand/40 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-brand/40"
+              />
+            ) : (
+              <button
+                onClick={() => { setEditingTotal(true); setTotalInputVal(String(totalBudget)); }}
+                className="text-xs font-semibold text-muted-foreground hover:text-brand underline underline-offset-2 transition-colors"
+              >
+                €{totalBudget.toLocaleString()}
+              </button>
+            )}
+            <span className="text-xs text-muted-foreground">/ person</span>
+          </div>
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="w-full bg-border rounded-full h-2.5 mb-6 overflow-hidden">
+      {/* Overview progress bar */}
+      <div className="w-full bg-border rounded-full h-2 mb-6 overflow-hidden">
         <div
-          className={`h-2.5 rounded-full transition-all duration-300 ${over ? "bg-red-500" : pct > 85 ? "bg-amber-400" : "bg-green-500"}`}
+          className={`h-2 rounded-full transition-all duration-300 ${over ? "bg-red-500" : pct > 85 ? "bg-amber-400" : "bg-green-500"}`}
           style={{ width: `${pct}%` }}
         />
       </div>
 
-      {/* Line items */}
-      <div className="space-y-2 mb-6">
-        {BUDGET_CATEGORIES.map((cat) => (
-          <div key={cat.key} className="flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-brand-subtle transition-colors group">
-            <span className="text-lg w-6">{cat.icon}</span>
-            <span className="text-sm text-muted-foreground flex-1">{cat.label}</span>
-            {editing === cat.key ? (
-              <input
-                autoFocus
-                type="number"
-                defaultValue={items[cat.key]}
-                onBlur={(e) => { update(cat.key, e.target.value); setEditing(null); }}
-                onKeyDown={(e) => { if (e.key === "Enter") { update(cat.key, (e.target as HTMLInputElement).value); setEditing(null); } }}
-                className="w-24 text-right text-sm font-semibold border border-brand/40 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand/40"
-              />
-            ) : (
-              <button
-                onClick={() => setEditing(cat.key)}
-                className="text-sm font-semibold text-foreground group-hover:text-brand transition-colors"
-              >
-                €{items[cat.key].toLocaleString()}
-              </button>
-            )}
-            <div className="w-20 bg-border rounded-full h-1.5 overflow-hidden">
-              <div
-                className="h-1.5 rounded-full bg-brand transition-all duration-300"
-                style={{ width: `${Math.min((items[cat.key] / budget) * 100, 100)}%` }}
-              />
+      {/* Sliders */}
+      <div className="space-y-4 mb-6">
+        {BUDGET_CATEGORIES.map((cat) => {
+          const sliderPct = Math.min(Math.round((items[cat.key] / totalBudget) * 100), 100);
+          return (
+            <div key={cat.key} className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-base w-6">{cat.icon}</span>
+                <span className="text-sm text-muted-foreground flex-1">{cat.label}</span>
+                <span className="text-sm font-semibold text-foreground tabular-nums">€{items[cat.key].toLocaleString()}</span>
+                <span className="text-xs text-muted-foreground w-8 text-right">{sliderPct}%</span>
+              </div>
+              <div className="pl-8">
+                <input
+                  type="range"
+                  min={0}
+                  max={totalBudget}
+                  step={10}
+                  value={items[cat.key]}
+                  onChange={(e) => updateSlider(cat.key, Number(e.target.value))}
+                  className="w-full accent-brand h-1.5 cursor-pointer"
+                />
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Totals */}
-      <div className={`flex items-center justify-between pt-4 border-t ${over ? "border-red-100 bg-red-50" : "border-border bg-background"} rounded-xl px-4 py-3`}>
-        <span className="text-sm font-semibold text-foreground">Gesamt pro Person</span>
+      <div className={`flex items-center justify-between pt-4 border-t ${over ? "border-red-100" : "border-border"} px-1 py-2`}>
+        <span className="text-sm font-semibold text-foreground">Total per person</span>
         <span className={`text-lg font-bold ${over ? "text-red-600" : "text-foreground"}`}>
           €{total.toLocaleString()}
         </span>
       </div>
       {travelers > 1 && (
-        <p className="text-xs text-muted-foreground text-right mt-2">
-          {travelers} Personen gesamt: €{(total * travelers).toLocaleString()}
+        <p className="text-xs text-muted-foreground text-right mt-1">
+          {travelers} persons total: €{(total * travelers).toLocaleString()}
         </p>
       )}
     </div>
@@ -897,78 +974,145 @@ function BookingSection({
 }) {
   const dest = encodeURIComponent(destination || "Europe");
   const destRaw = destination || "Europe";
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   const links = [
     {
-      icon: "✈️",
+      icon: "🛫",
       label: "Flights",
       sub: "Google Flights",
-      url: `https://www.google.com/travel/flights?hl=de&q=Flug+nach+${dest}`,
-      cardClass: "bg-blue-50 hover:bg-blue-100 border-blue-100",
-      labelClass: "text-blue-700",
+      description: "Google's global flight search — compare airlines, see price calendars, set fare alerts.",
+      tip: `Searching: ${destRaw} · ${startDate || "flexible dates"} · ${travelers} passenger${Number(travelers) > 1 ? "s" : ""}`,
+      url: startDate && endDate
+        ? `https://www.google.com/travel/flights#flt=${dest}.${startDate}.${dest}*${dest}.${endDate}.${dest};c:EUR;e:1;px:${travelers};tt:o`
+        : `https://www.google.com/travel/flights?q=flights+to+${dest}`,
+      cardClass: "border-blue-100 dark:border-blue-900/40",
+      accentClass: "bg-blue-50 dark:bg-blue-950/30",
+      labelClass: "text-blue-700 dark:text-blue-400",
     },
     {
       icon: "✈️",
       label: "Flights",
       sub: "Skyscanner",
-      url: `https://www.skyscanner.de/transport/flights/anywhere/${dest.toLowerCase()}/${startDate.replace(/-/g, "")}/?adults=${travelers}&currency=EUR`,
-      cardClass: "bg-sky-50 hover:bg-sky-100 border-sky-100",
-      labelClass: "text-sky-700",
+      description: "Skyscanner aggregates hundreds of airlines and OTAs. Great for finding cheapest month / flexible dates.",
+      tip: "Best for: flexible date search & budget airlines",
+      url: `https://www.skyscanner.de/transport/flights/anywhere/${dest.toLowerCase()}/${startDate ? startDate.replace(/-/g, "") : ""}/?adults=${travelers}&currency=EUR`,
+      cardClass: "border-sky-100 dark:border-sky-900/40",
+      accentClass: "bg-sky-50 dark:bg-sky-950/30",
+      labelClass: "text-sky-700 dark:text-sky-400",
     },
     {
-      icon: "✈️",
+      icon: "🔍",
       label: "Flights",
       sub: "Kayak",
-      url: `https://www.kayak.de/flights/FRA-${dest}/${startDate}/${endDate}/${travelers}adults`,
-      cardClass: "bg-orange-50 hover:bg-orange-100 border-orange-100",
-      labelClass: "text-orange-700",
+      description: "Kayak searches 200+ travel sites at once. Price alerts and flexible destination search.",
+      tip: "Best for: price alerts & last-minute deals",
+      url: `https://www.kayak.de/flights/FRA-${dest}/${startDate || ""}/${endDate || ""}/${travelers}adults`,
+      cardClass: "border-orange-100 dark:border-orange-900/40",
+      accentClass: "bg-orange-50 dark:bg-orange-950/30",
+      labelClass: "text-orange-700 dark:text-orange-400",
     },
     {
-      icon: "🏨",
+      icon: "🏕️",
       label: "Hotels",
       sub: "Booking.com",
-      url: `https://www.booking.com/searchresults.html?ss=${dest}&checkin=${startDate}&checkout=${endDate}&group_adults=${travelers}&no_rooms=1&lang=en`,
-      cardClass: "bg-amber-50 hover:bg-amber-100 border-amber-100",
-      labelClass: "text-amber-700",
+      description: "World's largest hotel platform. 28M+ listings, free cancellation options, genius loyalty tier.",
+      tip: startDate && endDate ? `${destRaw} · ${startDate} → ${endDate} · ${travelers} guest${Number(travelers) > 1 ? "s" : ""}` : `Searching hotels in ${destRaw}`,
+      url: `https://www.booking.com/searchresults.html?ss=${dest}&checkin=${startDate || ""}&checkout=${endDate || ""}&group_adults=${travelers}&no_rooms=1&lang=en&currency=EUR`,
+      cardClass: "border-amber-100 dark:border-amber-900/40",
+      accentClass: "bg-amber-50 dark:bg-amber-950/30",
+      labelClass: "text-amber-700 dark:text-amber-400",
     },
     {
-      icon: "🏠",
+      icon: "🏡",
       label: "Apartments",
       sub: "Airbnb",
-      url: `https://www.airbnb.de/s/${encodeURIComponent(destRaw)}/homes?checkin=${startDate}&checkout=${endDate}&adults=${travelers}`,
-      cardClass: "bg-rose-50 hover:bg-rose-100 border-rose-100",
-      labelClass: "text-rose-700",
+      description: "Homes, apartments & unique stays. Great for longer trips, families, and local neighbourhood immersion.",
+      tip: `${destRaw} · entire homes & private rooms`,
+      url: `https://www.airbnb.com/s/${encodeURIComponent(destRaw)}/homes?checkin=${startDate || ""}&checkout=${endDate || ""}&adults=${travelers}&currency=EUR`,
+      cardClass: "border-rose-100 dark:border-rose-900/40",
+      accentClass: "bg-rose-50 dark:bg-rose-950/30",
+      labelClass: "text-rose-700 dark:text-rose-400",
     },
     {
-      icon: "🗺️",
+      icon: "🧭",
       label: "Activities",
       sub: "GetYourGuide",
-      url: `https://www.getyourguide.de/s/?q=${dest}${startDate ? `&date_from=${startDate}` : ""}`,
-      cardClass: "bg-green-50 hover:bg-green-100 border-green-100",
-      labelClass: "text-green-700",
+      description: "50,000+ guided tours, day trips and experiences worldwide. Instant confirmation, free cancellation.",
+      tip: `Tours & activities in ${destRaw}`,
+      url: `https://www.getyourguide.com/s/?q=${dest}${startDate ? `&date_from=${startDate}` : ""}`,
+      cardClass: "border-green-100 dark:border-green-900/40",
+      accentClass: "bg-green-50 dark:bg-green-950/30",
+      labelClass: "text-green-700 dark:text-green-400",
+    },
+    {
+      icon: "🌟",
+      label: "Activities",
+      sub: "Viator",
+      description: "TripAdvisor's booking platform. 300,000+ experiences with verified reviews and best-price guarantee.",
+      tip: `Experiences & tours in ${destRaw}`,
+      url: `https://www.viator.com/searchResults/all?text=${dest}&startDate=${startDate || ""}`,
+      cardClass: "border-violet-100 dark:border-violet-900/40",
+      accentClass: "bg-violet-50 dark:bg-violet-950/30",
+      labelClass: "text-violet-700 dark:text-violet-400",
+    },
+    {
+      icon: "🎫",
+      label: "Attractions",
+      sub: "Klook",
+      description: "Asia-focused activities & passes. Strong for Japan, Korea, SE Asia — city passes, airport transfers.",
+      tip: `City passes & local experiences in ${destRaw}`,
+      url: `https://www.klook.com/en-GB/search/?query=${dest}`,
+      cardClass: "border-pink-100 dark:border-pink-900/40",
+      accentClass: "bg-pink-50 dark:bg-pink-950/30",
+      labelClass: "text-pink-700 dark:text-pink-400",
     },
   ];
 
   return (
     <div className="bg-surface rounded-2xl border border-border p-4 sm:p-8 mb-4 sm:mb-6 no-print">
-      <div className="flex items-center gap-2 mb-5">
+      <div className="flex items-center gap-2 mb-2">
         <span className="text-xl">🔗</span>
-        <h3 className="font-semibold text-foreground">Direkt buchen</h3>
+        <h3 className="font-semibold text-foreground">Book direct</h3>
+        <span className="text-xs text-muted-foreground ml-1">— tap to expand, then open in app</span>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {links.map((link) => (
-          <a
-            key={link.sub}
-            href={link.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors ${link.cardClass}`}
-          >
-            <span className="text-2xl">{link.icon}</span>
-            <span className={`font-semibold text-xs ${link.labelClass}`}>{link.label}</span>
-            <span className="text-xs text-muted-foreground">{link.sub}</span>
-          </a>
-        ))}
+      <p className="text-xs text-muted-foreground mb-5">Click any provider to see details. "Open" takes you directly to pre-filled results.</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {links.map((link) => {
+          const isOpen = expanded === link.sub;
+          return (
+            <div key={link.sub} className={`rounded-xl border ${link.cardClass} overflow-hidden transition-all`}>
+              <button
+                onClick={() => setExpanded(isOpen ? null : link.sub)}
+                className="w-full flex items-center gap-3 p-3 text-left"
+              >
+                <span className="text-xl">{link.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-xs font-bold uppercase tracking-wide ${link.labelClass}`}>{link.label}</span>
+                    <span className="text-xs text-muted-foreground">· {link.sub}</span>
+                  </div>
+                  {!isOpen && <p className="text-xs text-muted-foreground/60 truncate mt-0.5">{link.tip}</p>}
+                </div>
+                <span className={`text-muted-foreground/50 text-xs transition-transform ${isOpen ? "rotate-180" : ""}`}>▾</span>
+              </button>
+              {isOpen && (
+                <div className={`px-3 pb-3 ${link.accentClass}`}>
+                  <p className="text-xs text-muted-foreground leading-relaxed mb-2">{link.description}</p>
+                  <p className="text-xs font-medium text-foreground/70 mb-3">📍 {link.tip}</p>
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold ${link.labelClass} border ${link.cardClass} bg-background hover:bg-surface transition-colors`}
+                  >
+                    Open {link.sub} ↗
+                  </a>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -993,26 +1137,57 @@ function activityIcon(activity: string): string {
 }
 
 function ItineraryTimeline({ itinerary }: { itinerary: { day: string; activities: string[] }[] }) {
+  const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
+
+  function toggleBlock(i: number) {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      next.has(i) ? next.delete(i) : next.add(i);
+      return next;
+    });
+  }
+
+  const allCollapsed = collapsed.size === itinerary.length;
+
   return (
-    <ol className="relative mb-6 pl-9">
-      <span className="absolute left-[15px] top-2 bottom-2 w-px bg-gradient-to-b from-brand/40 via-brand/20 to-brand/10" aria-hidden />
-      {itinerary.map((block, i) => (
-        <li key={block.day} className="relative pb-6 last:pb-0">
-          <span className="absolute -left-9 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-brand text-xs font-bold text-brand-foreground ring-4 ring-surface">
-            {i + 1}
-          </span>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-brand">{block.day}</p>
-          <div className="space-y-1.5">
-            {block.activities.map((activity) => (
-              <div key={activity} className="flex items-start gap-2.5 rounded-lg bg-brand-subtle px-3 py-2 text-sm text-muted-foreground">
-                <span className="text-base leading-none">{activityIcon(activity)}</span>
-                <span className="leading-snug">{activity}</span>
-              </div>
-            ))}
-          </div>
-        </li>
-      ))}
-    </ol>
+    <div className="mb-6">
+      <button
+        onClick={() => setCollapsed(allCollapsed ? new Set() : new Set(itinerary.map((_, i) => i)))}
+        className="text-xs text-muted-foreground hover:text-foreground mb-3 ml-9 transition-colors"
+      >
+        {allCollapsed ? "▸ Expand all" : "▾ Collapse all"}
+      </button>
+      <ol className="relative pl-9">
+        <span className="absolute left-[15px] top-2 bottom-2 w-px bg-gradient-to-b from-brand/40 via-brand/20 to-brand/10" aria-hidden />
+        {itinerary.map((block, i) => {
+          const isCollapsed = collapsed.has(i);
+          return (
+            <li key={block.day} className="relative pb-5 last:pb-0">
+              <span className="absolute -left-9 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-brand text-xs font-bold text-brand-foreground ring-4 ring-surface">
+                {i + 1}
+              </span>
+              <button
+                onClick={() => toggleBlock(i)}
+                className="flex items-center gap-2 mb-2 group w-full text-left"
+              >
+                <p className="text-xs font-semibold uppercase tracking-wide text-brand group-hover:text-brand/70 transition-colors">{block.day}</p>
+                <span className="text-[10px] text-muted-foreground ml-auto pr-1">{isCollapsed ? "▸" : "▾"}</span>
+              </button>
+              {!isCollapsed && (
+                <div className="space-y-1.5">
+                  {block.activities.map((activity) => (
+                    <div key={activity} className="flex items-start gap-2.5 rounded-lg bg-brand-subtle px-3 py-2 text-sm text-muted-foreground">
+                      <span className="text-base leading-none">{activityIcon(activity)}</span>
+                      <span className="leading-snug">{activity}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </div>
   );
 }
 

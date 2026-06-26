@@ -7,21 +7,21 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { SiteNav } from "@/components/site-nav";
 import { DestinationScanner } from "@/components/destination-scanner";
-import { Landmark, Mountain, Waves, Building2, Zap, UtensilsCrossed, Gem, Leaf, Baby, Music2, type LucideIcon } from "lucide-react";
+import { Compass, TreePine, Waves, Globe, Tent, UtensilsCrossed, Crown, Wind, Heart, Sparkles, type LucideIcon } from "lucide-react";
 
 const TOTAL_STEPS = 6;
 
 const INTERESTS: { id: string; label: string; Icon: LucideIcon }[] = [
-  { id: "culture",   label: "Kultur & Geschichte", Icon: Landmark },
-  { id: "nature",    label: "Natur & Berge",        Icon: Mountain },
+  { id: "culture",   label: "Kultur & Geschichte", Icon: Compass },
+  { id: "nature",    label: "Natur & Berge",        Icon: TreePine },
   { id: "beach",     label: "Strand & Meer",        Icon: Waves },
-  { id: "city",      label: "Städtetrip",           Icon: Building2 },
-  { id: "adventure", label: "Abenteuer",            Icon: Zap },
+  { id: "city",      label: "Städtetrip",           Icon: Globe },
+  { id: "adventure", label: "Abenteuer",            Icon: Tent },
   { id: "food",      label: "Kulinarik",            Icon: UtensilsCrossed },
-  { id: "luxury",    label: "Luxus",                Icon: Gem },
-  { id: "wellness",  label: "Wellness & Spa",       Icon: Leaf },
-  { id: "family",    label: "Familie",              Icon: Baby },
-  { id: "nightlife", label: "Nightlife & Events",   Icon: Music2 },
+  { id: "luxury",    label: "Luxus",                Icon: Crown },
+  { id: "wellness",  label: "Wellness & Spa",       Icon: Wind },
+  { id: "family",    label: "Familie",              Icon: Heart },
+  { id: "nightlife", label: "Nightlife & Events",   Icon: Sparkles },
 ];
 
 const DESTINATIONS = [
@@ -84,7 +84,8 @@ type FormData = {
   travelers: number;
   interests: string[];
   budget: number;
-  budgetMode: "with-flights" | "activities-only";
+  includeFlights: boolean;
+  includeHotel: boolean;
   adventureMode: boolean;
 };
 
@@ -134,7 +135,8 @@ function PlanContent() {
       travelers: Number(searchParams.get("travelers")) || lsLoad("vagamundo_travelers", 2),
       interests: mergedInterests.length > 0 ? mergedInterests : lsLoad("vagamundo_interests", []),
       budget: 3000,
-      budgetMode: "with-flights",
+      includeFlights: true,
+      includeHotel: true,
       adventureMode: isAdventure,
     };
   });
@@ -185,7 +187,8 @@ function PlanContent() {
       interests: form.interests.join(","),
       budget: String(form.budget),
       origin: form.origin,
-      budgetMode: form.budgetMode,
+      includeFlights: String(form.includeFlights),
+      includeHotel: String(form.includeHotel),
       ...(form.adventureMode ? { adventure: "1" } : {}),
     };
     if (form.isMultiCity) {
@@ -279,9 +282,11 @@ function PlanContent() {
             {step === 5 && (
               <StepBudget
                 value={form.budget}
-                budgetMode={form.budgetMode}
+                includeFlights={form.includeFlights}
+                includeHotel={form.includeHotel}
                 onChange={(v) => setForm((f) => ({ ...f, budget: v }))}
-                onModeChange={(v) => setForm((f) => ({ ...f, budgetMode: v }))}
+                onFlightsChange={(v) => setForm((f) => ({ ...f, includeFlights: v }))}
+                onHotelChange={(v) => setForm((f) => ({ ...f, includeHotel: v }))}
               />
             )}
             {step === 6 && <StepSummary form={form} />}
@@ -584,11 +589,14 @@ function StepDates({
   function handleStartChange(v: string) {
     onChangeStart(v);
     if (v) {
-      // Auto-advance focus to return date after departure is picked
+      // Auto-advance to return date after departure is picked
       setTimeout(() => {
-        const el = document.getElementById("end-date-input");
-        if (el) (el as HTMLInputElement).focus();
-      }, 80);
+        const el = document.getElementById("end-date-input") as HTMLInputElement | null;
+        if (el) {
+          el.focus();
+          try { el.showPicker?.(); } catch { /* not supported on all browsers */ }
+        }
+      }, 120);
     }
   }
 
@@ -698,14 +706,18 @@ function StepInterests({
 
 function StepBudget({
   value,
-  budgetMode,
+  includeFlights,
+  includeHotel,
   onChange,
-  onModeChange,
+  onFlightsChange,
+  onHotelChange,
 }: {
   value: number;
-  budgetMode: "with-flights" | "activities-only";
+  includeFlights: boolean;
+  includeHotel: boolean;
   onChange: (v: number) => void;
-  onModeChange: (v: "with-flights" | "activities-only") => void;
+  onFlightsChange: (v: boolean) => void;
+  onHotelChange: (v: boolean) => void;
 }) {
   const [inputVal, setInputVal] = useState(String(value));
 
@@ -724,16 +736,20 @@ function StepBudget({
     }
   }
 
+  const budgetDesc = !includeFlights && !includeHotel
+    ? "Budget nur für Aktivitäten, Essen & lokalen Transport."
+    : !includeFlights
+      ? "Budget pro Person ohne Flüge (Hotel inkl.)."
+      : !includeHotel
+        ? "Budget pro Person ohne Hotel (Flüge inkl.)."
+        : "Gesamtbudget pro Person inkl. Flüge & Unterkunft.";
+
   const presets = [1000, 2000, 3000, 5000, 10000];
   return (
     <div>
       <p className="text-xs font-semibold text-brand uppercase tracking-[0.28em] mb-2">Schritt 5</p>
       <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-foreground mb-2">Was ist dein Budget?</h2>
-      <p className="text-muted-foreground text-sm mb-6">
-        {budgetMode === "with-flights"
-          ? "Gesamtbudget pro Person inkl. Flüge & Unterkunft."
-          : "Budget pro Person für Aktivitäten & Essen (ohne Flüge & Hotel)."}
-      </p>
+      <p className="text-muted-foreground text-sm mb-6">{budgetDesc}</p>
       <div className="flex items-center gap-3 mb-5">
         <span className="text-3xl font-bold text-foreground">€</span>
         <input
@@ -764,19 +780,34 @@ function StepBudget({
           </button>
         ))}
       </div>
-      {/* Budget scope toggle */}
-      <label className="flex items-start gap-3 cursor-pointer p-3 rounded-xl border border-border hover:bg-muted/50 transition-colors">
-        <input
-          type="checkbox"
-          checked={budgetMode === "activities-only"}
-          onChange={(e) => onModeChange(e.target.checked ? "activities-only" : "with-flights")}
-          className="mt-0.5 w-4 h-4 rounded accent-foreground"
-        />
-        <div>
-          <span className="text-sm font-medium text-foreground">Ohne Flug & Hotel</span>
-          <p className="text-xs text-muted-foreground mt-0.5">Budget nur für Aktivitäten, Essen & Transport vor Ort.</p>
-        </div>
-      </label>
+      {/* Separate flight / hotel toggles */}
+      <div className="space-y-2.5">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Was ist im Budget enthalten?</p>
+        <label className="flex items-start gap-3 cursor-pointer p-3 rounded-xl border border-border hover:bg-muted/50 transition-colors">
+          <input
+            type="checkbox"
+            checked={includeFlights}
+            onChange={(e) => onFlightsChange(e.target.checked)}
+            className="mt-0.5 w-4 h-4 rounded accent-foreground"
+          />
+          <div>
+            <span className="text-sm font-medium text-foreground">✈️ Flüge</span>
+            <p className="text-xs text-muted-foreground mt-0.5">Hin- und Rückflug sind im Budget enthalten.</p>
+          </div>
+        </label>
+        <label className="flex items-start gap-3 cursor-pointer p-3 rounded-xl border border-border hover:bg-muted/50 transition-colors">
+          <input
+            type="checkbox"
+            checked={includeHotel}
+            onChange={(e) => onHotelChange(e.target.checked)}
+            className="mt-0.5 w-4 h-4 rounded accent-foreground"
+          />
+          <div>
+            <span className="text-sm font-medium text-foreground">🏕️ Unterkunft</span>
+            <p className="text-xs text-muted-foreground mt-0.5">Hotel, Hostel oder Unterkunft sind im Budget enthalten.</p>
+          </div>
+        </label>
+      </div>
     </div>
   );
 }
@@ -827,7 +858,7 @@ function StepSummary({ form }: { form: FormData }) {
         <SummaryRow
           icon="💶"
           label="Budget"
-          value={`€${form.budget.toLocaleString()} pro Person${form.budgetMode === "activities-only" ? " (ohne Flug & Hotel)" : ""}`}
+          value={`€${form.budget.toLocaleString()} pro Person${!form.includeFlights && !form.includeHotel ? " (ohne Flug & Hotel)" : !form.includeFlights ? " (ohne Flüge)" : !form.includeHotel ? " (ohne Unterkunft)" : ""}`}
         />
       </div>
       {form.adventureMode && (

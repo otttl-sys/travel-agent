@@ -307,10 +307,19 @@ async function executeMultiCityTool(name: string, input: Record<string, unknown>
 }
 
 export async function POST(req: NextRequest) {
-  const { destination, startDate, endDate, travelers, interests, budget, cities, cityDays, multiCity, origin, budgetMode, adventure } = await req.json();
+  const { destination, startDate, endDate, travelers, interests, budget, cities, cityDays, multiCity, origin, budgetMode, adventure, includeFlights, includeHotel } = await req.json();
   const adventureMode = adventure === "1" || adventure === true;
   const interestsList: string[] = interests ? String(interests).split(",").map((s: string) => s.trim()) : [];
   const familyMode = interestsList.includes("family");
+  const flightsIncluded = includeFlights !== false && budgetMode !== "activities-only";
+  const hotelIncluded = includeHotel !== false && budgetMode !== "activities-only";
+  const budgetNote = !flightsIncluded && !hotelIncluded
+    ? " (activities & local transport only — NO flights or hotel)"
+    : !flightsIncluded
+      ? " (hotel IS included, flights are NOT in this budget)"
+      : !hotelIncluded
+        ? " (flights ARE included, hotel is NOT in this budget)"
+        : " (total including flights and hotel)";
 
   const isMultiCity = multiCity === "1" || multiCity === true;
   const cityList: string[] = isMultiCity && cities ? (Array.isArray(cities) ? cities : String(cities).split(",")) : [];
@@ -354,9 +363,9 @@ Plan a trip with the following preferences:
 - Dates: ${startDate || "flexible"} to ${endDate || "flexible"}
 - Travelers: ${travelers || 2}
 - Interests: ${interests || "general"}
-- Budget per person: €${budget || 3000}${budgetMode === "activities-only" ? " (activities & local transport only — flights and hotel are NOT included in this budget)" : " (total including flights and hotel)"}
+- Budget per person: €${budget || 3000}${budgetNote}
 
-Use the available tools to research flights from ${origin || "Germany"}, hotels, and activities and optimise the budget.
+Use the available tools to research${flightsIncluded ? " flights from " + (origin || "Germany") + "," : ""} ${hotelIncluded ? "hotels," : ""} and activities and optimise the budget.
 Then create a concrete, structured travel plan in English.
 `.trim();
 
@@ -405,7 +414,10 @@ RULES:
 - Do NOT use Markdown tables (no | --- | format). Use headings (##), bullet points (-) and bold (**) instead.
 - NEVER end with questions, offers to continue, or chatbot-style closings ("Should I...", "Would you like...", "Can I help with..."). The plan is complete and self-contained.
 - If both Wellness AND Luxury are listed as interests, look for hotels that offer BOTH: luxury accommodation with wellness/spa facilities.
-- Be precise with prices: mark estimates as "approx." and ranges as "€X–€Y".${adventureAddition}${familyAddition}`;
+- Be precise with prices: mark estimates as "approx." and ranges as "€X–€Y".
+- For each itinerary day or activity block, add one sentence explaining WHY this was selected (e.g. "→ Why: best value for the dates, close to major sights").
+- For any train, bus, or ferry connections: ALWAYS specify the exact departure station/terminal, arrival station/terminal, and approximate travel time (e.g. "ICE from Berlin Hbf → Munich Hbf, ~4h").
+- Occupancy outlook: mention if the travel period is peak, shoulder, or low season for the destination and what to expect (crowds, pricing).${adventureAddition}${familyAddition}`;
 
           // Stream every Claude call — text tokens arrive live, tool_use detected after
           const stream = client.messages.stream({
@@ -512,14 +524,14 @@ RULES:
                 ];
                 const cardTool: Anthropic.Tool = {
                   name: "generate_trip_cards",
-                  description: "Generate 5 structured trip card options based on the travel plan already created.",
+                  description: "Generate 8 structured trip card options based on the travel plan already created.",
                   input_schema: {
                     type: "object" as const,
                     properties: {
                       cards: {
                         type: "array",
                         minItems: 5,
-                        maxItems: 5,
+                        maxItems: 8,
                         items: {
                           type: "object",
                           properties: {
@@ -576,7 +588,7 @@ RULES:
                       ? `Based on the travel plan above, generate 5 ADVENTURE trip card options for ${destination}. Each must be genuinely adventurous. Tiers: ultra-budget backpacker (hostels/camping), budget active explorer, balanced active trip, premium expedition (guided tours/gear), luxury adventure lodge. All prices realistic. Use English. bookingUrl = Google Flights from ${origin || "Germany"} to destination.`
                       : familyMode
                         ? `Based on the travel plan above, generate 5 FAMILY-FRIENDLY trip card options for ${destination}. Tiers: budget self-catering apartment (bunk beds, kitchen), affordable family hotel (pool, kids menu), comfortable family resort (kids club, entertainment), premium family villa (private pool, nanny service), luxury all-inclusive family retreat. Include child discounts and family pricing notes. All prices realistic. Use English. bookingUrl = Google Flights from ${origin || "Germany"} to destination.`
-                        : `Based on the travel plan above, generate 5 different trip card options for ${destination}. Vary styles: ultra-budget backpacker, budget-friendly, balanced mid-range, premium comfort, luxury. All prices realistic. Use English. bookingUrl = Google Flights from ${origin || "Germany"} to destination.`,
+                        : `Based on the travel plan above, generate 8 different trip card options for ${destination}. Vary styles across: ultra-budget backpacker, budget-friendly hostel, balanced mid-range, comfort traveller, premium comfort, business class, luxury boutique, ultra-luxury. Give distinct itinerary themes (beach focus, city focus, nature, cultural, adventure mix, food & wine, romantic, family-style). All prices realistic. Use English. bookingUrl = Google Flights from ${origin || "Germany"} to destination.`,
                   },
                 ];
 

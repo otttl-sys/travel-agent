@@ -26,9 +26,9 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Nav */}
-      <nav className="border-b border-border px-6 py-5 bg-background/95 backdrop-blur sticky top-0 z-50 relative">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
+      <nav className="border-b border-border px-6 py-4 bg-background/95 backdrop-blur sticky top-0 z-50 relative">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-6">
+          <div className="flex items-center gap-2 shrink-0">
             <span className="font-bold text-foreground text-base tracking-[0.2em] uppercase">Vagamundo</span>
           </div>
 
@@ -78,10 +78,10 @@ export default function Home() {
             <ThemeToggle />
           </div>
 
-          <div className="flex md:hidden items-center gap-3">
+          <div className="flex md:hidden items-center gap-4">
             <ThemeToggle />
             <Link href="/plan">
-              <button className="bg-foreground text-background px-4 py-2 rounded-full text-xs uppercase tracking-[0.18em] font-semibold">Plan</button>
+              <button className="bg-foreground text-background px-5 py-2.5 rounded-full text-xs uppercase tracking-[0.18em] font-semibold whitespace-nowrap">Plan a trip</button>
             </Link>
             <button
               onClick={() => setMobileMenuOpen((o) => !o)}
@@ -462,12 +462,12 @@ const STEPS = [
 ];
 
 const AGENTS = [
-  { icon: "✈️", name: "Flight Agent", description: "Best flights, cheap stopovers, optimal times." },
-  { icon: "🏨", name: "Hotel Agent", description: "Prime location, best price-performance ratio." },
-  { icon: "🗺️", name: "Activity Agent", description: "Culture, adventure, restaurants, day planning." },
-  { icon: "💰", name: "Budget Agent", description: "Optimize total costs, find alternatives." },
-  { icon: "🔍", name: "Research Agent", description: "Visa, climate, safety, local tips — all before booking." },
-  { icon: "🚨", name: "Disruption Agent", description: "Flight disrupted? Status, alternatives and rights in seconds." },
-  { icon: "🎒", name: "Packing Agent", description: "Destination-specific packing list tailored to climate and trip type." },
-  { icon: "📋", name: "Briefing Agent", description: "Full country briefing: culture, currency, health, safety." },
+  { icon: "🛫", name: "Flight Agent", description: "Best routes, cheapest windows, layover hacks." },
+  { icon: "🏕️", name: "Hotel Agent", description: "Prime location, boutique finds, best price-performance." },
+  { icon: "🧭", name: "Activity Agent", description: "Hidden gems, local adventures, off-beat experiences." },
+  { icon: "💎", name: "Budget Agent", description: "Squeeze every euro — finds alternatives you'd never spot." },
+  { icon: "🌍", name: "Research Agent", description: "Visa, climate, safety intel — everything before you go." },
+  { icon: "⚡", name: "Disruption Agent", description: "Flight chaos? Finds alternatives and your rights instantly." },
+  { icon: "🎒", name: "Packing Agent", description: "Smart packing list tuned to climate and trip style." },
+  { icon: "🗞️", name: "Briefing Agent", description: "Culture codes, currency, health, safety — the full picture." },
 ];
