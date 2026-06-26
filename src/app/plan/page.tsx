@@ -134,7 +134,7 @@ function PlanContent() {
       endDate: searchParams.get("endDate") || lsLoad("vagamundo_endDate", ""),
       travelers: Number(searchParams.get("travelers")) || lsLoad("vagamundo_travelers", 2),
       interests: mergedInterests.length > 0 ? mergedInterests : lsLoad("vagamundo_interests", []),
-      budget: 3000,
+      budget: lsLoad("vagamundo_budget", 3000),
       includeFlights: true,
       includeHotel: true,
       adventureMode: isAdventure,
@@ -146,6 +146,7 @@ function PlanContent() {
   useEffect(() => { lsSave("vagamundo_endDate", form.endDate); }, [form.endDate]);
   useEffect(() => { lsSave("vagamundo_travelers", form.travelers); }, [form.travelers]);
   useEffect(() => { lsSave("vagamundo_interests", form.interests); }, [form.interests]);
+  useEffect(() => { lsSave("vagamundo_budget", form.budget); }, [form.budget]);
 
   useEffect(() => {
     fetch("/api/profile")
@@ -586,10 +587,11 @@ function StepDates({
   onChangeStart: (v: string) => void;
   onChangeEnd: (v: string) => void;
 }) {
+  const [activeField, setActiveField] = useState<"start" | "end" | null>(null);
+
   function handleStartChange(v: string) {
     onChangeStart(v);
     if (v) {
-      // Auto-advance to return date after departure is picked
       setTimeout(() => {
         const el = document.getElementById("end-date-input") as HTMLInputElement | null;
         if (el) {
@@ -604,24 +606,47 @@ function StepDates({
     <div>
       <p className="text-xs font-semibold text-brand uppercase tracking-[0.28em] mb-2">Schritt 2</p>
       <h2 className="text-2xl font-extrabold tracking-[-0.03em] text-foreground mb-2">Wann möchtest du reisen?</h2>
-      <p className="text-muted-foreground text-sm mb-6">Ungefähre Daten reichen völlig aus.</p>
+      <p className="text-muted-foreground text-sm mb-4">Ungefähre Daten reichen völlig aus.</p>
+
+      {/* Active field indicator — stays visible even when native date picker overlaps */}
+      <div className={`mb-4 p-3 rounded-xl border transition-all duration-200 ${
+        activeField
+          ? "bg-brand-subtle border-brand/40 opacity-100"
+          : "bg-muted/40 border-border opacity-60"
+      }`}>
+        <p className="text-sm font-semibold text-brand">
+          {activeField === "start" ? "🛫 Du wählst: Abreisedatum" :
+           activeField === "end"   ? "🛬 Du wählst: Rückreisedatum" :
+           "📅 Tippe ein Datum-Feld an"}
+        </p>
+        {startDate && endDate && (
+          <p className="text-xs text-muted-foreground mt-1">
+            {startDate} → {endDate}
+          </p>
+        )}
+      </div>
+
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1">Abreise</label>
+          <label className="block text-sm font-semibold text-foreground mb-1.5">🛫 Abreise</label>
           <Input
             type="date"
             value={startDate}
             onChange={(e) => handleStartChange(e.target.value)}
+            onFocus={() => setActiveField("start")}
+            onBlur={() => setActiveField(null)}
             className="text-base"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1">Rückkehr</label>
+          <label className="block text-sm font-semibold text-foreground mb-1.5">🛬 Rückkehr</label>
           <Input
             id="end-date-input"
             type="date"
             value={endDate}
             onChange={(e) => onChangeEnd(e.target.value)}
+            onFocus={() => setActiveField("end")}
+            onBlur={() => setActiveField(null)}
             className="text-base"
           />
         </div>

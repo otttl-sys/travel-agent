@@ -134,6 +134,7 @@ function ResultsContent() {
   const [savedId, setSavedId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [refinementCount, setRefinementCount] = useState(0);
+  const [streamingDone, setStreamingDone] = useState(false);
   const hasFetchedRef = useRef(false);
   const loadingRef = useRef(true);
   const [loadingInterrupted, setLoadingInterrupted] = useState(false);
@@ -299,6 +300,7 @@ function ResultsContent() {
       setTimeout(() => {
         setAiResult(result);
         setLoading(false);
+        setStreamingDone(true);
       }, 500);
     }).catch((err) => {
       if (err.name === "AbortError") return;
@@ -313,6 +315,14 @@ function ResultsContent() {
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (streamingDone) {
+      setTimeout(() => {
+        document.getElementById("budget-tracker")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 600);
+    }
+  }, [streamingDone]);
 
   if (loading) {
     return (
@@ -520,7 +530,7 @@ function ResultsContent() {
             <div className="flex-1 min-w-0">
               {/* AI Result */}
               {aiResult && (
-                <div className="bg-surface rounded-2xl border border-border p-4 sm:p-8 mb-4 sm:mb-6">
+                <div className="bg-surface rounded-2xl border border-border p-4 sm:p-8 mb-4 sm:mb-6" style={{ overflowAnchor: "none" }}>
                   <div className="flex items-center gap-2 mb-5">
                     <span className="text-xl">🧭</span>
                     <h3 className="font-semibold text-foreground">Your personalised travel plan by Vagamundo</h3>
@@ -643,6 +653,54 @@ const REFINEMENT_CHIPS = [
   { label: "Luxury upgrade ✨", prompt: "Upgrade to a luxury experience: 5-star hotels, Michelin-starred dining, private tours, and premium activities." },
 ];
 
+function VoiceButton({ onTranscript, disabled }: { onTranscript: (t: string) => void; disabled: boolean }) {
+  const [listening, setListening] = useState(false);
+  const recRef = useRef<{ stop: () => void } | null>(null);
+
+  function toggle() {
+    if (listening) {
+      recRef.current?.stop();
+      return;
+    }
+    type SRCtor = new () => {
+      lang: string; continuous: boolean; interimResults: boolean;
+      onresult: ((e: { results: { [i: number]: { [j: number]: { transcript: string } } } }) => void) | null;
+      onend: (() => void) | null;
+      onerror: (() => void) | null;
+      start: () => void; stop: () => void;
+    };
+    const win = window as unknown as Record<string, unknown>;
+    const SR = (win.SpeechRecognition ?? win.webkitSpeechRecognition) as SRCtor | undefined;
+    if (!SR) return;
+    const rec = new SR();
+    rec.lang = "de-DE";
+    rec.continuous = false;
+    rec.interimResults = false;
+    rec.onresult = (e) => onTranscript(e.results[0][0].transcript);
+    rec.onend = () => setListening(false);
+    rec.onerror = () => { setListening(false); };
+    rec.start();
+    setListening(true);
+    recRef.current = rec;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      disabled={disabled}
+      title={listening ? "Stop recording" : "Voice input"}
+      className={`shrink-0 w-9 h-9 rounded-xl border flex items-center justify-center transition-colors disabled:opacity-40 ${
+        listening
+          ? "bg-red-500 border-red-400 text-white animate-pulse"
+          : "border-border bg-background text-muted-foreground hover:border-brand hover:text-brand"
+      }`}
+    >
+      {listening ? "⏹" : "🎤"}
+    </button>
+  );
+}
+
 function RefinementChat({
   currentPlan,
   destination,
@@ -667,7 +725,14 @@ function RefinementChat({
   const [streamPreview, setStreamPreview] = useState("");
   const [lastMessage, setLastMessage] = useState("");
   const [history, setHistory] = useState<string[]>([]);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  function autoResize() {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = el.scrollHeight + "px";
+  }
 
   async function submit(message: string) {
     if (!message.trim() || isRefining) return;
@@ -675,6 +740,9 @@ function RefinementChat({
     setStreamPreview("");
     setLastMessage(message);
     setInput("");
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
 
     try {
       const res = await fetch("/api/refine", {
@@ -720,17 +788,18 @@ function RefinementChat({
     } finally {
       setIsRefining(false);
       setStreamPreview("");
-      inputRef.current?.focus();
+      textareaRef.current?.focus();
     }
   }
 
   return (
-    <div className="bg-surface rounded-2xl border border-brand/20 p-4 sm:p-6 mb-4 sm:mb-6 no-print">
-      <div className="flex items-center gap-2 mb-4">
-        <span className="text-lg">✨</span>
-        <h3 className="font-semibold text-foreground">Refine your plan</h3>
-        <span className="text-xs text-muted-foreground">— ask Claude to adjust anything</span>
+    <div className="bg-gradient-to-br from-surface to-brand-subtle/30 rounded-2xl border border-brand/40 p-4 sm:p-6 mb-4 sm:mb-6 no-print shadow-sm">
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-xl">🤖</span>
+        <h3 className="font-bold text-foreground text-base">Chat with Claude</h3>
+        <span className="ml-auto text-[10px] font-semibold uppercase tracking-wider text-brand bg-brand/10 px-2 py-0.5 rounded-full">AI</span>
       </div>
+      <p className="text-xs text-muted-foreground mb-4">Ask to change anything — Claude knows your full trip plan and budget.</p>
 
       {/* Quick chips */}
       <div className="flex flex-wrap gap-2 mb-4">
@@ -746,23 +815,29 @@ function RefinementChat({
         ))}
       </div>
 
-      {/* Free-text input */}
-      <div className="flex gap-2">
-        <input
-          ref={inputRef}
-          type="text"
+      {/* Free-text input with auto-expand + voice */}
+      <div className="flex items-end gap-2">
+        <textarea
+          ref={textareaRef}
           value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") submit(input); }}
-          placeholder='e.g. "Add a day trip outside the city" or "Swap the beach resort for a boutique hotel"'
+          rows={1}
+          spellCheck
+          onChange={(e) => { setInput(e.target.value); autoResize(); }}
+          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(input); } }}
+          placeholder='z.B. "Füge einen Tagesausflug hinzu" oder "Günstiger bitte"'
           disabled={isRefining}
-          className="flex-1 text-sm rounded-xl border border-border bg-background px-4 py-2.5 placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-brand/30 disabled:opacity-50"
+          className="flex-1 text-sm rounded-xl border border-border bg-background px-4 py-2.5 placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-brand/30 disabled:opacity-50 resize-none overflow-hidden min-h-[42px]"
+          style={{ lineHeight: "1.5" }}
+        />
+        <VoiceButton
+          onTranscript={(t) => { setInput((prev) => prev + (prev ? " " : "") + t); setTimeout(autoResize, 0); }}
+          disabled={isRefining}
         />
         <Button
           onClick={() => submit(input)}
           disabled={isRefining || !input.trim()}
           size="sm"
-          className="px-4 shrink-0"
+          className="px-4 shrink-0 h-[42px]"
         >
           {isRefining ? (
             <span className="flex items-center gap-1.5">
@@ -773,6 +848,7 @@ function RefinementChat({
           ) : "→"}
         </Button>
       </div>
+      <p className="text-[10px] text-muted-foreground mt-1.5">Enter senden · Shift+Enter Zeilenumbruch · 🎤 Spracheingabe</p>
 
       {/* Streaming indicator */}
       {isRefining && (
@@ -781,7 +857,6 @@ function RefinementChat({
             <div className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
             <span className="text-xs font-medium text-brand">Refining: "{lastMessage.slice(0, 60)}{lastMessage.length > 60 ? "…" : ""}"</span>
           </div>
-          {/* Progress bar for refinement */}
           <div className="w-full bg-brand/15 rounded-full h-1.5 mb-2 overflow-hidden">
             <div className="h-1.5 rounded-full bg-brand animate-[progress-indeterminate_1.5s_ease-in-out_infinite]" style={{ width: "40%" }} />
           </div>
@@ -872,7 +947,7 @@ function BudgetTracker({ budget: initialBudget, aiResult, isMultiCity, travelers
   }
 
   return (
-    <div className="bg-surface rounded-2xl border border-border p-4 sm:p-8 mb-4 sm:mb-6">
+    <div id="budget-tracker" className="bg-surface rounded-2xl border border-border p-4 sm:p-8 mb-4 sm:mb-6">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
         <div className="flex items-center gap-2">
           <span className="text-xl">💶</span>
