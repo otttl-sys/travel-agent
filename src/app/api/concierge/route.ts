@@ -103,7 +103,7 @@ Answer the traveler's questions about this trip warmly, knowledgeably, and in En
 export async function POST(req: NextRequest) {
   const { trip, messages: history } = await req.json() as {
     trip: TripContext;
-    messages: { role: "user" | "assistant"; content: string }[];
+    messages: { role: "user" | "assistant"; content: string; imageUrl?: string }[];
   };
 
   const systemPrompt = buildSystemPrompt(trip ?? {});
@@ -112,10 +112,20 @@ export async function POST(req: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        const messages: Anthropic.MessageParam[] = (history ?? []).map((m) => ({
-          role: m.role,
-          content: m.content,
-        }));
+        const messages: Anthropic.MessageParam[] = (history ?? []).map((m) => {
+          if (m.role === "user" && m.imageUrl) {
+            const base64 = m.imageUrl.replace(/^data:image\/\w+;base64,/, "");
+            const mediaType = (m.imageUrl.match(/^data:(image\/\w+);base64/) ?? [])[1] as Anthropic.Base64ImageSource["media_type"] ?? "image/jpeg";
+            return {
+              role: "user" as const,
+              content: [
+                { type: "image" as const, source: { type: "base64" as const, media_type: mediaType, data: base64 } },
+                { type: "text" as const, text: m.content || "What can you tell me about this image?" },
+              ],
+            };
+          }
+          return { role: m.role, content: m.content };
+        });
 
         let continueLoop = true;
         let iterations = 0;

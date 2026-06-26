@@ -76,7 +76,7 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
 
   const search = async (query: string) => {
     try {
-      const result = await tvly.search(query, { searchDepth: "basic", maxResults: 5 });
+      const result = await tvly.search(query, { searchDepth: "advanced", maxResults: 10 });
       return JSON.stringify({
         query,
         results: result.results.map((r) => ({ title: r.title, url: r.url, content: r.content })),

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -10,6 +11,41 @@ import {
   Plane, Calendar, Globe2, MapPinned,
   Users, TrendingDown, TrendingUp, Minus, Check, CalendarPlus, Loader2,
 } from "lucide-react";
+
+const DESTINATION_PHOTOS: [string[], string][] = [
+  [["japan", "tokyo", "kyoto", "osaka"],        "photo-1540959733332-eab4deabeeaf"],
+  [["portugal", "lisbon", "porto"],             "photo-1555881400-74d7acaacd8b"],
+  [["morocco", "marrakech", "fez"],             "photo-1539020140153-e479b8c22e70"],
+  [["bali", "indonesia"],                       "photo-1537996194471-e657df975ab4"],
+  [["greece", "santorini", "athens", "mykonos"],"photo-1533105079780-92b9be482077"],
+  [["italy", "rome", "venice", "florence"],     "photo-1523906834658-6e24ef2386f9"],
+  [["thailand", "bangkok", "phuket", "chiang"], "photo-1528360983277-13d401cdc186"],
+  [["france", "paris"],                         "photo-1502602898657-3e91760cbb34"],
+  [["spain", "barcelona", "madrid", "seville"], "photo-1539037116277-4db20889f2d4"],
+  [["colombia", "cartagena", "medellin"],       "photo-1566438480900-0609be27a4be"],
+  [["brazil", "rio"],                           "photo-1483729558449-99ef09a8c325"],
+  [["kenya", "safari", "nairobi"],              "photo-1516026672322-bc52d61a55d5"],
+  [["vietnam", "hanoi", "ho chi minh"],         "photo-1559592413-7cec4d0cae2b"],
+  [["dubai", "abu dhabi", "uae"],               "photo-1512453979798-5ea266f8880c"],
+  [["canada", "toronto", "vancouver"],          "photo-1534430480872-3498386e7856"],
+  [["australia", "sydney", "melbourne"],        "photo-1523482580672-f109ba8cb9be"],
+  [["iceland", "reykjavik"],                    "photo-1504893524553-b855bce32c67"],
+  [["maldives"],                                "photo-1514282401047-d79a71a590e8"],
+  [["peru", "machu picchu", "lima"],            "photo-1526392060635-9d6019884377"],
+  [["mexico", "cancun", "oaxaca"],              "photo-1518638150340-f706e86654de"],
+  [["india", "taj mahal", "delhi", "mumbai"],   "photo-1506905925346-21bda4d32df4"],
+  [["turkey", "istanbul"],                      "photo-1524231757912-21f4fe3a7200"],
+  [["new zealand"],                             "photo-1469521669194-babb45599def"],
+];
+const FALLBACK_PHOTO = "photo-1488646953014-85cb44e25828";
+
+function getDestinationPhoto(dest: string): string {
+  const lower = dest.toLowerCase();
+  for (const [keywords, id] of DESTINATION_PHOTOS) {
+    if (keywords.some((k) => lower.includes(k))) return id;
+  }
+  return FALLBACK_PHOTO;
+}
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -165,6 +201,9 @@ export default function SavedPage() {
   // ── Tab helpers ──────────────────────────────────────────────────────────────
 
   function openTab(tripId: string, tab: TabId) {
+    if (tab === "visa" && profilePassport && !visaPassport[tripId]) {
+      setVisaPassport(prev => ({ ...prev, [tripId]: profilePassport }));
+    }
     setActiveTab(prev => ({ ...prev, [tripId]: prev[tripId] === tab ? null : tab }));
   }
 
@@ -310,9 +349,9 @@ export default function SavedPage() {
     setActiveConversationId(prev => ({ ...prev, [tripId]: thread.id }));
   }
 
-  async function sendMessage(trip: SavedTrip, text: string) {
+  async function sendMessage(trip: SavedTrip, text: string, imageUrl?: string) {
     if (sendingId) return;
-    const history = [...(conversations[trip.id] ?? []), { role: "user" as const, content: text }];
+    const history = [...(conversations[trip.id] ?? []), { role: "user" as const, content: text, ...(imageUrl ? { imageUrl } : {}) }];
     setConversations(prev => ({ ...prev, [trip.id]: history }));
     setConciergeTraces(prev => ({ ...prev, [trip.id]: [] }));
     setSendingId(trip.id);
@@ -690,6 +729,21 @@ export default function SavedPage() {
                 return (
                   <div key={trip.id} className="bg-surface rounded-2xl border border-border overflow-hidden">
 
+                    {/* ── Destination image ── */}
+                    <div className="relative h-28 overflow-hidden">
+                      <Image
+                        src={`https://images.unsplash.com/${getDestinationPhoto(dest)}?w=800&q=70&auto=format&fit=crop`}
+                        alt={dest}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                      <div className="absolute bottom-3 left-4">
+                        <p className="text-white font-bold text-lg leading-tight tracking-tight drop-shadow">{dest}</p>
+                      </div>
+                    </div>
+
                     {/* ── Card header ── */}
                     <div className="p-4 sm:p-6">
                       <div className="flex items-start justify-between gap-4">
@@ -732,15 +786,31 @@ export default function SavedPage() {
                               <Calendar size={13} strokeWidth={1.5} className="shrink-0" /> Calendar
                             </Button>
                           </a>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={togglingId === trip.id}
-                            onClick={() => handleTogglePublic(trip.id)}
-                            className={publicState[trip.id] ? "text-brand border-brand/40 bg-brand/5" : ""}
-                          >
-                            {publicState[trip.id] ? <><Globe2 size={13} strokeWidth={1.5} className="shrink-0" /> Public</> : "Make public"}
-                          </Button>
+                          <div className="relative group">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={togglingId === trip.id}
+                              onClick={() => handleTogglePublic(trip.id)}
+                              className={publicState[trip.id] ? "text-brand border-brand/40 bg-brand/5" : ""}
+                            >
+                              {publicState[trip.id] ? <><Globe2 size={13} strokeWidth={1.5} className="shrink-0" /> Public</> : "Make public"}
+                            </Button>
+                            {!publicState[trip.id] && (
+                              <div className="absolute bottom-full right-0 mb-1.5 w-56 bg-popover border border-border rounded-lg shadow-lg px-3 py-2 text-xs text-muted-foreground opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
+                                Creates a shareable link anyone can view — no login required.
+                              </div>
+                            )}
+                          </div>
+                          {publicState[trip.id] && (
+                            <button
+                              onClick={() => handleShare(trip.id)}
+                              className="text-xs text-brand hover:text-brand/80 underline underline-offset-2 whitespace-nowrap"
+                              title="Copy public link"
+                            >
+                              {copiedId === trip.id ? "Copied!" : "Copy link"}
+                            </button>
+                          )}
                           <button onClick={() => handleDelete(trip.id)} className="text-muted-foreground/60 hover:text-red-400 transition-colors text-xl leading-none p-1" aria-label="Delete trip">×</button>
                         </div>
                       </div>
@@ -831,7 +901,7 @@ export default function SavedPage() {
                               messages={conversations[trip.id] ?? []}
                               trace={conciergeTraces[trip.id] ?? []}
                               sending={sendingId === trip.id}
-                              onSend={(text) => sendMessage(trip, text)}
+                              onSend={(text, imageUrl) => sendMessage(trip, text, imageUrl)}
                             />
                           </div>
                         )}
@@ -855,7 +925,7 @@ export default function SavedPage() {
                             messages={conversations[trip.id] ?? []}
                             trace={conciergeTraces[trip.id] ?? []}
                             sending={sendingId === trip.id}
-                            onSend={(text) => sendMessage(trip, text)}
+                            onSend={(text, imageUrl) => sendMessage(trip, text, imageUrl)}
                           />
                         )}
 

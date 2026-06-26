@@ -29,7 +29,7 @@ export default function Home() {
         setHeroIndex((i) => (i + 1) % QUICK_DESTINATIONS.length);
         setHeroVisible(true);
       }, 600);
-    }, 6000);
+    }, 12000);
     return () => clearInterval(timer);
   }, []);
 
@@ -150,9 +150,6 @@ export default function Home() {
           <div className="relative h-full max-w-7xl mx-auto px-6 flex flex-col justify-end pb-20">
             <p className={`text-white/60 text-[10px] font-semibold uppercase tracking-[0.3em] mb-2 transition-opacity duration-700 ${heroVisible ? "opacity-100" : "opacity-0"}`}>
               {QUICK_DESTINATIONS[heroIndex].tag} · {QUICK_DESTINATIONS[heroIndex].name}
-            </p>
-            <p className="text-white/85 text-xs font-semibold uppercase tracking-[0.28em] mb-5">
-              Powered by 8 AI agents
             </p>
             <h1 className="text-white text-5xl md:text-7xl font-heading font-extrabold leading-[1.04] tracking-[-0.03em] max-w-2xl mb-10">
               Where to next?

@@ -1029,7 +1029,33 @@ function BudgetTracker({ budget: initialBudget, aiResult, isMultiCity, travelers
   const over = total > totalBudget;
 
   function updateSlider(key: string, val: number) {
-    setItems((prev) => ({ ...prev, [key]: val }));
+    setItems((prev) => {
+      const clamped = Math.max(0, Math.min(val, totalBudget));
+      const otherKeys = activeCategories.map((c) => c.key).filter((k) => k !== key);
+      const othersTotal = otherKeys.reduce((s, k) => s + (prev[k] ?? 0), 0);
+      const othersNew = Math.max(0, totalBudget - clamped);
+      const next: Record<string, number> = { ...prev, [key]: clamped };
+
+      if (othersTotal === 0) {
+        const share = Math.round(othersNew / (otherKeys.length || 1));
+        otherKeys.forEach((k, i) => {
+          next[k] = i === otherKeys.length - 1 ? othersNew - share * (otherKeys.length - 1) : share;
+        });
+        return next;
+      }
+
+      let distributed = 0;
+      otherKeys.forEach((k, i) => {
+        if (i === otherKeys.length - 1) {
+          next[k] = Math.max(0, othersNew - distributed);
+        } else {
+          const scaled = Math.round(((prev[k] ?? 0) / othersTotal) * othersNew);
+          next[k] = Math.max(0, scaled);
+          distributed += next[k];
+        }
+      });
+      return next;
+    });
   }
 
   function commitTotalEdit() {
