@@ -171,15 +171,23 @@ function ResultsContent() {
   // Keep loadingRef in sync with state for the visibility-change handler
   useEffect(() => { loadingRef.current = loading; }, [loading]);
 
-  // Fix: detect when user switches apps during streaming and returns to a broken state
+  // Detect stream stall: only show interrupted if no progress for 15s after returning to tab
   useEffect(() => {
+    let stallTimer: ReturnType<typeof setTimeout> | null = null;
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible" && loadingRef.current) {
-        setLoadingInterrupted(true);
+        stallTimer = setTimeout(() => {
+          if (loadingRef.current) setLoadingInterrupted(true);
+        }, 15000);
+      } else {
+        if (stallTimer) clearTimeout(stallTimer);
       }
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (stallTimer) clearTimeout(stallTimer);
+    };
   }, []);
 
   const isMultiCity = searchParams.get("multiCity") === "1";

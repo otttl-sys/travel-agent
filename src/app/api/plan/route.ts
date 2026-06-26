@@ -342,7 +342,9 @@ For a ${cityCount}-city trip you must call exactly ${legCount + cityCount + 1} t
 - ${cityCount} × plan_city_stop (one per city)
 - 1 × optimize_total_budget
 
-Fire all ${legCount + cityCount + 1} tool calls in your very first response. Then write the final travel plan after receiving all results.`;
+Fire all ${legCount + cityCount + 1} tool calls in your very first response. Then write the final travel plan after receiving all results.
+
+Do NOT use emojis anywhere in the output. Use plain text headings only.`;
 
   const userMessage = isMultiCity
     ? `
@@ -417,7 +419,8 @@ RULES:
 - Be precise with prices: mark estimates as "approx." and ranges as "€X–€Y".
 - For each itinerary day or activity block, add one sentence explaining WHY this was selected (e.g. "→ Why: best value for the dates, close to major sights").
 - For any train, bus, or ferry connections: ALWAYS specify the exact departure station/terminal, arrival station/terminal, and approximate travel time (e.g. "ICE from Berlin Hbf → Munich Hbf, ~4h").
-- Occupancy outlook: mention if the travel period is peak, shoulder, or low season for the destination and what to expect (crowds, pricing).${adventureAddition}${familyAddition}`;
+- Occupancy outlook: mention if the travel period is peak, shoulder, or low season for the destination and what to expect (crowds, pricing).
+- Do NOT use emojis anywhere in the output. Use plain text headings only.${adventureAddition}${familyAddition}`;
 
           // Stream every Claude call — text tokens arrive live, tool_use detected after
           const stream = client.messages.stream({
