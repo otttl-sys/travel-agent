@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
-import { Mail, Eye, EyeOff } from "lucide-react";
+import { Mail, Eye, EyeOff, Check, X } from "lucide-react";
 import { SiteNav } from "@/components/site-nav";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,16 @@ export default function LoginPage() {
 
 type Mode = "signin" | "signup" | "forgot";
 
+const PWD_RULES = [
+  { id: "length",  label: "At least 8 characters",    test: (p: string) => p.length >= 8 },
+  { id: "upper",   label: "One uppercase letter",      test: (p: string) => /[A-Z]/.test(p) },
+  { id: "special", label: "One special character",     test: (p: string) => /[^A-Za-z0-9]/.test(p) },
+];
+
+function passwordValid(p: string) {
+  return PWD_RULES.every((r) => r.test(p));
+}
+
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -33,9 +43,14 @@ function LoginContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [pwdTouched, setPwdTouched] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (mode === "signup" && !passwordValid(password)) {
+      setPwdTouched(true);
+      return;
+    }
     setLoading(true);
     setError("");
     setSuccess("");
@@ -63,11 +78,9 @@ function LoginContent() {
       if (error) {
         setError(error.message);
       } else if (data.session) {
-        // Email confirmation disabled — session returned immediately
         router.push("/onboarding");
         router.refresh();
       } else {
-        // Email confirmation still enabled (fallback)
         setSuccess("Account created — check your inbox to confirm your email, then sign in.");
         setMode("signin");
         setPassword("");
@@ -87,12 +100,13 @@ function LoginContent() {
   }
 
   const titles: Record<Mode, { heading: string; sub: string; cta: string }> = {
-    signin:  { heading: "Sign in",       sub: "Welcome back.",                              cta: loading ? "Signing in…" : "Sign in →" },
-    signup:  { heading: "Create account", sub: "Free — no credit card needed.",             cta: loading ? "Creating…"  : "Create account →" },
-    forgot:  { heading: "Reset password", sub: "We'll send a reset link to your email.",    cta: loading ? "Sending…"   : "Send reset link →" },
+    signin:  { heading: "Sign in",        sub: "Welcome back.",                           cta: loading ? "Signing in…"  : "Sign in →" },
+    signup:  { heading: "Create account", sub: "Free — no credit card needed.",           cta: loading ? "Creating…"    : "Create account →" },
+    forgot:  { heading: "Reset password", sub: "We'll send a reset link to your email.",  cta: loading ? "Sending…"     : "Send reset link →" },
   };
 
   const { heading, sub, cta } = titles[mode];
+  const showRules = mode === "signup" && (pwdTouched || password.length > 0);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -156,11 +170,10 @@ function LoginContent() {
                 <div className="relative">
                   <Input
                     type={showPassword ? "text" : "password"}
-                    placeholder={mode === "signup" ? "Min. 8 characters" : "Your password"}
+                    placeholder={mode === "signup" ? "Create a strong password" : "Your password"}
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => { setPassword(e.target.value); setPwdTouched(true); }}
                     required
-                    minLength={mode === "signup" ? 8 : undefined}
                     className="text-base pr-10"
                   />
                   <button
@@ -174,6 +187,27 @@ function LoginContent() {
                       : <Eye size={15} strokeWidth={1.5} />}
                   </button>
                 </div>
+
+                {/* Password rules */}
+                {showRules && (
+                  <div className="mt-2.5 space-y-1.5">
+                    {PWD_RULES.map((rule) => {
+                      const ok = rule.test(password);
+                      return (
+                        <div key={rule.id} className="flex items-center gap-2">
+                          <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 transition-colors ${ok ? "bg-green-500" : "bg-muted"}`}>
+                            {ok
+                              ? <Check size={9} strokeWidth={3} className="text-white" />
+                              : <X size={9} strokeWidth={2.5} className="text-muted-foreground" />}
+                          </div>
+                          <span className={`text-xs transition-colors ${ok ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}>
+                            {rule.label}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
@@ -181,7 +215,7 @@ function LoginContent() {
 
             <Button
               type="submit"
-              disabled={loading || !email.trim() || (mode !== "forgot" && !password.trim())}
+              disabled={loading || !email.trim() || (mode !== "forgot" && !password.trim()) || (mode === "signup" && !passwordValid(password))}
               className="w-full bg-foreground text-background hover:bg-brand hover:text-brand-foreground"
             >
               {cta}
@@ -191,14 +225,14 @@ function LoginContent() {
               {mode === "signin" ? (
                 <>
                   No account?{" "}
-                  <button type="button" onClick={() => { setMode("signup"); setError(""); setSuccess(""); }} className="text-foreground font-semibold hover:text-brand transition-colors">
+                  <button type="button" onClick={() => { setMode("signup"); setError(""); setSuccess(""); setPwdTouched(false); setPassword(""); }} className="text-foreground font-semibold hover:text-brand transition-colors">
                     Create one →
                   </button>
                 </>
               ) : (
                 <>
                   Already have an account?{" "}
-                  <button type="button" onClick={() => { setMode("signin"); setError(""); setSuccess(""); }} className="text-foreground font-semibold hover:text-brand transition-colors">
+                  <button type="button" onClick={() => { setMode("signin"); setError(""); setSuccess(""); setPwdTouched(false); }} className="text-foreground font-semibold hover:text-brand transition-colors">
                     Sign in →
                   </button>
                 </>
