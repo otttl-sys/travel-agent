@@ -75,6 +75,15 @@ const DESTINATIONS = [
 type CityStop = { city: string; days: number };
 
 type Child = { age: number; gender: "boy" | "girl" | "unspecified" };
+type PlanLanguage = "en" | "fr" | "it" | "de" | "es";
+
+const PLAN_LANGUAGES: { code: PlanLanguage; flag: string; label: string }[] = [
+  { code: "en", flag: "🇬🇧", label: "EN" },
+  { code: "fr", flag: "🇫🇷", label: "FR" },
+  { code: "it", flag: "🇮🇹", label: "IT" },
+  { code: "de", flag: "🇩🇪", label: "DE" },
+  { code: "es", flag: "🇪🇸", label: "ES" },
+];
 
 type FormData = {
   isMultiCity: boolean;
@@ -90,6 +99,7 @@ type FormData = {
   includeHotel: boolean;
   adventureMode: boolean;
   children: Child[];
+  language: PlanLanguage;
 };
 
 function lsLoad<T>(key: string, fallback: T): T {
@@ -142,6 +152,7 @@ function PlanContent() {
       includeHotel: true,
       adventureMode: isAdventure,
       children: [],
+      language: "en",
     };
   });
 
@@ -204,6 +215,7 @@ function PlanContent() {
       includeHotel: String(form.includeHotel),
       ...(form.adventureMode ? { adventure: "1" } : {}),
       ...(form.children.length > 0 ? { children: JSON.stringify(form.children) } : {}),
+      ...(form.language !== "en" ? { language: form.language } : {}),
     };
     if (form.isMultiCity) {
       const validCities = form.cities.filter((c) => c.city.trim());
@@ -271,6 +283,8 @@ function PlanContent() {
                 cities={form.cities}
                 onCitiesChange={(cities) => setForm((f) => ({ ...f, cities }))}
                 onScanDetected={handleScanDetected}
+                language={form.language}
+                onLanguageChange={(l) => setForm((f) => ({ ...f, language: l }))}
               />
             )}
             {step === 2 && (
@@ -437,6 +451,8 @@ function StepDestination({
   cities,
   onCitiesChange,
   onScanDetected,
+  language,
+  onLanguageChange,
 }: {
   isMultiCity: boolean;
   onToggleMode: () => void;
@@ -447,6 +463,8 @@ function StepDestination({
   cities: CityStop[];
   onCitiesChange: (cities: CityStop[]) => void;
   onScanDetected?: (destination: string, interests: string[]) => void;
+  language: PlanLanguage;
+  onLanguageChange: (l: PlanLanguage) => void;
 }) {
   function updateCity(index: number, city: string) {
     onCitiesChange(cities.map((c, i) => (i === index ? { ...c, city } : c)));
@@ -589,6 +607,25 @@ function StepDestination({
           </div>
         </>
       )}
+      <div className="mt-5 pt-4 border-t border-border">
+        <p className="text-xs text-muted-foreground mb-2">Plan language</p>
+        <div className="flex gap-2 flex-wrap">
+          {PLAN_LANGUAGES.map(({ code, flag, label }) => (
+            <button
+              key={code}
+              onClick={() => onLanguageChange(code)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                language === code
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-border text-muted-foreground hover:border-foreground"
+              }`}
+            >
+              <span>{flag}</span>
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -959,6 +996,13 @@ function StepSummary({ form }: { form: FormData }) {
             icon="👶"
             label="Kinder"
             value={form.children.map(c => `${c.age < 1 ? "< 1" : c.age} yr${c.gender !== "unspecified" ? ` (${c.gender})` : ""}`).join(", ")}
+          />
+        )}
+        {form.language !== "en" && (
+          <SummaryRow
+            icon={PLAN_LANGUAGES.find(l => l.code === form.language)?.flag ?? "🌐"}
+            label="Plan language"
+            value={PLAN_LANGUAGES.find(l => l.code === form.language)?.label ?? form.language}
           />
         )}
         <SummaryRow

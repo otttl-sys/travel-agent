@@ -309,7 +309,7 @@ async function executeMultiCityTool(name: string, input: Record<string, unknown>
 type Child = { age: number; gender: "boy" | "girl" | "unspecified" };
 
 export async function POST(req: NextRequest) {
-  const { destination, startDate, endDate, travelers, interests, budget, cities, cityDays, multiCity, origin, budgetMode, adventure, includeFlights, includeHotel, children: childrenRaw } = await req.json();
+  const { destination, startDate, endDate, travelers, interests, budget, cities, cityDays, multiCity, origin, budgetMode, adventure, includeFlights, includeHotel, children: childrenRaw, language } = await req.json();
   const adventureMode = adventure === "1" || adventure === true;
   const interestsList: string[] = interests ? String(interests).split(",").map((s: string) => s.trim()) : [];
   const familyMode = interestsList.includes("family");
@@ -338,6 +338,15 @@ export async function POST(req: NextRequest) {
   const cityCount = cityList.length;
   const legCount = cityCount + 1; // outbound + inter-city legs + return
 
+  const LANGUAGE_NAMES: Record<string, string> = {
+    en: "English", fr: "French", it: "Italian", de: "German", es: "Spanish",
+  };
+  const planLanguage = typeof language === "string" && language in LANGUAGE_NAMES ? language : "en";
+  const languageName = LANGUAGE_NAMES[planLanguage];
+  const languageAddition = planLanguage !== "en"
+    ? `\n\nLANGUAGE: Write the ENTIRE travel plan in ${languageName}. Every heading, description, recommendation, price note, and practical tip must be in ${languageName}. Do not mix languages.`
+    : "";
+
   const multiCitySystemPrompt = `You are a multi-city travel planning agent. Your goal is to plan the complete journey as fast as possible.
 
 CRITICAL RULE — PARALLEL TOOL CALLS:
@@ -350,7 +359,7 @@ For a ${cityCount}-city trip you must call exactly ${legCount + cityCount + 1} t
 
 Fire all ${legCount + cityCount + 1} tool calls in your very first response. Then write the final travel plan after receiving all results.
 
-Do NOT use emojis anywhere in the output. Use plain text headings only.`;
+Do NOT use emojis anywhere in the output. Use plain text headings only.${languageAddition}`;
 
   const userMessage = isMultiCity
     ? `
@@ -362,7 +371,7 @@ Plan a multi-city trip:
 - Budget per person (total): €${budget || 3000}
 
 IMPORTANT: Call ALL tools simultaneously in a single batch — not sequentially.
-Then create a detailed day-by-day travel plan in English.
+Then create a detailed day-by-day travel plan in ${languageName}.
 `.trim()
     : `
 Plan a trip with the following preferences:
@@ -374,7 +383,7 @@ Plan a trip with the following preferences:
 - Budget per person: €${budget || 3000}${budgetNote}
 
 Use the available tools to research${flightsIncluded ? " flights from " + (origin || "Germany") + "," : ""} ${hotelIncluded ? "hotels," : ""} and activities and optimise the budget.
-Then create a concrete, structured travel plan in English.
+Then create a concrete, structured travel plan in ${languageName}.
 `.trim();
 
   const encoder = new TextEncoder();
@@ -430,7 +439,7 @@ RULES:
 - For each itinerary day or activity block, add one sentence explaining WHY this was selected (e.g. "→ Why: best value for the dates, close to major sights").
 - For any train, bus, or ferry connections: ALWAYS specify the exact departure station/terminal, arrival station/terminal, and approximate travel time (e.g. "ICE from Berlin Hbf → Munich Hbf, ~4h").
 - Occupancy outlook: mention if the travel period is peak, shoulder, or low season for the destination and what to expect (crowds, pricing).
-- Do NOT use emojis anywhere in the output. Use plain text headings only.${adventureAddition}${familyAddition}`;
+- Do NOT use emojis anywhere in the output. Use plain text headings only.${adventureAddition}${familyAddition}${languageAddition}`;
 
           // Stream every Claude call — text tokens arrive live, tool_use detected after
           const stream = client.messages.stream({

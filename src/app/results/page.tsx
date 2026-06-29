@@ -266,6 +266,7 @@ function ResultsContent() {
     const controller = new AbortController();
 
     const childrenParam = searchParams.get("children") || undefined;
+    const languageParam = searchParams.get("language") || undefined;
     const params = isMultiCity
       ? {
           multiCity: "1",
@@ -276,6 +277,7 @@ function ResultsContent() {
           interests: searchParams.get("interests") || "",
           budget,
           ...(childrenParam ? { children: childrenParam } : {}),
+          ...(languageParam ? { language: languageParam } : {}),
         }
       : {
           destination,
@@ -285,6 +287,7 @@ function ResultsContent() {
           interests: searchParams.get("interests") || "",
           budget,
           ...(childrenParam ? { children: childrenParam } : {}),
+          ...(languageParam ? { language: languageParam } : {}),
         };
 
     const progressInterval = setInterval(() => {
