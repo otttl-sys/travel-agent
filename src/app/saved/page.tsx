@@ -132,6 +132,7 @@ export default function SavedPage() {
 
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [itineraryTraces, setItineraryTraces] = useState<Record<string, TraceEntry[]>>({});
+  const [selectedCardIndex, setSelectedCardIndex] = useState<Record<string, number>>({});
 
   const [generatingBriefingId, setGeneratingBriefingId] = useState<string | null>(null);
   const [briefingTraces, setBriefingTraces] = useState<Record<string, TraceEntry[]>>({});
@@ -417,11 +418,12 @@ export default function SavedPage() {
     }
   }
 
-  async function generateItinerary(trip: SavedTrip) {
+  async function generateItinerary(trip: SavedTrip, cardIdx?: number) {
     if (generatingId) return;
     setGeneratingId(trip.id);
     setItineraryTraces(prev => ({ ...prev, [trip.id]: [] }));
-    const card = trip.cards?.[0];
+    const idx = cardIdx ?? selectedCardIndex[trip.id] ?? 0;
+    const card = trip.cards?.[idx];
     const body = { destination: trip.isMultiCity ? trip.cities.join(" → ") : trip.destination, themes: card?.themes ?? [], itinerary: card?.itinerary ?? [] };
     try {
       const res = await fetch("/api/itinerary", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -941,6 +943,20 @@ export default function SavedPage() {
                                 </div>
                               )}
                             </div>
+                            {trip.cards && trip.cards.length > 1 && (
+                              <div className="mb-4">
+                                <label className="text-xs text-muted-foreground mb-1 block">Based on trip style</label>
+                                <select
+                                  value={selectedCardIndex[trip.id] ?? 0}
+                                  onChange={e => setSelectedCardIndex(prev => ({ ...prev, [trip.id]: Number(e.target.value) }))}
+                                  className="w-full text-sm rounded-lg border border-foreground/10 bg-surface px-3 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-brand"
+                                >
+                                  {trip.cards.map((c, i) => (
+                                    <option key={i} value={i}>{c.emoji} {c.tagline} — €{c.price?.toLocaleString()}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
                             {generatingId === trip.id && (
                               <div className="mb-4">
                                 <AgentTrace trace={itineraryTraces[trip.id] ?? []} />

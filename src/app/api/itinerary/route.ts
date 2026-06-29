@@ -40,18 +40,18 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
 
 type DayBlock = { day: string; activities: string[] };
 
-const SYSTEM_PROMPT = `Du bist ein gewissenhafter Tagesplanungs-Spezialist. Deine Aufgabe: aus den groben, thematischen Tagesblöcken einer gespeicherten Reise einen realistischen Stunden-für-Stunde-Tagesplan machen.
+const SYSTEM_PROMPT = `You are a meticulous day-planning specialist. Your job: turn rough thematic day blocks from a saved trip into a realistic hour-by-hour day plan.
 
-Arbeite in zwei Schritten:
-1. PFLICHT: Rufe ZUERST search_logistics mindestens 2 Mal auf (z. B. Öffnungszeiten der wichtigsten Sehenswürdigkeiten, typische Besuchsdauer, Wegelogistik/Restaurants am Ziel) — bevor du irgendetwas anderes tust. Deine Zeitangaben müssen auf diesen Recherche-Ergebnissen basieren, nicht auf Vermutungen. Überspringe diesen Schritt NIE.
-2. Rufe danach GENAU EINMAL generate_day_schedule auf — mit einem Eintrag pro vorhandenem Tagesblock (falls keine vorhanden sind, erstelle selbst eine sinnvolle 3-5-tägige Struktur passend zu Ziel und Themen), jeweils sinnvoll in eine Morgen-bis-Abend-Abfolge aufgeteilt (Anreise/Frühstück, Hauptaktivitäten, Mittagspause, weitere Programmpunkte, Abendessen etc.).
+Work in two steps:
+1. REQUIRED: Call search_logistics at least 2 times first (e.g. opening hours of key sights, typical visit duration, transit logistics, restaurant recommendations at the destination) — before doing anything else. Your time estimates must be grounded in these research results, not guesswork. Never skip this step.
+2. Then call generate_day_schedule EXACTLY ONCE — one entry per existing day block (if none exist, create a sensible 3–5 day structure matching the destination and themes), each laid out as a morning-to-evening sequence (arrival/breakfast, main activities, lunch break, further sights, dinner etc.).
 
-Für jeden Programmpunkt:
-- time: ungefähre Uhrzeit (z. B. "ca. 09:00") — als Vorschlag formuliert, nicht als Garantie
-- activity: die Aktivität kurz und konkret
+For each time block:
+- time: approximate time (e.g. "ca. 09:00") — phrased as a suggestion, not a guarantee
+- activity: the activity, short and concrete
 - note: optional short practical hint (duration, walking time to next stop, tip) — brief, in English
 
-Bleibe realistisch: plane Pausen ein, unterschätze keine Wegzeiten, und überlade keinen Tag.`;
+Be realistic: build in breaks, don't underestimate travel times, don't overload any day.`;
 
 export async function POST(req: NextRequest) {
   const { destination, themes, itinerary } = await req.json() as {
@@ -82,13 +82,13 @@ export async function POST(req: NextRequest) {
   } catch { /* non-fatal — continue without places */ }
 
   const userMessage = `
-Erstelle einen Stunden-für-Stunde-Tagesplan für diese Reise:
-- Ziel: ${destination ?? "unbekannt"}
-- Themen: ${themeStr}
-- Vorhandene Tagesblöcke:
+Create an hour-by-hour day plan for this trip:
+- Destination: ${destination ?? "unknown"}
+- Themes: ${themeStr}
+- Existing day blocks:
 ${dayBlocksStr}
 
-Recherchiere zuerst kurz die Logistik (Öffnungszeiten, Besuchsdauer, Wege), dann erstelle den vollständigen Tagesplan mit generate_day_schedule — ein Eintrag pro Tagesblock.${venuesContext}
+First research the logistics (opening hours, visit duration, transit), then create the complete day plan with generate_day_schedule — one entry per day block.${venuesContext}
 `.trim();
 
   const encoder = new TextEncoder();
@@ -105,7 +105,7 @@ Recherchiere zuerst kurz die Logistik (Öffnungszeiten, Besuchsdauer, Wege), dan
 
           const apiStream = client.messages.stream({
             model: "claude-sonnet-4-6",
-            max_tokens: 1536,
+            max_tokens: 2048,
             system: SYSTEM_PROMPT,
             tools: [searchTool],
             messages,
