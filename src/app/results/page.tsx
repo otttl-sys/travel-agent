@@ -265,6 +265,7 @@ function ResultsContent() {
     hasFetchedRef.current = true;
     const controller = new AbortController();
 
+    const childrenParam = searchParams.get("children") || undefined;
     const params = isMultiCity
       ? {
           multiCity: "1",
@@ -274,6 +275,7 @@ function ResultsContent() {
           travelers: searchParams.get("travelers") || "2",
           interests: searchParams.get("interests") || "",
           budget,
+          ...(childrenParam ? { children: childrenParam } : {}),
         }
       : {
           destination,
@@ -282,6 +284,7 @@ function ResultsContent() {
           travelers: searchParams.get("travelers") || "2",
           interests: searchParams.get("interests") || "",
           budget,
+          ...(childrenParam ? { children: childrenParam } : {}),
         };
 
     const progressInterval = setInterval(() => {

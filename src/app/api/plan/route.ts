@@ -306,11 +306,17 @@ async function executeMultiCityTool(name: string, input: Record<string, unknown>
   }
 }
 
+type Child = { age: number; gender: "boy" | "girl" | "unspecified" };
+
 export async function POST(req: NextRequest) {
-  const { destination, startDate, endDate, travelers, interests, budget, cities, cityDays, multiCity, origin, budgetMode, adventure, includeFlights, includeHotel } = await req.json();
+  const { destination, startDate, endDate, travelers, interests, budget, cities, cityDays, multiCity, origin, budgetMode, adventure, includeFlights, includeHotel, children: childrenRaw } = await req.json();
   const adventureMode = adventure === "1" || adventure === true;
   const interestsList: string[] = interests ? String(interests).split(",").map((s: string) => s.trim()) : [];
   const familyMode = interestsList.includes("family");
+  let childrenList: Child[] = [];
+  if (childrenRaw) {
+    try { childrenList = typeof childrenRaw === "string" ? JSON.parse(childrenRaw) : childrenRaw; } catch { /* ignore */ }
+  }
   const flightsIncluded = includeFlights !== false && budgetMode !== "activities-only";
   const hotelIncluded = includeHotel !== false && budgetMode !== "activities-only";
   const budgetNote = !flightsIncluded && !hotelIncluded
@@ -399,9 +405,13 @@ ADVENTURE MODE — override standard behavior:
 - Mention authentic local culture, hidden gems, and the unexpected. Be enthusiastic about discovery.
 - Tone: exploratory, bold, honest about difficulty.` : "";
 
+          const childrenSummary = childrenList.length > 0
+            ? childrenList.map(c => `${c.age < 1 ? "infant (< 1 yr)" : `${c.age} yr old`}${c.gender !== "unspecified" ? ` ${c.gender}` : ""}`).join(", ")
+            : null;
+
           const familyAddition = familyMode ? `
 
-FAMILY MODE — adapt entire plan for families with children:
+FAMILY MODE — adapt entire plan for families with children:${childrenSummary ? `\n- Traveling with: ${childrenSummary}. Tailor activity energy levels, nap/rest times, and age-appropriate attractions accordingly.` : ""}
 - Prioritize kid-friendly activities: theme parks, beaches, gentle nature walks, interactive museums, zoos, water parks.
 - Avoid strenuous multi-day treks, extreme sports, late-night venues, or activities unsuitable for children.
 - Recommend family rooms, apartments, or resorts with pools, kids clubs, playgrounds, and early dinner options.
@@ -592,7 +602,7 @@ RULES:
                     content: adventureMode
                       ? `Based on the travel plan above, generate 5 ADVENTURE trip card options for ${destination}. Each must be genuinely adventurous. Tiers: ultra-budget backpacker (hostels/camping), budget active explorer, balanced active trip, premium expedition (guided tours/gear), luxury adventure lodge. All prices realistic. Use English. bookingUrl = Google Flights from ${origin || "Germany"} to destination.`
                       : familyMode
-                        ? `Based on the travel plan above, generate 5 FAMILY-FRIENDLY trip card options for ${destination}. Tiers: budget self-catering apartment (bunk beds, kitchen), affordable family hotel (pool, kids menu), comfortable family resort (kids club, entertainment), premium family villa (private pool, nanny service), luxury all-inclusive family retreat. Include child discounts and family pricing notes. All prices realistic. Use English. bookingUrl = Google Flights from ${origin || "Germany"} to destination.`
+                        ? `Based on the travel plan above, generate 5 FAMILY-FRIENDLY trip card options for ${destination}.${childrenSummary ? ` Traveling with: ${childrenSummary}.` : ""} Tiers: budget self-catering apartment (bunk beds, kitchen), affordable family hotel (pool, kids menu), comfortable family resort (kids club, entertainment), premium family villa (private pool, nanny service), luxury all-inclusive family retreat. Include child discounts and family pricing notes. All prices realistic. Use English. bookingUrl = Google Flights from ${origin || "Germany"} to destination.`
                         : `Based on the travel plan above, generate 8 different trip card options for ${destination}. Vary styles across: ultra-budget backpacker, budget-friendly hostel, balanced mid-range, comfort traveller, premium comfort, business class, luxury boutique, ultra-luxury. Give distinct itinerary themes (beach focus, city focus, nature, cultural, adventure mix, food & wine, romantic, family-style). All prices realistic. Use English. bookingUrl = Google Flights from ${origin || "Germany"} to destination.`,
                   },
                 ];

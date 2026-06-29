@@ -74,6 +74,8 @@ const DESTINATIONS = [
 
 type CityStop = { city: string; days: number };
 
+type Child = { age: number; gender: "boy" | "girl" | "unspecified" };
+
 type FormData = {
   isMultiCity: boolean;
   destination: string;
@@ -87,6 +89,7 @@ type FormData = {
   includeFlights: boolean;
   includeHotel: boolean;
   adventureMode: boolean;
+  children: Child[];
 };
 
 function lsLoad<T>(key: string, fallback: T): T {
@@ -138,6 +141,7 @@ function PlanContent() {
       includeFlights: true,
       includeHotel: true,
       adventureMode: isAdventure,
+      children: [],
     };
   });
 
@@ -199,6 +203,7 @@ function PlanContent() {
       includeFlights: String(form.includeFlights),
       includeHotel: String(form.includeHotel),
       ...(form.adventureMode ? { adventure: "1" } : {}),
+      ...(form.children.length > 0 ? { children: JSON.stringify(form.children) } : {}),
     };
     if (form.isMultiCity) {
       const validCities = form.cities.filter((c) => c.city.trim());
@@ -286,6 +291,10 @@ function PlanContent() {
               <StepInterests
                 selected={form.interests}
                 onToggle={toggleInterest}
+                children={form.children}
+                onAddChild={() => setForm((f) => ({ ...f, children: [...f.children, { age: 8, gender: "unspecified" }] }))}
+                onRemoveChild={(i) => setForm((f) => ({ ...f, children: f.children.filter((_, idx) => idx !== i) }))}
+                onUpdateChild={(i, patch) => setForm((f) => ({ ...f, children: f.children.map((c, idx) => idx === i ? { ...c, ...patch } : c) }))}
               />
             )}
             {step === 5 && (
@@ -699,10 +708,19 @@ function StepTravelers({
 function StepInterests({
   selected,
   onToggle,
+  children,
+  onAddChild,
+  onRemoveChild,
+  onUpdateChild,
 }: {
   selected: string[];
   onToggle: (id: string) => void;
+  children: Child[];
+  onAddChild: () => void;
+  onRemoveChild: (i: number) => void;
+  onUpdateChild: (i: number, patch: Partial<Child>) => void;
 }) {
+  const familySelected = selected.includes("family");
   return (
     <div>
       <p className="text-xs font-semibold text-brand uppercase tracking-[0.28em] mb-2">Schritt 4</p>
@@ -733,6 +751,53 @@ function StepInterests({
           );
         })}
       </div>
+      {familySelected && (
+        <div className="mt-5 p-4 rounded-xl bg-teal-50 dark:bg-teal-950/20 border border-teal-200 dark:border-teal-800/40">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-semibold text-teal-700 dark:text-teal-400 uppercase tracking-wider">Children (optional)</p>
+            {children.length < 6 && (
+              <button
+                onClick={onAddChild}
+                className="text-xs font-medium text-teal-700 dark:text-teal-400 hover:text-teal-900 dark:hover:text-teal-200 flex items-center gap-1"
+              >
+                + Add child
+              </button>
+            )}
+          </div>
+          {children.length === 0 ? (
+            <p className="text-xs text-muted-foreground">Add ages for a more tailored plan.</p>
+          ) : (
+            <div className="space-y-2">
+              {children.map((child, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <select
+                    value={child.age}
+                    onChange={e => onUpdateChild(i, { age: Number(e.target.value) })}
+                    className="text-xs rounded-lg border border-teal-200 dark:border-teal-700 bg-white dark:bg-teal-950/40 px-2 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  >
+                    <option value={0}>&lt; 1 yr</option>
+                    {Array.from({ length: 17 }, (_, n) => n + 1).map(n => (
+                      <option key={n} value={n}>{n} yr</option>
+                    ))}
+                  </select>
+                  <div className="flex rounded-lg border border-teal-200 dark:border-teal-700 overflow-hidden text-xs font-medium">
+                    {(["boy", "girl", "unspecified"] as const).map(g => (
+                      <button
+                        key={g}
+                        onClick={() => onUpdateChild(i, { gender: g })}
+                        className={`px-2.5 py-1.5 transition-colors ${child.gender === g ? "bg-teal-600 text-white" : "bg-white dark:bg-teal-950/40 text-muted-foreground hover:bg-teal-50 dark:hover:bg-teal-900/40"}`}
+                      >
+                        {g === "boy" ? "Boy" : g === "girl" ? "Girl" : "—"}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={() => onRemoveChild(i)} className="text-muted-foreground hover:text-foreground ml-auto text-sm leading-none">×</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -889,6 +954,13 @@ function StepSummary({ form }: { form: FormData }) {
           }
         />
         <SummaryRow icon="👥" label="Personen" value={`${form.travelers}`} />
+        {form.children.length > 0 && (
+          <SummaryRow
+            icon="👶"
+            label="Kinder"
+            value={form.children.map(c => `${c.age < 1 ? "< 1" : c.age} yr${c.gender !== "unspecified" ? ` (${c.gender})` : ""}`).join(", ")}
+          />
+        )}
         <SummaryRow
           icon="❤️"
           label="Interessen"
