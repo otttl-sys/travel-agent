@@ -232,6 +232,14 @@ Conversational alternative to the 6-step wizard — Claude gathers trip details 
 
 ---
 
+### N4 — Playwright QA Suite (2026-07-04) `9faa9ac`
+- `tests/e2e/`: happy path (onboarding skip → 6-step plan wizard → results), standalone `/budget` flow, itinerary collapsible sections — each on desktop (1280px, Chromium) and mobile (390px, WebKit/iPhone 12)
+- `/api/plan` + `/api/budget` mocked at the network layer (canned SSE) so runs are deterministic, fast, and don't touch the real Anthropic/Tavily backend
+- `npm run test:e2e` (headless) / `npm run test:e2e:ui` (interactive)
+- **Found & worked around**: the results/budget pages get stuck loading forever under `next dev` — React Strict Mode double-invokes the fetch `useEffect`, and its cleanup calls `controller.abort()` on the very first (real) request, which no one retries. Doesn't affect production (no double-invoke there), but it means anyone testing the AI streaming flow locally in dev mode will see it hang. Suite now runs against a production build (`next build && next start -p 3100`) instead of dev to sidestep it — worth a real fix later (e.g. guard the abort so it only fires for a genuinely superseded request).
+
+---
+
 ## Planned
 
 | # | Feature | Priority | Description |
@@ -239,7 +247,6 @@ Conversational alternative to the 6-step wizard — Claude gathers trip details 
 | N1 | **Child age/gender for Family Mode** | High | Optional "Family details" text field in plan wizard when Family group type selected (e.g. "13-year-old daughter"). Injected into family system prompt. Also in /onboarding Step 2. |
 | N2 | **Language selector EFIGS** | High | En/Fr/It/De/Es picker in plan wizard or persistent nav setting. Passed as `language` param; system prompt: "Write the plan in [Language]." |
 | N3 | **Swipeable day-by-day timeline** | Medium | Horizontal swipe/carousel for itinerary days. CSS scroll-snap + card per day. Parses `### Day X —` blocks from AI markdown. Arrow buttons + keyboard for desktop. |
-| N4 | **Playwright QA** | Medium | Test suite: desktop (1280px) + mobile (390px), happy path + budget flow + collapsible sections |
 | N5 | **iOS touch fallback** | Low | Autocomplete dropdown `onTouchStart` instead of `onMouseDown` (Safari iOS) |
 | N6 | **Booking.com affiliate widget** | Medium | Apply for Booking.com affiliate (partners.booking.com) — free. Embedded search widget in-app. |
 | N7 | **SPF Resend vagamundo.ai** | Low | DNS pending (Cloudflare auto-configure) |
