@@ -225,6 +225,13 @@ Conversational alternative to the 6-step wizard — Claude gathers trip details 
 
 ---
 
+### Destination Scanner — Drag & Drop (2026-07-04) `9907e34`
+- Photo upload for the Destination Scanner now accepts drag & drop, not just click-to-browse
+- Trigger element changed from `<button>` to `<div role="button">`: dropping a file directly onto a `<button>` made Chrome also fire a click, reopening the OS file picker and clobbering the drop
+- Drag-over visual feedback ("Drop photo here" state + highlighted border)
+
+---
+
 ## Planned
 
 | # | Feature | Priority | Description |
