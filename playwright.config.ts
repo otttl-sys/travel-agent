@@ -28,7 +28,7 @@ export default defineConfig({
     },
     {
       name: "mobile",
-      use: { ...devices["iPhone 12"], viewport: { width: 390, height: 844 } },
+      use: { ...devices["iPhone 13"] },
     },
   ],
 });
