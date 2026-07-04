@@ -233,7 +233,7 @@ Conversational alternative to the 6-step wizard — Claude gathers trip details 
 ---
 
 ### N4 — Playwright QA Suite (2026-07-04) `9faa9ac`
-- `tests/e2e/`: happy path (onboarding skip → 6-step plan wizard → results), standalone `/budget` flow, itinerary collapsible sections — each on desktop (1280px, Chromium) and mobile (390px, WebKit/iPhone 12)
+- `tests/e2e/`: happy path (onboarding skip → 6-step plan wizard → results), standalone `/budget` flow, itinerary collapsible sections — each on desktop (1280px, Chromium) and mobile (390px, WebKit/iPhone 13)
 - `/api/plan` + `/api/budget` mocked at the network layer (canned SSE) so runs are deterministic, fast, and don't touch the real Anthropic/Tavily backend
 - `npm run test:e2e` (headless) / `npm run test:e2e:ui` (interactive)
 - **Found & worked around**: the results/budget pages get stuck loading forever under `next dev` — React Strict Mode double-invokes the fetch `useEffect`, and its cleanup calls `controller.abort()` on the very first (real) request, which no one retries. Doesn't affect production (no double-invoke there), but it means anyone testing the AI streaming flow locally in dev mode will see it hang. Suite now runs against a production build (`next build && next start -p 3100`) instead of dev to sidestep it — worth a real fix later (e.g. guard the abort so it only fires for a genuinely superseded request).
