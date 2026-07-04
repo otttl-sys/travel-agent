@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, type DragEvent } from "react";
 
 type ScanResult = {
   destination: string;
@@ -54,7 +54,9 @@ export function DestinationScanner({
   const [result, setResult] = useState<ScanResult | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounter = useRef(0);
 
   async function handleFile(file: File) {
     if (file.size > 4 * 1024 * 1024) {
@@ -111,10 +113,43 @@ export function DestinationScanner({
     }
   }
 
+  function handleDragEnter(e: DragEvent) {
+    e.preventDefault();
+    if (!e.dataTransfer.types.includes("Files")) return;
+    dragCounter.current += 1;
+    setIsDragging(true);
+  }
+
+  function handleDragOver(e: DragEvent) {
+    e.preventDefault();
+  }
+
+  function handleDragLeave(e: DragEvent) {
+    e.preventDefault();
+    dragCounter.current -= 1;
+    if (dragCounter.current <= 0) {
+      dragCounter.current = 0;
+      setIsDragging(false);
+    }
+  }
+
+  function handleDrop(e: DragEvent) {
+    e.preventDefault();
+    dragCounter.current = 0;
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFile(file);
+  }
+
   const flag = result ? (FLAGS[result.country] ?? "🌍") : "";
 
   return (
-    <div>
+    <div
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <input
         ref={fileInputRef}
         type="file"
@@ -127,18 +162,31 @@ export function DestinationScanner({
       />
 
       {state === "idle" && (
-        <button
-          type="button"
+        <div
+          role="button"
+          tabIndex={0}
           onClick={() => fileInputRef.current?.click()}
-          className={`flex items-center gap-1.5 transition-colors text-muted-foreground hover:text-foreground ${
-            compact ? "text-xs" : "text-sm"
-          }`}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              fileInputRef.current?.click();
+            }
+          }}
+          className={`flex items-center gap-1.5 rounded-lg px-2 py-1 -mx-2 -my-1 border border-dashed transition-colors cursor-pointer ${
+            isDragging
+              ? "border-brand text-brand bg-brand-subtle"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          } ${compact ? "text-xs" : "text-sm"}`}
         >
-          <span className="text-base">📷</span>
+          <span className="text-base">{isDragging ? "⬇️" : "📷"}</span>
           <span className="underline underline-offset-2 decoration-dashed">
-            {compact ? "Foto scannen" : "Oder Foto hochladen — KI erkennt das Ziel automatisch"}
+            {isDragging
+              ? "Foto hier ablegen"
+              : compact
+                ? "Foto scannen"
+                : "Oder Foto hochladen — KI erkennt das Ziel automatisch"}
           </span>
-        </button>
+        </div>
       )}
 
       {state === "loading" && (
