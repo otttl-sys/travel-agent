@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   PlaneLanding, MapPinned, Globe2, CircleDollarSign, Binoculars,
-  Zap, BaggageClaim, BookOpenText, Bot, Globe,
+  Zap, BaggageClaim, BookOpenText, Bot, Globe, Star,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -51,45 +51,13 @@ export default function Home() {
           </div>
 
           <div className="hidden md:flex items-center gap-6">
-            <Link href="/discover" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Discover</Link>
-            <Link href="/explore" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Explore</Link>
-            <Link href="/chat" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Chat</Link>
-            <Link href="/saved" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Saved</Link>
-            {/* Tools dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setToolsOpen((o) => !o)}
-                className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-              >
-                Tools <span className="text-[10px]">▾</span>
-              </button>
-              {toolsOpen && (
-                <div
-                  className="absolute top-full left-0 mt-2 w-44 bg-background border border-border rounded-lg shadow-lg z-50 py-1"
-                  onMouseLeave={() => setToolsOpen(false)}
-                >
-                  {[
-                    { href: "/research", label: "Research" },
-                    { href: "/budget", label: "Budget" },
-                    { href: "/disruption", label: "Disruption" },
-                    { href: "/packing", label: "Packing List" },
-                    { href: "/about", label: "About" },
-                  ].map(({ href, label }) => (
-                    <Link
-                      key={href}
-                      href={href}
-                      onClick={() => setToolsOpen(false)}
-                      className="block px-4 py-2 text-xs uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                    >
-                      {label}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
+            {(["Discover", "Chat", "Explore"] as const).map((label) => (
+              <Link key={label} href={`/${label.toLowerCase()}`} className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">{label}</Link>
+            ))}
+            <Link href="/saved" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Trips</Link>
             <Link href="/plan">
-              <button className="bg-foreground text-background px-6 py-2.5 rounded-full text-xs uppercase tracking-[0.18em] font-semibold hover:bg-brand transition-colors">
-                Plan a trip
+              <button className="bg-brand text-brand-foreground px-6 py-2.5 rounded-full text-xs uppercase tracking-[0.18em] font-semibold hover:opacity-90 transition-opacity">
+                Start planning
               </button>
             </Link>
             <UserNav />
@@ -99,7 +67,7 @@ export default function Home() {
           <div className="flex md:hidden items-center gap-4">
             <ThemeToggle />
             <Link href="/plan">
-              <button className="bg-foreground text-background px-5 py-2.5 rounded-full text-xs uppercase tracking-[0.18em] font-semibold whitespace-nowrap">Plan a trip</button>
+              <button className="bg-brand text-brand-foreground px-5 py-2.5 rounded-full text-xs uppercase tracking-[0.18em] font-semibold whitespace-nowrap">Start planning</button>
             </Link>
             <button
               onClick={() => setMobileMenuOpen((o) => !o)}
@@ -151,8 +119,12 @@ export default function Home() {
             <p className={`text-white/60 text-[10px] font-semibold uppercase tracking-[0.3em] mb-2 transition-opacity duration-700 ${heroVisible ? "opacity-100" : "opacity-0"}`}>
               {QUICK_DESTINATIONS[heroIndex].tag} · {QUICK_DESTINATIONS[heroIndex].name}
             </p>
-            <h1 className="text-white text-5xl md:text-7xl font-heading font-extrabold leading-[1.04] tracking-[-0.03em] max-w-2xl mb-10">
-              Where to next?
+            <h1
+              className="text-white text-5xl md:text-7xl leading-[1.04] tracking-[-0.02em] max-w-2xl mb-10"
+              style={{ fontFamily: "var(--font-instrument-serif, var(--font-inter), serif)", fontWeight: 400 }}
+            >
+              Where to{" "}
+              <em style={{ fontStyle: "italic", color: "oklch(0.85 0.13 35)" }}>next?</em>
             </h1>
 
             {/* Search bar */}
@@ -168,10 +140,10 @@ export default function Home() {
                 />
                 <button
                   onClick={() => handleSearch()}
-                  className={`px-7 py-4 font-semibold transition-colors whitespace-nowrap text-xs uppercase tracking-[0.18em] ${
+                  className={`px-7 py-4 font-semibold transition-opacity whitespace-nowrap text-xs uppercase tracking-[0.18em] ${
                     adventureMode
                       ? "bg-amber-500 text-white hover:bg-amber-600"
-                      : "bg-foreground text-background hover:bg-brand hover:text-brand-foreground"
+                      : "bg-brand text-brand-foreground hover:opacity-90"
                   }`}
                 >
                   {adventureMode ? "⚡ Go →" : "Plan trip →"}
@@ -250,8 +222,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Popular destinations - editorial photo grid */}
-        <section className="py-24 px-6">
+        {/* Popular destinations - info cards */}
+        <section className="py-24 px-6 bg-surface-sunken">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-end justify-between mb-10">
               <div>
@@ -260,47 +232,13 @@ export default function Home() {
                   Popular destinations
                 </h2>
               </div>
+              <Link href="/discover" className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors hidden sm:block">
+                View all →
+              </Link>
             </div>
-
-            <div className="grid md:grid-cols-4 gap-4">
-              {/* Large featured tile */}
-              <button
-                onClick={() => handleSearch(QUICK_DESTINATIONS[0].name)}
-                className="group relative md:col-span-2 md:row-span-2 aspect-[4/3] md:aspect-square rounded-2xl overflow-hidden text-left"
-              >
-                <Image
-                  src={QUICK_DESTINATIONS[0].img}
-                  alt={QUICK_DESTINATIONS[0].name}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  unoptimized
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent" />
-                <div className="absolute bottom-0 left-0 p-6">
-                  <p className="text-white/80 text-xs uppercase tracking-[0.2em] mb-1">{QUICK_DESTINATIONS[0].tag}</p>
-                  <h3 className="text-white text-2xl font-heading font-extrabold tracking-[-0.03em]">{QUICK_DESTINATIONS[0].name}</h3>
-                </div>
-              </button>
-
-              {QUICK_DESTINATIONS.slice(1, 9).map((dest) => (
-                <button
-                  key={dest.name}
-                  onClick={() => handleSearch(dest.name)}
-                  className="group relative aspect-[4/3] rounded-2xl overflow-hidden text-left"
-                >
-                  <Image
-                    src={dest.img}
-                    alt={dest.name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    unoptimized
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/0 to-transparent" />
-                  <div className="absolute bottom-0 left-0 p-4">
-                    <p className="text-white/80 text-[10px] uppercase tracking-[0.2em] mb-1">{dest.tag}</p>
-                    <h3 className="text-white text-lg font-heading font-extrabold tracking-[-0.03em]">{dest.name}</h3>
-                  </div>
-                </button>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {DESTINATIONS.map((dest) => (
+                <DestinationCard key={dest.name} dest={dest} onPlan={() => handleSearch(dest.name)} />
               ))}
             </div>
           </div>
@@ -424,6 +362,84 @@ export default function Home() {
     </div>
   );
 }
+
+function DestinationCard({
+  dest,
+  onPlan,
+}: {
+  dest: { name: string; tag: string; desc: string; price: string; rating: string; img: string };
+  onPlan: () => void;
+}) {
+  return (
+    <div
+      className="rounded-2xl overflow-hidden flex flex-col group cursor-pointer bg-surface border border-border hover:shadow-md transition-shadow"
+      onClick={onPlan}
+    >
+      <div className="relative h-48 overflow-hidden">
+        <Image
+          src={dest.img}
+          alt={dest.name}
+          fill
+          className="object-cover group-hover:scale-105 transition-transform duration-500"
+          unoptimized
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+        <div
+          className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-surface text-foreground"
+        >
+          <Star size={11} fill="currentColor" className="text-amber-400" />
+          {dest.rating}
+        </div>
+      </div>
+      <div className="p-4 flex flex-col flex-1">
+        <p className="text-xs text-muted-foreground mb-1">{dest.tag}</p>
+        <h3 className="font-semibold text-foreground mb-1 text-title leading-snug">{dest.name}</h3>
+        <p className="text-xs text-muted-foreground flex-1 mb-3 leading-relaxed">{dest.desc}</p>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground font-semibold">
+            from <span className="text-foreground">{dest.price}</span>
+          </span>
+          <span className="text-xs font-semibold uppercase tracking-[0.15em] text-brand">Plan trip →</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const DESTINATIONS = [
+  {
+    name: "Japan",
+    tag: "Asia",
+    desc: "Ancient temples, neon cities, cherry blossoms and world-class food.",
+    price: "€680",
+    rating: "4.9",
+    img: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800&q=80&auto=format&fit=crop",
+  },
+  {
+    name: "Portugal",
+    tag: "Europe",
+    desc: "Cobblestone villages, Atlantic surf, and the best pastéis de nata.",
+    price: "€290",
+    rating: "4.8",
+    img: "https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=800&q=80&auto=format&fit=crop",
+  },
+  {
+    name: "Bali",
+    tag: "Indonesia",
+    desc: "Rice terraces, surf breaks, temples and jungle wellness retreats.",
+    price: "€520",
+    rating: "4.7",
+    img: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&q=80&auto=format&fit=crop",
+  },
+  {
+    name: "Kenya",
+    tag: "Africa",
+    desc: "Big Five safaris on the Maasai Mara, Swahili coast and mountain trekking.",
+    price: "€890",
+    rating: "4.9",
+    img: "https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=800&q=80&auto=format&fit=crop",
+  },
+];
 
 const ADVENTURE_CHIPS = [
   { name: "Patagonia" },
