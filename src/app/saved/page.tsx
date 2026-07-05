@@ -146,6 +146,7 @@ export default function SavedPage() {
 
   const [generatingBudgetId, setGeneratingBudgetId] = useState<string | null>(null);
   const [budgetTraces, setBudgetTraces] = useState<Record<string, TraceEntry[]>>({});
+  const [budgetOptions, setBudgetOptions] = useState<Record<string, { includeFlights: boolean; includeHotel: boolean; selfCatering: boolean }>>({});
 
   const [weatherData, setWeatherData] = useState<Record<string, WeatherResult>>({});
   const [loadingWeatherId, setLoadingWeatherId] = useState<string | null>(null);
@@ -535,7 +536,8 @@ export default function SavedPage() {
     if (generatingBudgetId) return;
     setGeneratingBudgetId(trip.id);
     setBudgetTraces(prev => ({ ...prev, [trip.id]: [] }));
-    const body = { destination: trip.isMultiCity ? trip.cities.join(" → ") : trip.destination, startDate: trip.startDate, endDate: trip.endDate, travelers: trip.travelers, budget: trip.budget };
+    const options = budgetOptions[trip.id] ?? { includeFlights: true, includeHotel: true, selfCatering: false };
+    const body = { destination: trip.isMultiCity ? trip.cities.join(" → ") : trip.destination, startDate: trip.startDate, endDate: trip.endDate, travelers: trip.travelers, budget: trip.budget, includeFlights: options.includeFlights, includeHotel: options.includeHotel, selfCatering: options.selfCatering };
     try {
       const res = await fetch("/api/budget", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const reader = res.body?.getReader();
@@ -1112,6 +1114,26 @@ export default function SavedPage() {
                             ) : generatingBudgetId !== trip.id ? (
                               <div className="text-center py-6">
                                 <p className="text-sm text-muted-foreground mb-4">Get a realistic cost breakdown — flights, hotel, food, activities, transport — and see if your budget adds up.</p>
+                                {(() => {
+                                  const opts = budgetOptions[trip.id] ?? { includeFlights: true, includeHotel: true, selfCatering: false };
+                                  const setOpts = (patch: Partial<typeof opts>) => setBudgetOptions(prev => ({ ...prev, [trip.id]: { ...opts, ...patch } }));
+                                  return (
+                                    <div className="flex flex-wrap justify-center gap-2 mb-4">
+                                      <label className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-border bg-surface cursor-pointer">
+                                        <input type="checkbox" checked={opts.includeFlights} onChange={(e) => setOpts({ includeFlights: e.target.checked })} className="accent-brand" />
+                                        Flights
+                                      </label>
+                                      <label className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-border bg-surface cursor-pointer">
+                                        <input type="checkbox" checked={opts.includeHotel} onChange={(e) => setOpts({ includeHotel: e.target.checked })} className="accent-brand" />
+                                        Hotel
+                                      </label>
+                                      <label className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-border bg-surface cursor-pointer">
+                                        <input type="checkbox" checked={opts.selfCatering} onChange={(e) => setOpts({ selfCatering: e.target.checked })} className="accent-brand" />
+                                        Self-catering (cooking, not restaurants)
+                                      </label>
+                                    </div>
+                                  );
+                                })()}
                                 <Button size="sm" onClick={() => generateBudget(trip)} className="flex items-center gap-1.5"><Coins size={13} strokeWidth={1.5} /> Estimate Budget</Button>
                               </div>
                             ) : null}

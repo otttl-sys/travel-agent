@@ -240,15 +240,49 @@ Conversational alternative to the 6-step wizard — Claude gathers trip details 
 
 ---
 
+### N1 — Child age/gender for Family Mode (2026-06-29) `cf4c5f1`
+- Plan wizard Step 4: teal "Children (optional)" section when Family interest is active
+- Age dropdown (< 1 yr … 17 yr) + gender toggle (Boy / Girl / —) + remove, up to 6 children
+- Step 6 summary shows children with age + gender; passed through to `/api/plan` as `children` (JSON) and injected into the family system prompt
+
+### N2 — Language selector EFIGS (2026-06-29) `84941da`
+- Step 1 pills: 🇬🇧 EN · 🇫🇷 FR · 🇮🇹 IT · 🇩🇪 DE · 🇪🇸 ES, default EN
+- `language` param threaded through to both system prompts (single + multi-city)
+
+### N3 — Swipeable day-by-day timeline (2026-06-29) `3708ff4`
+- `day-timeline.tsx`: horizontal scroll-snap carousel, day-tab pills + dots, `IntersectionObserver` sync
+- Applies to Timeline tab + Day-Plan tab; single-day trips render without the carousel
+
+---
+
+### N5 — iOS touch fallback (2026-07-05)
+- `AutocompleteInput` (`plan/page.tsx`) suggestion buttons now also fire on `onTouchStart`, not just `onMouseDown` — Safari iOS wasn't registering the tap
+
+### Bugfix batch (2026-07-05) — uncommitted
+- **Broken section photos**: "Season & Occupancy Outlook" used a dead Unsplash ID (404) → replaced. "Budget Reality Check" photo (calculator + US flag, off-brand/irrelevant) → replaced with a world-currencies photo.
+- **Root-cause fix — flight/hotel/origin/adventure never reached the AI**: `results/page.tsx` read `includeFlights`/`includeHotel`/`origin`/`adventure` from the URL only for local display (Budget Tracker widget), but never forwarded them in the `/api/plan` request body. The AI therefore always planned with full flight+hotel budget for 2 adults regardless of what the `/plan` wizard actually had selected. All four fields are now forwarded.
+- **Self-catering as a budget option**: `/saved` → Budget tab now has Flights/Hotel/Self-catering toggles before "Estimate Budget"; `/api/budget` skips flight/hotel research when excluded and researches grocery costs instead of restaurant prices when self-catering is on (this endpoint previously had no toggles at all — same class of bug as above, fixed separately).
+- **`/chat` gained parity with the wizard**: recognizes "no flight/hotel needed" (own booking / staying with friends) and solo-parent-plus-child phrasing ("me, no wife, with my 3-year-old daughter" → `travelers: 1, children: [{age: 3, gender: "girl"}]`) instead of silently defaulting to 2 adults or dropping the child.
+
+---
+
+## Design Handoff — Fable full-app redesign (2026-07-05, not yet implemented)
+
+Otto produced a complete design package with Fable: `handoff/README.md` + `tokens.css` + `vagamundo-reference.html` (23 screens, web 1440px + mobile 390×844). Tokens already match the live Otto UI Kit in `globals.css` — no token migration needed. Covers: Landing (2 variants), a brand-new **Trip Workspace** (3-column split: itinerary rail · day timeline · map, with a floating live-agent chat dock — no equivalent exists in the app today), redesigned Plan Wizard (adults/children as separate steppers), Explore, Saved Trips, Research dossier, Disruption/flight-chaos handling, plus mobile counterparts (Discover, AI Chat, Itinerary, Budget checker, Packing list, etc.).
+
+**Excluded on purpose:** Pricing/Checkout screens (show a €9/month Pro tier) — not being built, conflicts with the no-revenue/no-contracts line from the brand strategy session until legal clears the LHG conflict.
+
+`src/app/v2/` (never committed) was already cherry-picked into the live homepage on 2026-07-04 (`f3b95dd`) — nothing left to reuse there; can be deleted once the new design lands.
+
+**Not yet started** — next session needs to pick a starting screen (README suggests Landing → Plan → Trip Workspace → Explore/Saved → Research/Disruption).
+
+---
+
 ## Planned
 
 | # | Feature | Priority | Description |
 |---|---------|----------|-------------|
-| N1 | **Child age/gender for Family Mode** | High | Optional "Family details" text field in plan wizard when Family group type selected (e.g. "13-year-old daughter"). Injected into family system prompt. Also in /onboarding Step 2. |
-| N2 | **Language selector EFIGS** | High | En/Fr/It/De/Es picker in plan wizard or persistent nav setting. Passed as `language` param; system prompt: "Write the plan in [Language]." |
-| N3 | **Swipeable day-by-day timeline** | Medium | Horizontal swipe/carousel for itinerary days. CSS scroll-snap + card per day. Parses `### Day X —` blocks from AI markdown. Arrow buttons + keyboard for desktop. |
-| N5 | **iOS touch fallback** | Low | Autocomplete dropdown `onTouchStart` instead of `onMouseDown` (Safari iOS) |
-| N6 | **Booking.com affiliate widget** | Medium | Apply for Booking.com affiliate (partners.booking.com) — free. Embedded search widget in-app. |
+| N6 | **Booking.com affiliate widget** | Medium | Apply for Booking.com affiliate (partners.booking.com) — free. Embedded search widget in-app. Blocked behind a feature flag until legal clears commercialization (no contracts red line). |
 | N7 | **SPF Resend vagamundo.ai** | Low | DNS pending (Cloudflare auto-configure) |
 | N8 | **vagamundo.io → Cloudflare transfer** | Low | Transfer lock expires 2026-08-16. ~$10/yr vs current €75/yr. |
 

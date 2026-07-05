@@ -428,6 +428,7 @@ function AutocompleteInput({
             <button
               key={s}
               onMouseDown={(e) => { e.preventDefault(); select(s); }}
+              onTouchStart={(e) => { e.preventDefault(); select(s); }}
               className={`w-full text-left px-4 py-3 text-sm transition-colors ${
                 i === activeIdx ? "bg-brand-subtle text-foreground" : "hover:bg-muted text-foreground"
               }`}

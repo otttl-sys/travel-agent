@@ -15,7 +15,7 @@ const PLAN_TRIP_TOOL: Anthropic.Tool = {
       budget: { type: "number", description: "Budget per person in EUR (if mentioned)" },
       startDate: { type: "string", description: "Departure date YYYY-MM-DD (if mentioned)" },
       endDate: { type: "string", description: "Return date YYYY-MM-DD (if mentioned)" },
-      travelers: { type: "number", description: "Number of travelers" },
+      travelers: { type: "number", description: "Number of ADULT travelers only — do not count children here, they go in the children array" },
       interests: {
         type: "array",
         items: { type: "string" },
@@ -26,6 +26,20 @@ const PLAN_TRIP_TOOL: Anthropic.Tool = {
         type: "array",
         items: { type: "string" },
         description: "List of cities for multi-city trip",
+      },
+      includeFlights: { type: "boolean", description: "False if the user already has flights sorted or said they're flying separately/cheaply themselves. Defaults to true." },
+      includeHotel: { type: "boolean", description: "False if the user already has accommodation sorted, e.g. staying with a friend/family. Defaults to true." },
+      children: {
+        type: "array",
+        description: "Children traveling along, if mentioned (e.g. a 3-year-old daughter). Do not add a child here AND count them in travelers.",
+        items: {
+          type: "object",
+          properties: {
+            age: { type: "number" },
+            gender: { type: "string", enum: ["boy", "girl", "unspecified"] },
+          },
+          required: ["age"],
+        },
       },
     },
     required: ["destination", "travelers"],
@@ -48,8 +62,10 @@ Rules:
 - If the user is vague ("somewhere warm", "a beach trip"), suggest 2-3 specific places and ask which appeals.
 - As soon as you have destination + travelers, call plan_trip — don't keep asking.
 - If budget/dates/interests are mentioned, capture them. If not, don't ask more than one follow-up.
+- travelers = adult travelers only. If the user mentions a child/kid traveling with them (e.g. "with my 3-year-old daughter", "no partner, just me and my son"), put the child in the children array and do NOT add them to travelers — a solo parent traveling with one child is travelers: 1, children: [{...}].
+- If the user says they already have flights sorted, are flying separately, or staying with a friend/family — set includeFlights/includeHotel to false accordingly instead of assuming a package trip.
 - Keep replies short: 1-2 sentences max. No bullet lists. No formal headers.
-- Default travelers to 2 if the user hasn't said and context doesn't make it obvious.`,
+- Default travelers to 2 only if genuinely ambiguous — if the user's phrasing implies solo or solo-with-child, use that instead.`,
     tools: [PLAN_TRIP_TOOL],
     messages,
   });

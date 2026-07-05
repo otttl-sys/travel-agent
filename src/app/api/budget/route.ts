@@ -34,14 +34,14 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
 const SYSTEM_PROMPT = `You are a travel budget researcher. Your job: find realistic, current cost estimates for a trip and give an honest verdict on whether the traveler's budget is sufficient.
 
 Work in two phases:
-1. Call search_travel_costs 3-5 times to research each cost category:
+1. Call search_travel_costs 3-5 times to research each relevant cost category (skip any category the traveler has told you they don't need):
    - Flights (return, economy, from the traveler's likely origin region — use Europe if unspecified)
    - Hotel (mid-range, per night)
-   - Food & drink (daily budget per person — street food to sit-down restaurants)
+   - Food & drink (daily budget per person — either sit-down/street food, or grocery/supermarket self-catering costs if the traveler is self-catering)
    - Activities & entrance fees (typical highlights for the destination)
    - Local transport (getting around — metro, taxis, day trips)
 
-   Search specifically, e.g. "flight price Europe to Tokyo 2025", "mid-range hotel cost per night Bangkok", "daily food budget Rome Italy traveler".
+   Search specifically, e.g. "flight price Europe to Tokyo 2025", "mid-range hotel cost per night Bangkok", "daily food budget Rome Italy traveler", or "grocery supermarket prices Rome Italy" for self-catering.
 
 2. Call generate_budget_estimate once with the full structured breakdown.
 
@@ -49,29 +49,40 @@ RULES:
 - Use real numbers from your research, not vague ranges. If you find a range, use the midpoint.
 - All amounts in EUR.
 - Per-person figures should reflect solo travel costs; total = per-person × number of travelers (note: hotels are shared so hotel total ≠ hotel per-person × travelers for groups).
+- If flights or hotel are excluded, do not research or include a line for them at all.
+- If self-catering, the Food line must reflect grocery/cooking costs, not restaurant prices — note this explicitly.
 - Be honest: if the budget is insufficient, say so clearly.
 - Do not use quotation marks in text fields.`;
 
 export async function POST(req: NextRequest) {
-  const { destination, startDate, endDate, travelers, budget } = await req.json() as {
+  const { destination, startDate, endDate, travelers, budget, includeFlights, includeHotel, selfCatering } = await req.json() as {
     destination?: string;
     startDate?: string;
     endDate?: string;
     travelers?: number;
     budget?: number;
+    includeFlights?: boolean;
+    includeHotel?: boolean;
+    selfCatering?: boolean;
   };
 
   const nights = startDate && endDate
     ? Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000))
     : 7;
 
+  const flightsIncluded = includeFlights !== false;
+  const hotelIncluded = includeHotel !== false;
+
   const userMessage = `Estimate the realistic budget for this trip:
 - Destination: ${destination ?? "unknown"}
 - Dates: ${startDate ?? "?"} to ${endDate ?? "?"} (${nights} nights)
 - Travelers: ${travelers ?? 1}
 - Traveler's budget: €${budget ?? 0} per person
+- Flights: ${flightsIncluded ? "include in the budget" : "traveler already has flights sorted — do NOT include a Flights line"}
+- Hotel: ${hotelIncluded ? "include in the budget" : "traveler already has accommodation sorted (e.g. staying with friends/family) — do NOT include a Hotel line"}
+- Food: ${selfCatering ? "traveler will self-cater (cooking, grocery shopping) — base the Food line on supermarket/grocery costs, not restaurants" : "standard mix of restaurants and street food"}
 
-Research current costs for flights, hotel, food, activities, and local transport. Then call generate_budget_estimate with a full breakdown.`.trim();
+Research current costs for the categories above (skip Flights/Hotel if excluded). Then call generate_budget_estimate with a full breakdown covering only the relevant categories.`.trim();
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({

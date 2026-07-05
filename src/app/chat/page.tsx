@@ -92,6 +92,9 @@ function ChatContent() {
           interests?: string[];
           multiCity?: boolean;
           cities?: string[];
+          includeFlights?: boolean;
+          includeHotel?: boolean;
+          children?: { age: number; gender?: "boy" | "girl" | "unspecified" }[];
         };
 
         const confirmMsg = `Perfect! Let me plan your trip to ${params.destination} now — 8 agents are on it.`;
@@ -110,6 +113,9 @@ function ChatContent() {
           qs.set("multiCity", "1");
           qs.set("cities", params.cities.join(","));
         }
+        if (params.includeFlights === false) qs.set("includeFlights", "false");
+        if (params.includeHotel === false) qs.set("includeHotel", "false");
+        if (params.children?.length) qs.set("children", JSON.stringify(params.children));
 
         setTimeout(() => router.push(`/results?${qs.toString()}`), 1400);
         return;

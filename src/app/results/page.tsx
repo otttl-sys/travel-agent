@@ -72,11 +72,11 @@ function getSectionStyle(heading: string): SectionStyle {
   if (/itinerary|week|day|programme|tage|schedule/.test(h))
     return { icon: CalendarDays, accent: "border-l-violet-400",   photoId: null }; // uses destination photo
   if (/budget|cost|price|kosten/.test(h))
-    return { icon: Coins,        accent: "border-l-amber-400",    photoId: "photo-1554224155-8d04cb21cd6c" };
+    return { icon: Coins,        accent: "border-l-amber-400",    photoId: "photo-1580519542036-c47de6196ba5" };
   if (/practical|visa|health|info|packing|entry|safety/.test(h))
     return { icon: ShieldCheck,  accent: "border-l-rose-400",     photoId: "photo-1507608616759-54f48f0af0ee" };
   if (/season|weather|climate|outlook|when/.test(h))
-    return { icon: CloudSun,     accent: "border-l-blue-400",     photoId: "photo-1504608524841-42584120d693" };
+    return { icon: CloudSun,     accent: "border-l-blue-400",     photoId: "photo-1601134467661-3d775b999c8b" };
   return       { icon: MapPin,   accent: "border-l-brand",        photoId: null };
 }
 
@@ -267,6 +267,18 @@ function ResultsContent() {
 
     const childrenParam = searchParams.get("children") || undefined;
     const languageParam = searchParams.get("language") || undefined;
+    const originParam = searchParams.get("origin") || undefined;
+    const includeFlights = searchParams.get("includeFlights") !== "false";
+    const includeHotel = searchParams.get("includeHotel") !== "false";
+    const adventure = searchParams.get("adventure") === "1";
+    const shared = {
+      ...(originParam ? { origin: originParam } : {}),
+      includeFlights,
+      includeHotel,
+      adventure,
+      ...(childrenParam ? { children: childrenParam } : {}),
+      ...(languageParam ? { language: languageParam } : {}),
+    };
     const params = isMultiCity
       ? {
           multiCity: "1",
@@ -276,8 +288,7 @@ function ResultsContent() {
           travelers: searchParams.get("travelers") || "2",
           interests: searchParams.get("interests") || "",
           budget,
-          ...(childrenParam ? { children: childrenParam } : {}),
-          ...(languageParam ? { language: languageParam } : {}),
+          ...shared,
         }
       : {
           destination,
@@ -286,8 +297,7 @@ function ResultsContent() {
           travelers: searchParams.get("travelers") || "2",
           interests: searchParams.get("interests") || "",
           budget,
-          ...(childrenParam ? { children: childrenParam } : {}),
-          ...(languageParam ? { language: languageParam } : {}),
+          ...shared,
         };
 
     const progressInterval = setInterval(() => {
