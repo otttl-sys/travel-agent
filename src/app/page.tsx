@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   PlaneLanding, MapPinned, Globe2, CircleDollarSign, Binoculars,
@@ -19,19 +19,6 @@ export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [adventureMode, setAdventureMode] = useState(false);
-  const [heroIndex, setHeroIndex] = useState(0);
-  const [heroVisible, setHeroVisible] = useState(true);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setHeroVisible(false);
-      setTimeout(() => {
-        setHeroIndex((i) => (i + 1) % QUICK_DESTINATIONS.length);
-        setHeroVisible(true);
-      }, 600);
-    }, 12000);
-    return () => clearInterval(timer);
-  }, []);
 
   function handleSearch(dest?: string) {
     const q = dest ?? query;
@@ -45,22 +32,31 @@ export default function Home() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Nav */}
       <nav className="border-b border-border px-6 py-4 bg-background/95 backdrop-blur sticky top-0 z-50 relative">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-6">
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="font-bold text-foreground text-base tracking-[0.2em] uppercase">Vagamundo</span>
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-10">
+          <div className="flex items-center gap-10 shrink-0">
+            <div className="flex items-center gap-2.5">
+              <span className="w-[26px] h-[26px] rounded-full bg-brand flex items-center justify-center shrink-0">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="oklch(0.99 0 0)" stroke="none">
+                  <path d="M3 11 L21 4 L14 21 L11 13 Z" />
+                </svg>
+              </span>
+              <span className="font-heading font-semibold text-foreground text-[19px] tracking-[-0.02em]">Vagamundo</span>
+            </div>
+            <div className="hidden md:flex items-center gap-7">
+              <Link href="/discover" className="text-[14.5px] font-medium text-muted-foreground hover:text-foreground transition-colors">Discover</Link>
+              <Link href="/saved" className="text-[14.5px] font-medium text-muted-foreground hover:text-foreground transition-colors">My trips</Link>
+              <a href="#how-it-works" className="text-[14.5px] font-medium text-muted-foreground hover:text-foreground transition-colors">How it works</a>
+              <Link href="/explore" className="text-[14.5px] font-medium text-muted-foreground hover:text-foreground transition-colors">Explore</Link>
+            </div>
           </div>
 
-          <div className="hidden md:flex items-center gap-6">
-            {(["Discover", "Chat", "Explore"] as const).map((label) => (
-              <Link key={label} href={`/${label.toLowerCase()}`} className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">{label}</Link>
-            ))}
-            <Link href="/saved" className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors">Trips</Link>
+          <div className="hidden md:flex items-center gap-[18px]">
+            <UserNav />
             <Link href="/plan">
-              <button className="bg-brand text-brand-foreground px-6 py-2.5 rounded-full text-xs uppercase tracking-[0.18em] font-semibold hover:opacity-90 transition-opacity">
+              <button className="border-none bg-foreground text-background font-semibold text-sm px-5 py-[11px] rounded-full hover:opacity-90 transition-opacity">
                 Start planning
               </button>
             </Link>
-            <UserNav />
             <ThemeToggle />
           </div>
 
@@ -104,66 +100,67 @@ export default function Home() {
 
       <main className="flex-1">
         {/* Hero */}
-        <section className="relative h-[80vh] min-h-[580px] w-full overflow-hidden">
-          <Image
-            src={QUICK_DESTINATIONS[heroIndex].img.replace(/w=\d+/, "w=1800")}
-            alt={QUICK_DESTINATIONS[heroIndex].name}
-            fill
-            priority
-            className={`object-cover transition-opacity duration-700 ${heroVisible ? "opacity-100" : "opacity-0"}`}
-            unoptimized
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-black/30" />
-
-          <div className="relative h-full max-w-7xl mx-auto px-6 flex flex-col justify-end pb-20">
-            <p className={`text-white/60 text-[10px] font-semibold uppercase tracking-[0.3em] mb-2 transition-opacity duration-700 ${heroVisible ? "opacity-100" : "opacity-0"}`}>
-              {QUICK_DESTINATIONS[heroIndex].tag} · {QUICK_DESTINATIONS[heroIndex].name}
-            </p>
-            <h1
-              className="text-white text-5xl md:text-7xl leading-[1.04] tracking-[-0.02em] max-w-2xl mb-10"
-              style={{ fontFamily: "var(--font-instrument-serif, var(--font-inter), serif)", fontWeight: 400 }}
-            >
-              Where to{" "}
-              <em style={{ fontStyle: "italic", color: "oklch(0.85 0.13 35)" }}>next?</em>
+        <section className="pt-20 pb-3 px-6 text-center">
+          <div className="max-w-3xl mx-auto">
+            <p className="text-micro font-bold text-brand mb-5">Eight agents · One perfect trip</p>
+            <h1 className="font-heading font-normal text-foreground text-[56px] md:text-[84px] leading-[1.0] tracking-[-0.01em]">
+              Where to <em className="not-italic font-heading italic text-brand">next?</em>
             </h1>
+            <p className="text-lg text-muted-foreground max-w-[46ch] mx-auto mt-6 leading-relaxed">
+              Describe the trip you&apos;re dreaming of. Our agents handle flights, stays, food and the fine print — and hand you a plan you can actually book.
+            </p>
 
-            {/* Search bar */}
-            <div className="max-w-xl">
-              <div className="flex rounded-full overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.25)] bg-surface">
-                <input
-                  type="text"
-                  placeholder={adventureMode ? "Anywhere wild — or leave blank for a surprise" : "Japan, Portugal, Bali..."}
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  className="flex-1 px-6 py-4 text-[15px] text-foreground placeholder:text-muted-foreground outline-none bg-transparent"
-                />
+            {/* Prompt bar */}
+            <div className="max-w-2xl mx-auto mt-9 bg-surface border border-border rounded-[20px] shadow-[0_14px_40px_-18px_rgba(80,40,20,0.25)] pl-6 pr-2.5 py-2.5 flex items-center gap-3.5">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-brand shrink-0" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M12 3 C7 9 7 15 12 21 C17 15 17 9 12 3 Z" />
+                <path d="M4 12 H20" />
+              </svg>
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                placeholder={adventureMode ? "Anywhere wild — or leave blank for a surprise" : "A 7-day food & wine trip through northern Portugal, mid-budget…"}
+                className="flex-1 bg-transparent outline-none text-[17px] text-left text-foreground placeholder:text-muted-foreground min-w-0"
+              />
+              <button
+                onClick={() => handleSearch()}
+                className={`shrink-0 font-semibold text-[15px] px-6 py-3 rounded-[13px] flex items-center gap-2 transition-opacity whitespace-nowrap ${
+                  adventureMode ? "bg-amber-500 text-white hover:bg-amber-600" : "bg-brand text-brand-foreground hover:opacity-90"
+                }`}
+              >
+                {adventureMode ? "Go" : "Plan it"}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+              </button>
+            </div>
+
+            {/* Suggestion chips */}
+            <div className="flex flex-wrap justify-center gap-2.5 mt-5">
+              {HERO_CHIPS.map((chip) => (
                 <button
-                  onClick={() => handleSearch()}
-                  className={`px-7 py-4 font-semibold transition-opacity whitespace-nowrap text-xs uppercase tracking-[0.18em] ${
-                    adventureMode
-                      ? "bg-amber-500 text-white hover:bg-amber-600"
-                      : "bg-brand text-brand-foreground hover:opacity-90"
-                  }`}
+                  key={chip.label}
+                  onClick={() => handleSearch(chip.destination)}
+                  className="text-[13.5px] text-muted-foreground border border-border bg-surface px-4 py-2 rounded-full hover:border-foreground hover:text-foreground transition-colors"
                 >
-                  {adventureMode ? "⚡ Go →" : "Plan trip →"}
+                  {chip.label}
                 </button>
-              </div>
+              ))}
+            </div>
 
-              {/* Chat entry point */}
-              <div className="mt-4 flex items-center gap-3">
-                <span className="text-white/50 text-xs">or</span>
-                <Link
-                  href={query.trim() ? `/chat?q=${encodeURIComponent(query.trim())}` : "/chat"}
-                  className="flex items-center gap-2 text-white/80 hover:text-white text-xs font-semibold uppercase tracking-[0.18em] transition-colors group"
-                >
-                  <span className="w-6 h-6 rounded-full bg-white/15 group-hover:bg-white/25 flex items-center justify-center transition-colors">
-                    <Bot size={13} strokeWidth={1.5} className="text-white" />
-                  </span>
-                  Chat with AI
-                  <span className="opacity-60">→</span>
-                </Link>
-              </div>
+            {/* Chat entry point */}
+            <div className="mt-6 flex items-center justify-center gap-3">
+              <span className="text-muted-foreground text-xs">or</span>
+              <Link
+                href={query.trim() ? `/chat?q=${encodeURIComponent(query.trim())}` : "/chat"}
+                className="flex items-center gap-2 text-muted-foreground hover:text-foreground text-xs font-semibold uppercase tracking-[0.18em] transition-colors group"
+              >
+                <span className="w-6 h-6 rounded-full bg-surface-sunken group-hover:bg-border flex items-center justify-center transition-colors">
+                  <Bot size={13} strokeWidth={1.5} />
+                </span>
+                Chat with AI
+                <span className="opacity-60">→</span>
+              </Link>
             </div>
           </div>
         </section>
@@ -227,25 +224,25 @@ export default function Home() {
           <div className="max-w-7xl mx-auto">
             <div className="flex items-end justify-between mb-10">
               <div>
-                <p className="text-xs font-semibold text-brand uppercase tracking-[0.28em] mb-4">Where travelers go</p>
-                <h2 className="text-headline font-heading font-extrabold text-foreground tracking-[-0.03em]">
-                  Popular destinations
+                <p className="text-xs font-semibold text-brand uppercase tracking-[0.28em] mb-4">Trending right now</p>
+                <h2 className="text-headline font-heading font-normal text-foreground tracking-[-0.01em]">
+                  Where travelers are going this spring
                 </h2>
               </div>
-              <Link href="/discover" className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors hidden sm:block">
-                View all →
+              <Link href="/discover" className="text-sm font-semibold text-brand hover:opacity-80 transition-opacity hidden sm:block">
+                Browse all destinations →
               </Link>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {DESTINATIONS.map((dest) => (
-                <DestinationCard key={dest.name} dest={dest} onPlan={() => handleSearch(dest.name)} />
+              {DESTINATIONS.map((dest, i) => (
+                <DestinationCard key={dest.name} dest={dest} editorsPick={i === 0} onPlan={() => handleSearch(dest.name)} />
               ))}
             </div>
           </div>
         </section>
 
         {/* How it works - editorial split */}
-        <section className="py-24 px-6 bg-surface border-y border-border">
+        <section id="how-it-works" className="py-24 px-6 bg-surface border-y border-border scroll-mt-20">
           <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
             <div className="relative aspect-[4/3] rounded-2xl overflow-hidden order-2 lg:order-1">
               <Image
@@ -277,26 +274,30 @@ export default function Home() {
         </section>
 
         {/* Agent grid */}
-        <section className="py-24 px-6">
-          <div className="max-w-7xl mx-auto">
-            <p className="text-xs font-semibold text-brand uppercase tracking-[0.28em] mb-4">Under the hood</p>
-            <h2 className="text-headline font-heading font-extrabold text-foreground tracking-[-0.03em] mb-4">
-              8 agents. One perfect trip.
-            </h2>
-            <p className="text-muted-foreground mb-12 max-w-lg text-sm leading-relaxed">
-              Specialized AI agents work in parallel — each an expert in its own domain.
-            </p>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 divide-y divide-x-0 lg:divide-y-0 lg:divide-x divide-border border-y border-border">
-              {AGENTS.map((agent) => (
-                <div
-                  key={agent.name}
-                  className="p-6 hover:bg-surface transition-colors"
-                >
-                  <div className="w-8 h-8 rounded-md bg-foreground flex items-center justify-center mb-4">
-                    <agent.icon size={14} strokeWidth={1.5} className="text-background" />
+        <section className="py-14 px-6">
+          <div className="max-w-7xl mx-auto rounded-3xl p-11 text-white" style={{ background: "oklch(0.18 0.008 60)" }}>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-7">
+              <div>
+                <p className="text-micro font-bold mb-3" style={{ color: "oklch(0.78 0.12 40)" }}>The team behind every trip</p>
+                <h2 className="font-heading font-normal text-[36px] leading-[1.05] tracking-[-0.01em]">
+                  Eight specialists, working in parallel
+                </h2>
+              </div>
+              <p className="max-w-[30ch] text-sm leading-relaxed text-white/60">
+                Each agent owns one part of your trip and negotiates the trade-offs with the others in real time.
+              </p>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+              {AGENTS.map((agent, i) => (
+                <div key={agent.name} className="bg-white/[0.06] border border-white/10 rounded-[14px] p-[18px]">
+                  <div
+                    className="w-[34px] h-[34px] rounded-[10px] flex items-center justify-center mb-3"
+                    style={{ background: i % 2 === 0 ? "oklch(0.65 0.19 35)" : "oklch(0.5 0.07 175)" }}
+                  >
+                    <agent.icon size={18} strokeWidth={1.8} className="text-white" />
                   </div>
-                  <h3 className="font-semibold text-foreground text-sm mb-1.5">{agent.name}</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{agent.description}</p>
+                  <div className="font-semibold text-[15px]">{agent.name}</div>
+                  <div className="text-[12.5px] text-white/50 mt-0.5">{agent.description}</div>
                 </div>
               ))}
             </div>
@@ -365,9 +366,11 @@ export default function Home() {
 
 function DestinationCard({
   dest,
+  editorsPick,
   onPlan,
 }: {
   dest: { name: string; tag: string; desc: string; price: string; rating: string; img: string };
+  editorsPick?: boolean;
   onPlan: () => void;
 }) {
   return (
@@ -383,23 +386,26 @@ function DestinationCard({
           className="object-cover group-hover:scale-105 transition-transform duration-500"
           unoptimized
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-        <div
-          className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-surface text-foreground"
-        >
-          <Star size={11} fill="currentColor" className="text-amber-400" />
-          {dest.rating}
-        </div>
+        {editorsPick && (
+          <span className="absolute top-3 left-3 bg-surface/90 backdrop-blur-sm text-[10px] font-bold uppercase tracking-[0.12em] text-brand px-2.5 py-1 rounded-full">
+            Editor&apos;s pick
+          </span>
+        )}
       </div>
       <div className="p-4 flex flex-col flex-1">
-        <p className="text-xs text-muted-foreground mb-1">{dest.tag}</p>
-        <h3 className="font-semibold text-foreground mb-1 text-title leading-snug">{dest.name}</h3>
-        <p className="text-xs text-muted-foreground flex-1 mb-3 leading-relaxed">{dest.desc}</p>
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground font-semibold">
-            from <span className="text-foreground">{dest.price}</span>
+        <div className="flex items-baseline justify-between">
+          <h3 className="font-semibold text-foreground text-title leading-snug">{dest.name}</h3>
+          <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
+            <Star size={11} fill="currentColor" className="text-amber-400" />
+            {dest.rating}
           </span>
-          <span className="text-xs font-semibold uppercase tracking-[0.15em] text-brand">Plan trip →</span>
+        </div>
+        <p className="text-xs text-muted-foreground mt-1 mb-3.5 leading-relaxed">{dest.tag} · {dest.desc}</p>
+        <div className="flex items-center justify-between pt-3.5 border-t border-border">
+          <span className="text-sm font-bold text-foreground">
+            {dest.price} <span className="font-normal text-xs text-muted-foreground">est.</span>
+          </span>
+          <span className="text-xs font-semibold text-brand">Plan trip</span>
         </div>
       </div>
     </div>
@@ -439,6 +445,13 @@ const DESTINATIONS = [
     rating: "4.9",
     img: "https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=800&q=80&auto=format&fit=crop",
   },
+];
+
+const HERO_CHIPS = [
+  { label: "🌸 Tokyo in cherry-blossom season", destination: "Tokyo" },
+  { label: "🏝️ Greek island hop, 10 days", destination: "Greek Islands" },
+  { label: "🦁 Safari + beach in Kenya", destination: "Kenya" },
+  { label: "⛷️ Long weekend in the Dolomites", destination: "Dolomites" },
 ];
 
 const ADVENTURE_CHIPS = [

@@ -266,15 +266,20 @@ Conversational alternative to the 6-step wizard — Claude gathers trip details 
 
 ---
 
-## Design Handoff — Fable full-app redesign (2026-07-05, not yet implemented)
+### Fable Landing Redesign — N9 (2026-07-06) — uncommitted
+First screen of the Fable full-app redesign (handoff package updated 2026-07-05 to a fuller v2: adds Dark Mode variant + personalization concept for every screen, "Landing — eingeloggt" variant, 3 mobile Discover personas; tokens unchanged, `handoff/` in-repo updated to this version). Landing (`src/app/page.tsx`) rebuilt to match `handoff/vagamundo-reference.html`:
+- **Header** — circular terracotta logo mark, real nav (Discover/My trips/How it works anchor/Explore), `UserNav` + dark pill "Start planning" CTA
+- **Hero** — flat centered layout replaces the old rotating full-bleed photo hero: eyebrow "Eight agents · One perfect trip", 84px Instrument Serif "Where to *next?*", single-sentence prompt bar (still wired to the real `handleSearch`/`adventureMode` state), 4 emoji suggestion chips, "Chat with AI" entry point kept below
+- **Trending destinations grid** — "Trending right now" eyebrow/headline, editor's-pick badge on the first card, rating inline with title, price-est./"Plan trip" footer row — same `DESTINATIONS` data, restyled `DestinationCard`
+- **8-agents section** — dark `oklch(0.18 0.008 60)` rounded panel, "Eight specialists, working in parallel", 4×2 grid with alternating terracotta/sage icon tiles — same real `AGENTS` data (Flight/Hotel/Activity/Budget/Research/Disruption/Packing/Briefing), not the mockup's generic labels
+- Removed the now-dead `heroIndex`/`heroVisible` rotation state and its `useEffect`
+- `src/app/v2/` deleted (already cherry-picked 2026-07-04, nothing left to reuse)
 
-Otto produced a complete design package with Fable: `handoff/README.md` + `tokens.css` + `vagamundo-reference.html` (23 screens, web 1440px + mobile 390×844). Tokens already match the live Otto UI Kit in `globals.css` — no token migration needed. Covers: Landing (2 variants), a brand-new **Trip Workspace** (3-column split: itinerary rail · day timeline · map, with a floating live-agent chat dock — no equivalent exists in the app today), redesigned Plan Wizard (adults/children as separate steppers), Explore, Saved Trips, Research dossier, Disruption/flight-chaos handling, plus mobile counterparts (Discover, AI Chat, Itinerary, Budget checker, Packing list, etc.).
+**Pricing preview (review-only, not shipped):** `src/app/design-preview/pricing/page.tsx` — Free/Pro plan cards from the mockup's "vagamundo.ai — gesamte Seite" variant, English copy. Deliberately **not linked from any nav or the homepage**, `robots: noindex`. Red line unchanged (STRATEGY.md §8/D-E15: no public commercial signaling until contract end) — this route exists solely so Otto can review the Pro-tier design; it must stay unlinked if/when this branch reaches `main` (auto-deploys to vagamundo.ai).
 
-**Excluded on purpose:** Pricing/Checkout screens (show a €9/month Pro tier) — not being built, conflicts with the no-revenue/no-contracts line from the brand strategy session until legal clears the LHG conflict.
+Verified: `tsc --noEmit` clean, dev server (`next dev -p 3100`) serves both `/` and `/design-preview/pricing` with the expected copy server-rendered. **Not yet visually screenshotted in a real browser** — Claude-in-Chrome extension wasn't connected this session.
 
-`src/app/v2/` (never committed) was already cherry-picked into the live homepage on 2026-07-04 (`f3b95dd`) — nothing left to reuse there; can be deleted once the new design lands.
-
-**Not yet started** — next session needs to pick a starting screen (README suggests Landing → Plan → Trip Workspace → Explore/Saved → Research/Disruption).
+**Still open from the Fable package:** Trip Workspace, Plan Wizard, Explore, Saved Trips, Research, Disruption (web + mobile), Landing dark mode + logged-in/personalized variant, mobile Discover personas.
 
 ---
 

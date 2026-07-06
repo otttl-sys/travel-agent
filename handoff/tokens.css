@@ -1,0 +1,75 @@
+/*
+  Vagamundo — Design Tokens (Otto UI Kit)
+  ----------------------------------------
+  Quelle der Wahrheit für Farben + Typo-Skala.
+  Web UND Mobile teilen sich diese Tokens, damit alles konsistent bleibt.
+
+  Tailwind v4: dieser Block ist additiv zu deiner bestehenden globals.css —
+  nichts wird umbenannt oder entfernt, bestehende shadcn-Komponenten laufen weiter.
+*/
+
+@theme inline {
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-subtle: var(--brand-subtle);
+  --color-sage: var(--sage);
+  --color-sage-foreground: var(--sage-foreground);
+  --color-sage-subtle: var(--sage-subtle);
+  --color-surface: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
+
+  --font-size-display: var(--text-display);
+  --font-size-headline: var(--text-headline);
+  --font-size-title: var(--text-title);
+  --font-size-body: var(--text-body);
+  --font-size-caption: var(--text-caption);
+  --font-size-micro: var(--text-micro);
+}
+
+:root {
+  /* Flächen / Surfaces */
+  --surface: oklch(1 0 0);
+  --surface-sunken: oklch(0.975 0.005 70);
+
+  /* Brand-Akzent #1 — Terracotta (Travel Agent / Vagamundo) */
+  --brand: oklch(0.65 0.19 35);
+  --brand-foreground: oklch(0.99 0 0);
+  --brand-subtle: oklch(0.96 0.03 35);
+
+  /* Brand-Akzent #2 — Sage/Teal (ruhig/stabil, 2. Akzent) */
+  --sage: oklch(0.5 0.07 175);
+  --sage-foreground: oklch(0.99 0 0);
+  --sage-subtle: oklch(0.95 0.02 175);
+
+  /* Typo-Skala — große, selbstbewusste Headlines */
+  --text-display: 3.5rem;    /* 56px · line-height 1.05 · tracking -0.02em · Hero */
+  --text-headline: 2.25rem;  /* 36px · line-height 1.15 · tracking -0.01em · Sektionen */
+  --text-title: 1.25rem;     /* 20px · line-height 1.3  · Karten-/Listen-Titel */
+  --text-body: 1rem;         /* 16px · line-height 1.6 */
+  --text-caption: 0.8125rem; /* 13px · sekundäre Labels */
+  --text-micro: 0.6875rem;   /* 11px · tracking 0.28em · uppercase · Eyebrow */
+
+  /* Fonts — siehe README für die <link>-Imports */
+  --font-heading: 'Instrument Serif', Georgia, serif;
+  --font-body: 'Hanken Grotesk', system-ui, sans-serif;
+}
+
+.dark {
+  --surface: oklch(0.205 0 0);
+  --surface-sunken: oklch(0.18 0 0);
+
+  --brand: oklch(0.7 0.17 35);
+  --brand-foreground: oklch(0.145 0 0);
+  --brand-subtle: oklch(0.27 0.05 35);
+
+  --sage: oklch(0.65 0.08 175);
+  --sage-foreground: oklch(0.145 0 0);
+  --sage-subtle: oklch(0.25 0.04 175);
+}
+
+@layer base {
+  .text-display  { font-size: var(--text-display);  line-height: 1.05; letter-spacing: -0.02em; font-family: var(--font-heading); }
+  .text-headline { font-size: var(--text-headline); line-height: 1.15; letter-spacing: -0.01em; font-family: var(--font-heading); }
+  .text-title    { font-size: var(--text-title);    line-height: 1.3;  font-family: var(--font-heading); }
+  .text-micro    { font-size: var(--text-micro);    letter-spacing: 0.28em; text-transform: uppercase; }
+}
